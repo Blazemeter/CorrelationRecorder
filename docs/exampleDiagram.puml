@@ -1,0 +1,90 @@
+@startuml
+title __Example of a Simple CorrelationExtractor UML's Class Diagram__\n
+
+  namespace com.blazemeter.jmeter.correlation.core {
+      abstract class com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement {
+          {abstract} + getParams()
+          + setContext()
+          + getSupportedContext()
+          {abstract} + setParams()
+          {abstract} + getParamsDefinition()
+          {abstract} + getType()
+      }
+
+      namespace extractors {
+        abstract class CorrelationExtractor {
+          + variableName : String
+          # target : ResultField
+          + CorrelationExtractor()
+          + getTarget()
+          + getType()
+          + getVariableName()
+          + setVariableName()
+          + toString()
+          + update()
+          + updateTestElem()
+          {abstract} + process()
+          {static} # parseInteger()
+        }
+      }
+
+      namespace replacements {
+        abstract class CorrelationReplacement {
+            # variableName : String
+            + CorrelationReplacement()
+            + getType()
+            + getVariableName()
+            + process()
+            + setVariableName()
+            + updateTestElem()
+            {abstract} + update()
+            {abstract} # replaceString()
+        }
+      }
+
+      class CorrelationRule {
+        - referenceName : String
+        - correlationExtractor : CorrelationExtractor
+        - correlationReplacement : CorrelationReplacement
+        + applyReplacements()
+        + buildTestElement()
+      }
+    }
+
+  namespace com.mycompany.extensions {
+    class SimpleCorrelationExtractor {
+        - tagType : String
+        + SimpleCorrelationExtractor()
+        + getParams()
+        + getParamsDefinition()
+        + getSupportedContext()
+        + process()
+        + setParams()
+        + update()
+        + updateTestElem()
+        - buildDefaultTagRegex()
+        - buildPostProcessor()
+        - buildTagRegex()
+    }
+
+    class SimpleContext {
+         - count : int
+         + getCount()
+         + reset()
+         + update()
+    }
+  }
+
+  com.blazemeter.jmeter.correlation.core.CorrelationRule o-- com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor : correlationExtractor
+  com.blazemeter.jmeter.correlation.core.CorrelationRule o-- com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement : correlationReplacement
+
+  com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor -up-|> com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement
+  com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement
+
+  com.mycompany.extensions.SimpleCorrelationExtractor -up-|> com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor
+  com.mycompany.extensions.SimpleContext .up.|> com.blazemeter.jmeter.correlation.core.CorrelationContext
+
+right footer
+UML Diagram explaining Custom Correlation relationships
+endfooter
+@enduml

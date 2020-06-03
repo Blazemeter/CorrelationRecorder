@@ -1,0 +1,39 @@
+{
+  "id" : "Siebel-CRM",
+  "description" : "This is a description",
+  "version" : "1.0",
+  "components" : "",
+  "responseFilters" : "",
+  "rules" : [ {
+    "referenceName" : "TestRuleOne",
+    "correlationExtractor" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+      "target" : "RESPONSE_HEADERS",
+      "regex" : "SWEACn=([a-z])",
+      "matchNr" : 2
+    },
+    "correlationReplacement" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+      "regex" : "SWEACn=([A-Z])"
+    }
+  }, {
+    "referenceName" : "TestRuleTwo",
+    "correlationExtractor" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+      "regex" : "SWEACn=(ˆ[\\.\\.])",
+      "matchNr" : 6,
+      "groupNr" : 5
+    },
+    "correlationReplacement" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+      "regex" : "SWEACn=([(\\d)])"
+    }
+  } ],
+  "dependencies" : [ {
+    "name" : "Dependency1",
+    "version" : "2.0",
+    "url" : "URL"
+  } ],
+  "repositoryId" : "local",
+  "changes" : ""
+}

@@ -1,0 +1,13 @@
+{
+  "siebel": {
+    "versions": [
+      "1.0",
+      "1.1"
+    ]
+  },
+  "wordpress": {
+    "versions": [
+      "1.0"
+    ]
+  }
+}

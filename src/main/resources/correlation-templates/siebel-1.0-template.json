@@ -1,0 +1,182 @@
+{
+  "id": "siebel",
+  "description": "<p>This is the first version of the <b>SIEBEL CRM</b> correlation recorder rules</p> <p>It contains 16 of the most used Correlations for the platform.</p>",
+  "version": "1.0",
+  "components": "com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement,\ncom.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor,\ncom.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement,\ncom.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement",
+  "responseFilters": "text/html",
+  "rules": [
+    {
+      "referenceName": "Siebel_SWEACn",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "SWEACn=(.*?)&"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWEACn=([^&\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_sn_cookie",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "target": "RESPONSE_HEADERS",
+        "regex": "_sn=(.*?);"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "sn=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_sn_body",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "_sn=(.*?)[\\\"|&]"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "_sn=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_sn_body2",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "name=\\\"_sn\\\" value=\\\"(.+?)\\\""
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "_sn=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_SWEBMC",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "SWEBMC=(.*?)&"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWEBMC=([^&\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_Analytic_ViewState",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "ViewState\\\" value=\\\"=(.*?)\\\""
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "ViewState=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_Analytic_search_id",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "sid=\\\"(.*?)\\\""
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "sid=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_SWEBID",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "navigator\\\\.id = [\\\"]?(.*?)[\\\"]?;"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWEBID=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_SWEBRS",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "name=\\\"SWEBRS\\\" value=\\\"(.*?)\\\""
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWEBRS=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_SRN",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "SRN=(.*?)&"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SRN=([^&\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_SWEFI",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "SWEFI([`^~\\\\[%|])(.*?)\\\\1",
+        "matchNr": 2
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWEFI=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_SWEVLC",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "cks([`^~\\\\[%|])(.*?)\\\\1",
+        "matchNr": 2
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "ShowViewLayout=([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_Star_Array",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor",
+        "regex": "([`^~\\\\[%|])ValueArray\\\\1(.*?)\\\\1",
+        "groupNr": 2
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement",
+        "regex": "([^&\\\\n]+)"
+      }
+    },
+    {
+      "referenceName": "Siebel_Star_Array_Op",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor",
+        "regex": "([`^~\\\\[%|])v\\\\1(.*?)\\\\1",
+        "groupNr": 2
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement",
+        "regex": "([^&\\\\n]+)"
+      }
+  }, {
+    "referenceName" : "__time()",
+    "correlationExtractor" : null,
+    "correlationReplacement" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+      "regex" : "SWETS"
+    }
+  }, {
+    "referenceName" : "__time()",
+    "correlationExtractor" : null,
+    "correlationReplacement" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+      "regex" : "SWETS"
+    }
+  } ],
+  "repositoryId": "local"
+}

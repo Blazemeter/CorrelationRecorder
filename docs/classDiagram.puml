@@ -1,0 +1,490 @@
+@startuml
+
+skinparam monochrome true
+hide empty members
+hide circle
+
+title __Correlations Recorder's Class Diagram__\n
+
+  namespace com.blazemeter.jmeter.correlation {
+
+    namespace com.blazemeter.jmeter.correlation.core {
+
+      namespace com.blazemeter.jmeter.correlation.core.extractors {
+        abstract class com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor {
+            + variableName : String
+        }
+
+        class com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor {
+            # regex : String
+            - groupNr : int
+            - matchNr : int
+        }
+      }
+
+      namespace com.blazemeter.jmeter.correlation.core.replacements {
+        abstract class com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement {
+            # variableName : String
+            {abstract} + update()
+            + updateTestElem()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement {
+             + update()
+             + updateTestElem()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement {
+            # regex : String
+            + update()
+            + updateTestElem()
+        }
+      }
+
+      namespace com.blazemeter.jmeter.correlation.core.templates {
+        class com.blazemeter.jmeter.correlation.core.templates.ConfigurationException {
+            + ConfigurationException()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationRuleSerializationPropertyFilter {
+            {static} + FILTER_ID : String
+            + depositSchemaProperty()
+            + depositSchemaProperty()
+            + serializeAsElement()
+            + serializeAsField()
+            # include()
+            # include()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate {
+            + addDependencies()
+            + hashCode()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder {
+            - changes : String
+            - components : String
+            - dependencies : List<CorrelationTemplateDependency>
+            - description : String
+            - id : String
+            - repositoryId : String
+            - responseFilters : String
+            - rules : List<CorrelationRule>
+            - snapShot : BufferedImage
+            - version : String
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency {
+            - name : String
+            - url : String
+            - version : String
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateFrame {
+            - dependenciesTable : JTable
+            - dependencyModel : ObjectTableModel
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateReference {
+            - name : String
+            - versions : List<String>
+            + addVersion()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesFrame {
+            - templatesList : JList<CorrelationTemplate>
+        }
+
+        interface com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry {
+            {abstract} + findByID()
+            {abstract} + getInstalledTemplates()
+            {abstract} + save()
+        }
+
+        interface com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler {
+            {abstract} + getCorrelationTemplates()
+            {abstract} + onLoadTemplate()
+            {abstract} + onSaveTemplate()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration {
+            + deleteRepository()
+            + getCorrelationRepositories()
+            + getCorrelationTemplatesByRepositoryName()
+            + getRepositoryURL()
+            + installTemplate()
+            + save()
+            + uninstallTemplate()
+            + updateLocalRepository()
+        }
+
+        interface com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistry {
+            {abstract} + delete()
+            {abstract} + find()
+            {abstract} + getRepositories()
+            {abstract} + save()
+        }
+
+        interface com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler {
+            {abstract} + deleteConflicts()
+            {abstract} + deleteRepository()
+            {abstract} + downloadDependencies()
+            {abstract} + getConfigurationRoute()
+            {abstract} + getConflictingInstalledDependencies()
+            {abstract} + getCorrelationRepositories()
+            {abstract} + getCorrelationTemplatesByRepositoryName()
+            {abstract} + getRepositoryURL()
+            {abstract} + installTemplate()
+            {abstract} + saveRepository()
+            {abstract} + uninstallTemplate()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository {
+            - name : String
+            - templatesVersions : Map<String, CorrelationTemplateReference>
+            + addTemplate()
+        }
+
+         class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfigFrame {
+             - repositoriesList : JList<CorrelationTemplatesRepository>
+             - templatesList : JList<List<CorrelationTemplate>>
+         }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfigFrame.CorrelationTemplateRenderer {
+            + getListCellRendererComponent()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfiguration {
+            - installedTemplates : Map<String, String>
+            - name : String
+            - url : String
+            + getInstalledTemplates()
+            + uninstallTemplate()
+            ~ installTemplate()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry {
+            + LocalCorrelationTemplatesRegistry()
+            + findByID()
+            + getInstalledTemplates()
+            + save()
+        }
+
+        class com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry {
+            + LocalCorrelationTemplatesRepositoriesRegistry()
+            + delete()
+            + find()
+            + getCorrelationTemplatesByRepositoryId()
+            + getRepositories()
+            + installTemplate()
+            + readTemplatesReferences()
+            + save()
+            + uninstallTemplate()
+            + updateLocalRepository()
+        }
+          class com.blazemeter.jmeter.correlation.core.templates.RemoteCorrelationTemplatesRepositoriesRegistry {
+              {static} - CONNECT_TIMEOUT : int
+              + RemoteCorrelationTemplatesRepositoriesRegistry()
+              + save()
+              - canDownload()
+              - getBaseURL()
+              - saveFileFromURL()
+          }
+      }
+
+      class com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry {
+          - customExtractors : Set<Class>
+          - customReplacements : Set<Class>
+          + getComponents()
+          + getCorrelationExtractor()
+          + getCorrelationReplacement()
+      }
+
+      interface com.blazemeter.jmeter.correlation.core.CorrelationContext {
+          {abstract} + reset()
+          {abstract} + update()
+      }
+
+      class com.blazemeter.jmeter.correlation.core.CorrelationEngine {
+          - initializedContexts : List<CorrelationContext>
+          - rules : List<CorrelationRule>
+          - vars : JMeterVariables
+          + getCorrelationRules()
+          + getInitializedContexts()
+          + process()
+          + reset()
+          + setCorrelationRules()
+          + updateContexts()
+      }
+
+      class com.blazemeter.jmeter.correlation.core.CorrelationRule {
+          - referenceName : String
+          + addExtractors()
+          + applyReplacements()
+          + buildTestElement()
+          + getCorrelationExtractor()
+          + getCorrelationReplacement()
+          + getReferenceName()
+      }
+
+      abstract class com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement {
+          + getContext()
+          {abstract} + getParams()
+          {abstract} + getParamsDefinition()
+          + getSupportedContext()
+          {abstract} + getType()
+          + setContext()
+          {abstract} + setParams()
+      }
+
+      class com.blazemeter.jmeter.correlation.core.ParameterDefinition {
+          - availableValuesToDisplayNamesMapping : Map<String, String>
+          - defaultValue : String
+          - description : String
+          - name : String
+          + ParameterDefinition()
+          + getDefaultValue()
+          + getDescription()
+          + getName()
+          + getValueNamesMapping()
+      }
+
+      class com.blazemeter.jmeter.correlation.core.RegexMatcher {
+          - group : int
+          - input : String
+          - regex : String
+          + RegexMatcher()
+          + findMatch()
+          + findMatches()
+      }
+
+       enum ResultField {
+         BODY
+         BODY_AS_A_DOCUMENT
+         BODY_UNESCAPED
+         REQUEST_HEADERS
+         RESPONSE_CODE
+         RESPONSE_HEADERS
+         RESPONSE_MESSAGE
+         URL
+       }
+
+
+    namespace gui {
+      class com.blazemeter.jmeter.correlation.gui.ComponentContainer {
+          - componentsTextArea : JTextArea
+          + clear()
+      }
+
+      interface com.blazemeter.jmeter.correlation.gui.ComponentsValidations {
+             {abstract} + validateRulesConsistency()
+      }
+
+       class com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement {
+           - extractorDefinitions : CorrelationRulePartTestElement
+           - replacementDefinitions : CorrelationRulePartTestElement
+       }
+
+      class com.blazemeter.jmeter.correlation.gui.CorrelationRulesTestElement {
+          {static} - RULES : String
+      }
+
+      class com.blazemeter.jmeter.correlation.gui.RulePanel {
+          - referenceVariableField : JTextField
+          - extractorHandler : ContainerPanelsHandler
+          - replacementHandler : ContainerPanelsHandler
+      }
+
+       class com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler {
+           - comboBox : JComboBox
+           - containerPanel : JPanel
+           - listComponents : ArrayList<Component>
+       }
+
+      class com.blazemeter.jmeter.correlation.gui.RulesContainer {
+          - rules : ArrayList<RulePanel>
+      }
+
+      class com.blazemeter.jmeter.correlation.gui.TestPlanTemplatesRepository {
+          - rootFolder : String
+          + TestPlanTemplatesRepository()
+          + addSiebelCorrelationTemplate()
+          + addSiebelTemplate()
+          + setRootFolder()
+      }
+
+    }
+
+    namespace siebel {
+      class com.blazemeter.jmeter.correlation.siebel.SiebelArrayFunction {
+          {static} - DESC : List<String>
+          {static} - KEY : String
+      }
+
+      class com.blazemeter.jmeter.correlation.siebel.SiebelContext {
+          - bcis : Map<String, BCI>
+          - counter : Integer
+          - paramRowFields : Map<String, Field>
+          - prefixId : int
+          - rowVars : Map<String, String>
+          + update()
+      }
+
+      class com.blazemeter.jmeter.correlation.siebel.SiebelContext.BCI {
+          - fields : Map<Integer, Field>
+          - addField()
+          - getField()
+      }
+      class com.blazemeter.jmeter.correlation.siebel.SiebelContext.Field {
+          {static} - TELEPHONE_TYPE : int
+          - id : int
+          - position : int
+          - type : int
+          + getIgnoredCharsRegex()
+          + getPosition()
+          - Field()
+      }
+      class com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement {
+          + SiebelCounterCorrelationReplacement()
+          + getSupportedContext()
+          + process()
+          + toString()
+          + update()
+          + updateTestElem()
+          - createPreProcessor()
+      }
+      class com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor {
+          + SiebelRowCorrelationExtractor()
+          + getParams()
+          + getParamsDefinition()
+          + getSupportedContext()
+          + process()
+          + update()
+          + updateTestElem()
+          - buildArrayParserPostProcessor()
+      }
+      class com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement {
+          + getSupportedContext()
+          + update()
+          + updateTestElem()
+          # replaceWithRegex()
+      }
+      class com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement {
+          - rowVarPrefix : String
+          + SiebelRowParamsCorrelationReplacement()
+          + getParams()
+          + getParamsDefinition()
+          + getSupportedContext()
+          + process()
+          + setParams()
+          + update()
+          + updateTestElem()
+          # replaceWithRegex()
+      }
+    }
+
+    }
+
+    class com.blazemeter.jmeter.correlation.CorrelationProxyControl {
+      + CorrelationProxyControl()
+      + deleteConflicts()
+      + deleteRepository()
+      + deliverSampler()
+      + downloadDependencies()
+      + installTemplate()
+      + onLoadTemplate()
+      + onSaveTemplate()
+      + saveRepository()
+      + startProxy()
+      + uninstallTemplate()
+      + update()
+    }
+
+    class com.blazemeter.jmeter.correlation.CorrelationProxyControlGui {
+      + configure()
+      + createTestElement()
+      + deleteConflicts()
+      + deleteRepository()
+      + downloadDependencies()
+      + getConfigurationRoute()
+      + getConflictingInstalledDependencies()
+      + getCorrelationRepositories()
+      + getCorrelationTemplates()
+      + getCorrelationTemplatesByRepositoryName()
+      + getRepositoryURL()
+      + getStaticLabel()
+      + installTemplate()
+      + modifyTestElement()
+      + onLoadTemplate()
+      + onSaveTemplate()
+      + saveRepository()
+      + uninstallTemplate()
+    }
+
+  }
+
+  com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor -up-|> com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement
+  com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor o-- com.blazemeter.jmeter.correlation.core.ResultField : target
+  com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor -up-|> com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor
+  com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement
+  com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
+  com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement
+
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationRuleSerializationPropertyFilter -up-|> com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate +-down- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesFrame o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler : repositoriesRegistryHandler
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesFrame o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler : templatesRegistryHandler
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration o-- com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry : local
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration o-- com.blazemeter.jmeter.correlation.core.templates.RemoteCorrelationTemplatesRepositoriesRegistry : remote
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfigFrame o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler : repositoryHandler
+  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfigFrame +-down- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfigFrame.CorrelationTemplateRenderer
+  com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry
+  com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry o-- com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration : localConfiguration
+  com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistry
+  com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry o-- com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration : configuration
+  com.blazemeter.jmeter.correlation.core.templates.RemoteCorrelationTemplatesRepositoriesRegistry .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistry
+  com.blazemeter.jmeter.correlation.core.templates.RemoteCorrelationTemplatesRepositoriesRegistry -up-|> com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry
+
+  com.blazemeter.jmeter.correlation.core.CorrelationRule o-- com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor : correlationExtractor
+  com.blazemeter.jmeter.correlation.core.CorrelationRule o-- com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement : correlationReplacement
+  com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement o-- T : context
+
+  com.blazemeter.jmeter.correlation.gui.CorrelationRulesTestElement -up-|> org.apache.jmeter.config.ConfigTestElement
+  com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement -up-|> org.apache.jmeter.testelement.AbstractTestElement
+  com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement o-- com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement : extractorDefinitions
+  com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement o-- com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement : replacementDefinitions
+
+
+  com.blazemeter.jmeter.correlation.gui.RulePanel o-- com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler : extractorHandler
+  com.blazemeter.jmeter.correlation.gui.RulePanel o-- com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler : replacementHandler
+  com.blazemeter.jmeter.correlation.gui.RulePanel +-down- com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler
+
+  com.blazemeter.jmeter.correlation.gui.RulesContainer .up.|> com.blazemeter.jmeter.correlation.gui.ComponentsValidations
+  com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.gui.ComponentContainer : componentContainer
+  com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry : componentsRepository
+  com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.gui.RulePanel : lastActivePanel
+
+  com.blazemeter.jmeter.correlation.siebel.SiebelArrayFunction -up-|> org.apache.jmeter.functions.AbstractFunction
+  com.blazemeter.jmeter.correlation.siebel.SiebelContext .up.|> com.blazemeter.jmeter.correlation.core.CorrelationContext
+  com.blazemeter.jmeter.correlation.siebel.SiebelContext +-down- com.blazemeter.jmeter.correlation.siebel.SiebelContext.BCI
+  com.blazemeter.jmeter.correlation.siebel.SiebelContext +-down- com.blazemeter.jmeter.correlation.siebel.SiebelContext.Field
+  com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
+  com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor -up-|> com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor
+  com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
+  com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
+
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl -up-|> org.apache.jmeter.protocol.http.proxy.ProxyControl
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl o-- com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry : componentsRegistry
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl o-- com.blazemeter.jmeter.correlation.core.CorrelationEngine : correlationEngine
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry : correlationTemplatesRegistry
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration : correlationTemplatesRepositoriesConfiguration
+  com.blazemeter.jmeter.correlation.CorrelationProxyControl o-- com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration : localConfiguration
+  com.blazemeter.jmeter.correlation.CorrelationProxyControlGui .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler
+  com.blazemeter.jmeter.correlation.CorrelationProxyControlGui .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler
+  com.blazemeter.jmeter.correlation.CorrelationProxyControlGui -up-|> org.apache.jmeter.protocol.http.proxy.gui.ProxyControlGui
+  com.blazemeter.jmeter.correlation.CorrelationProxyControlGui o-- com.blazemeter.jmeter.correlation.CorrelationProxyControl : model
+  com.blazemeter.jmeter.correlation.CorrelationProxyControlGui o-- com.blazemeter.jmeter.correlation.gui.RulesContainer : rulesContainer
+
+@enduml
