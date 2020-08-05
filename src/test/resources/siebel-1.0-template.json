@@ -1,0 +1,30 @@
+{
+  "id": "Siebel-1.0",
+  "name": "Siebel-1.0_Name",
+  "author": "blazemeter",
+  "description": "This is the version number 1.0 of this template.",
+  "version": "1.0",
+  "rules": [
+    {
+      "referenceName": "Temp1Siebel",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "(siebel)"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement"
+      }
+    },
+    {
+      "referenceName": "Temp1WikiVar",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "target": "URL",
+        "regex": "(wikipedia)"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement"
+      }
+    }
+  ]
+}
