@@ -1,13 +1,11 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
 import org.junit.Rule;
@@ -16,113 +14,129 @@ import org.junit.rules.TemporaryFolder;
 
 public class TestPlanTemplatesRepositoryTest {
 
-  protected static final String SIEBEL_CORRELATION_TEMPLATE = "siebel-1"
-      + ".0-template.json";
-  private static final String CORRELATION_RECORDER_TEMPLATE_FILE_PATH = "/template"
-      + "-correlation-recorder.xml";
-  private static final String CORRELATIONS_RECORDER_TEST_PLAN = "recording"
-      + "-correlations.jmx";
-  private static final String CORRELATION_RECORDER_TEMPLATE_DESCRIPTION_FILE = "test-plan-template"
-      + "/correlation"
-      + "-recorder-template-description.xml";
-  private static final String SIEBEL_RECORDING_TEMPLATE_NAME = "Recording";
-  private static final String TEST_PLAN_TEMPLATE_FOLDER = "/test-plan-template";
-  private static final String PATH_SEPARATOR = "/";
-  private static String TEMPLATES_LIST_PATH = "templates.xml";
+  private static final String CORRELATION_RECORDER_TEMPLATE_FILE_PATH = "template-correlation-recorder.xml";
+  private static final String CORRELATION_RECORDER_TEST_PLAN = "recording-correlations.jmx";
+  private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "Recording";
+  private static final String TEST_PLAN_TEMPLATE_FOLDER = "/test-plan-template/";
+  private static final String TEMPLATES_LIST_PATH = "templates.xml";
   @Rule
   public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
-  private TestPlanTemplatesRepository testPlanTemplatesRepository;
+  public TestPlanTemplatesRepository repository;
 
   @Before
-  public void setup() {
-    testPlanTemplatesRepository = new TestPlanTemplatesRepository(
-        tempFolder.getRoot().getPath() + PATH_SEPARATOR);
+  public void setup() throws IOException {
+    repository = new TestPlanTemplatesRepository(tempFolder.getRoot().getPath());
+    copyFile(TEST_PLAN_TEMPLATE_FOLDER + TEMPLATES_LIST_PATH,
+        tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH);
+  }
+
+  private void copyFile(String sourcePath, String destPath) throws IOException {
+    try (FileWriter fileWriter = new FileWriter(new File(destPath))) {
+      fileWriter.write(TestUtils.getFileContent(sourcePath, this.getClass()));
+    }
   }
 
   @Test
   public void shouldAddATemplateAndATemplateDescriptionWhenNotExistTheTemplate()
       throws IOException {
-    copyFile(TEST_PLAN_TEMPLATE_FOLDER + PATH_SEPARATOR + TEMPLATES_LIST_PATH,
-        tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH);
-    addSiebelTemplate(TEST_PLAN_TEMPLATE_FOLDER + PATH_SEPARATOR + CORRELATIONS_RECORDER_TEST_PLAN);
+    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
     assertionCorrelationRecorderOnTemplates();
   }
 
-  private void copyFile(String sourcePath, String destPath) throws IOException {
-    File dstFile = new File(destPath);
-    try (FileWriter fileWriter = new FileWriter(dstFile)) {
-      fileWriter.write(getFileFromResources(sourcePath));
-    }
-  }
-
-  private String getFileFromResources(String fileName) throws IOException {
-    InputStream inputStream = this.getClass().getResourceAsStream(fileName);
-    return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-  }
-
-  private void addSiebelTemplate(String templateResourcePath) {
-    testPlanTemplatesRepository
-        .addSiebelTemplate(CORRELATIONS_RECORDER_TEST_PLAN, templateResourcePath,
-            CORRELATION_RECORDER_TEMPLATE_DESCRIPTION_FILE, SIEBEL_RECORDING_TEMPLATE_NAME);
+  private void addTemplate(String templateTestPlan) {
+    repository.addCorrelationRecorderTemplate(templateTestPlan, TEST_PLAN_TEMPLATE_FOLDER,
+        TEST_PLAN_TEMPLATE_FOLDER + "correlation-recorder-template-description.xml",
+        CORRELATION_RECORDER_TEMPLATE_NAME);
   }
 
   private void assertionCorrelationRecorderOnTemplates() throws IOException {
-    File resultTemplate = new File(
-        tempFolder.getRoot().getPath() + PATH_SEPARATOR + CORRELATIONS_RECORDER_TEST_PLAN);
+    File resultTemplate = new File(tempFolder.getRoot().getPath() + CORRELATION_RECORDER_TEST_PLAN);
     File resultTemplatesList = new File(tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH);
 
-    softly.assertThat(FileUtils.readFileToString(resultTemplate, "utf-8"))
+    assertFiles(TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEST_PLAN, resultTemplate);
+    assertFiles(TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEMPLATE_FILE_PATH,
+        resultTemplatesList);
+  }
+
+  private void assertFiles(String expectedFilePath, File actualFile) throws IOException {
+    softly.assertThat(FileUtils.readFileToString(actualFile, "utf-8"))
         .isEqualToNormalizingWhitespace(
-            getFileFromResources(TEST_PLAN_TEMPLATE_FOLDER + PATH_SEPARATOR
-                + CORRELATIONS_RECORDER_TEST_PLAN));
-    softly.assertThat(FileUtils.readFileToString(resultTemplatesList, "utf-8"))
-        .isEqualToNormalizingWhitespace(getFileFromResources(TEST_PLAN_TEMPLATE_FOLDER +
-            CORRELATION_RECORDER_TEMPLATE_FILE_PATH));
+            TestUtils.getFileContent(expectedFilePath, this.getClass()));
   }
 
   @Test
   public void shouldNotAddTemplateDescriptionWhenItWasAlreadyAdded() throws IOException {
-    copyFile(TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEMPLATE_FILE_PATH,
-        tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH);
-    addSiebelTemplate(TEST_PLAN_TEMPLATE_FOLDER + PATH_SEPARATOR + CORRELATIONS_RECORDER_TEST_PLAN);
+    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
+
+    String templatesListFile = tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH;
+    long lastModifiedExpected = new File(templatesListFile).lastModified();
+    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
+
+    assertFileNotModified(templatesListFile, lastModifiedExpected);
     assertionCorrelationRecorderOnTemplates();
   }
 
   @Test
   public void shouldNotAddATemplateWhenItWasAlreadyAdded() throws IOException {
-    copyFile(TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEMPLATE_FILE_PATH,
-        tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH);
-    addSiebelTemplate(TEST_PLAN_TEMPLATE_FOLDER + PATH_SEPARATOR + CORRELATIONS_RECORDER_TEST_PLAN);
+    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
+    String correlationRecorderTemplate = tempFolder.getRoot().getPath() + CORRELATION_RECORDER_TEST_PLAN;
+    long lastModifiedExpected = new File(correlationRecorderTemplate).lastModified();
+    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
 
-    File result = new File(tempFolder.getRoot().getPath() + CORRELATIONS_RECORDER_TEST_PLAN);
-    long lastModifiedExpected = result.lastModified();
-    addSiebelTemplate(CORRELATIONS_RECORDER_TEST_PLAN);
-
-    result = new File(tempFolder.getRoot().getPath() + CORRELATIONS_RECORDER_TEST_PLAN);
-    long lastModifiedResult = result.lastModified();
-
-    softly.assertThat(lastModifiedResult).isEqualTo(lastModifiedExpected);
+    assertFileNotModified(correlationRecorderTemplate, lastModifiedExpected);
     assertionCorrelationRecorderOnTemplates();
+  }
+
+  private void assertFileNotModified(String correlationRecorderTemplate,
+      long lastModifiedExpected) {
+    softly.assertThat(new File(correlationRecorderTemplate).lastModified())
+        .isEqualTo(lastModifiedExpected);
   }
 
   @Test
   public void shouldAddSiebelCorrelationTemplateWhenStart() throws IOException {
-    String correlationTemplatesRootFolder = tempFolder.getRoot().getPath()
+    String rootFolder = tempFolder.getRoot().getPath()
         + LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER;
-    testPlanTemplatesRepository.setRootFolder(correlationTemplatesRootFolder);
+    repository.setRootFolder(rootFolder);
 
-    testPlanTemplatesRepository.addSiebelCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
-        PATH_SEPARATOR + SIEBEL_CORRELATION_TEMPLATE);
+    String siebelCorrelationTemplate = "/siebel-1.0-template.json";
+    repository.addCorrelationTemplate(siebelCorrelationTemplate, "/correlation-templates/");
+    File resultCorrelationTemplate = new File(rootFolder + siebelCorrelationTemplate);
 
-    File resultCorrelationTemplate = new File(tempFolder.getRoot().getPath()
-        + LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER
-        + SIEBEL_CORRELATION_TEMPLATE);
+    assertFiles(siebelCorrelationTemplate, resultCorrelationTemplate);
+  }
 
-    softly.assertThat(FileUtils.readFileToString(resultCorrelationTemplate, "utf-8"))
-        .isEqualToNormalizingWhitespace(
-            getFileFromResources(PATH_SEPARATOR + SIEBEL_CORRELATION_TEMPLATE));
+  @Test
+  public void shouldAddAssertionsOnCorrelationRecorderTemplateWhenStart() throws IOException {
+    String expectedCorrelationRecorderTemplate = copyTemplateWithAssertions();
 
+    String correlationRecorderTemplate = "correlation-recorder-base-template.jmx";
+    addTemplate(correlationRecorderTemplate);
+    File resultTemplate = new File(tempFolder.getRoot().getPath() + correlationRecorderTemplate);
+    assertFiles(expectedCorrelationRecorderTemplate, resultTemplate);
+  }
+
+  private String copyTemplateWithAssertions() throws IOException {
+    String expectedCorrelationRecorderTemplate =
+        TEST_PLAN_TEMPLATE_FOLDER + "correlation-recorder-with-assertions.jmx";
+    copyFile(expectedCorrelationRecorderTemplate,
+        tempFolder.getRoot().getPath() + TEMPLATES_LIST_PATH);
+    return expectedCorrelationRecorderTemplate;
+  }
+
+  @Test
+  public void shouldNotAddAssertionsOnCorrelationRecorderTemplateWhenAlreadyExists()
+      throws IOException {
+    copyTemplateWithAssertions();
+
+    String correlationRecorderTemplate = "correlation-recorder-base-template.jmx";
+    addTemplate(correlationRecorderTemplate);
+
+    String templateFile = tempFolder.getRoot().getPath() + correlationRecorderTemplate;
+    long lastModified = new File(templateFile).lastModified();
+    addTemplate(correlationRecorderTemplate);
+    assertFileNotModified(templateFile, lastModified);
   }
 }

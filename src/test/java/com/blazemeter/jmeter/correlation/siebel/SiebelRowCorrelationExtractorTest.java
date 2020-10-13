@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.ResultField;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.jmeter.extractor.JSR223PostProcessor;
 import org.apache.jmeter.extractor.RegexExtractor;
@@ -45,7 +46,8 @@ public class SiebelRowCorrelationExtractorTest {
     sampler = new HTTPSampler();
     sampleResult = new SampleResult();
     vars = new JMeterVariables();
-    siebelRowExtractor = new SiebelRowCorrelationExtractor(REGEX_ONE);
+    siebelRowExtractor = new SiebelRowCorrelationExtractor();
+    siebelRowExtractor.setParams(Collections.singletonList(REGEX_ONE));
     siebelRowExtractor.setContext(context);
   }
 
@@ -82,7 +84,8 @@ public class SiebelRowCorrelationExtractorTest {
   public void shouldNotAddRegexExtractorAndPostProcessorWhenRegexDoesNotMatch() {
     List<TestElement> children = new ArrayList<>();
     sampleResult.setResponseData(RESPONSE_DATA_TWO, SampleResult.DEFAULT_HTTP_ENCODING);
-    siebelRowExtractor = new SiebelRowCorrelationExtractor(REGEX_ONE);
+    siebelRowExtractor = new SiebelRowCorrelationExtractor();
+    siebelRowExtractor.setParams(Collections.singletonList(REGEX_ONE));
     siebelRowExtractor.setVariableName(REFERENCE_NAME);
     siebelRowExtractor.process(sampler, children, sampleResult, vars);
     assertThat(children).isEmpty();
@@ -115,8 +118,8 @@ public class SiebelRowCorrelationExtractorTest {
     regex.setName("RegExp - " + REFERENCE_NAME);
     regex.setRefName(REFERENCE_NAME);
     regex.setTemplate("$1$");
-    regex.setMatchNumber(-1);
-    regex.setDefaultValue("");
+    regex.setMatchNumber(1);
+    regex.setDefaultValue(REFERENCE_NAME + "_NOT_FOUND");
     regex.setRegex(responseRegex);
     regex.setUseField(fieldToCheck.getCode());
     return regex;

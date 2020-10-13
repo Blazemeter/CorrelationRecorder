@@ -2,8 +2,11 @@ package com.blazemeter.jmeter.correlation.siebel;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
+import com.blazemeter.jmeter.correlation.core.ParameterDefinition.ComboParameterDefinition;
+import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
 import com.blazemeter.jmeter.correlation.core.ResultField;
+import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import java.util.Arrays;
@@ -18,6 +21,11 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Correlation Extractor that gets the value of the Siebel CRM Context in every response and
+ * extracts its rows. Applies parsing Array function with the regex, adding post processors for each
+ * matching string.
+ */
 public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<SiebelContext> {
 
   private static final Logger LOG = LoggerFactory.getLogger(SiebelRowCorrelationExtractor.class);
@@ -35,16 +43,30 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
     super(regex, group, -1, DEFAULT_TARGET);
   }
 
+  /**
+   * Constructor that receives only strings to create the Correlation Extractor. Needed to create
+   * from the values in the UI.
+   *
+   * @param regex Regular Expression used to extract the value
+   * @param groupNumber Group Number from where the information will be extracted in the regex
+   * @param targetName Target Field where the extraction will be applied
+   */
   public SiebelRowCorrelationExtractor(String regex, String groupNumber, String targetName) {
-    super(regex, Integer.valueOf(groupNumber), -1,
+    super(regex, Integer.parseInt(groupNumber), -1,
         ResultField.valueOf(targetName));
   }
 
   //Added to support backward compatibility with beta version
+  @Deprecated
   public SiebelRowCorrelationExtractor(String regex, String groupNumber, String targetName,
       String matchNumber) {
-    super(regex, Integer.valueOf(groupNumber), Integer.valueOf(matchNumber),
+    super(regex, Integer.parseInt(groupNumber), Integer.parseInt(matchNumber),
         ResultField.valueOf(targetName));
+  }
+
+  @Override
+  public String getDisplayName() {
+    return "Siebel Row";
   }
 
   @Override
@@ -100,30 +122,18 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
   }
 
   @Override
-  public void updateTestElem(CorrelationRuleTestElement testElem) {
-    super.updateTestElem(testElem);
-    testElem.setProperty(EXTRACTOR_REGEX_NAME, regex);
-  }
-
-  @Override
-  public void update(CorrelationRuleTestElement testElem) {
-    super.update(testElem);
-    regex = testElem.getPropertyAsString(EXTRACTOR_REGEX_NAME);
-  }
-
-  @Override
   public String toString() {
     return "SiebelRowCorrelationExtractor{" +
-        "regex='" + regex + '\'' +
+        "paramValues=" + getParams() +
         '}';
   }
 
   public List<ParameterDefinition> getParamsDefinition() {
-    return Arrays.asList(new ParameterDefinition(EXTRACTOR_REGEX_NAME, EXTRACTOR_REGEX_DESCRIPTION,
-            REGEX_DEFAULT_VALUE, null),
-        new ParameterDefinition(GROUP_NUMBER_NAME, GROUP_NUMBER_DESCRIPTION, String.valueOf(1),
-            null),
-        new ParameterDefinition(TARGET_FIELD_NAME, TARGET_FIELD_DESCRIPTION,
+    return Arrays.asList(new TextParameterDefinition(EXTRACTOR_REGEX_NAME,
+            EXTRACTOR_REGEX_DESCRIPTION,
+            REGEX_DEFAULT_VALUE),
+        new TextParameterDefinition(GROUP_NUMBER_NAME, GROUP_NUMBER_DESCRIPTION, String.valueOf(1)),
+        new ComboParameterDefinition(TARGET_FIELD_NAME, TARGET_FIELD_DESCRIPTION,
             ResultField.BODY.name(),
             ResultField.getNamesToCodesMapping()));
   }
@@ -136,11 +146,21 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
 
   @Override
   public void setParams(List<String> params) {
-    regex = params.size() > 0 ? params.get(0) : REGEX_DEFAULT_VALUE;
-    setGroupNr(params.size() > 1 ? parseInteger(params.get(1), DEFAULT_MATCH_GROUP_NAME,
+    regex = !params.isEmpty() ? params.get(0) : REGEX_DEFAULT_VALUE;
+    setGroupNr(params.size() > 1 ? parseInteger(params.get(1), DEFAULT_MATCH_GROUP_NAME, 
         DEFAULT_MATCH_GROUP) : DEFAULT_MATCH_GROUP);
-    target = params.size() > 2 && !params.get(2).isEmpty() ? ResultField.valueOf(params.get(2))
-        : DEFAULT_TARGET_VALUE;
+    //This means it applies to all the matches
+    matchNr = -1;
+    int targetParamIndex = 3;
+    target =
+        params.size() > targetParamIndex && !params.get(targetParamIndex).isEmpty() ? ResultField
+            .valueOf(params.get(targetParamIndex)) : DEFAULT_TARGET_VALUE;
+  }
+
+  @Override
+  public void updateTestElem(CorrelationRuleTestElement testElem) {
+    super.updateTestElem(testElem);
+    testElem.setExtractorClass(getClass());
   }
 
   public void setRegex(String regex) {
@@ -150,5 +170,13 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
   @Override
   public Class<? extends CorrelationContext> getSupportedContext() {
     return SiebelContext.class;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o.getClass() != getClass()) {
+      return false;
+    }
+    return super.equals(o);
   }
 }

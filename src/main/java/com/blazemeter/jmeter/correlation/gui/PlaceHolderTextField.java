@@ -25,7 +25,7 @@ public class PlaceHolderTextField extends JTextField {
       return;
     }
 
-    final Graphics2D g = (Graphics2D) pG;
+    Graphics2D g = (Graphics2D) pG;
     g.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);
@@ -37,6 +37,4 @@ public class PlaceHolderTextField extends JTextField {
   public void setPlaceHolder(String placeHolder) {
     this.placeHolder = placeHolder;
   }
-
-
 }

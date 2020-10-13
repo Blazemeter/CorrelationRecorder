@@ -20,9 +20,9 @@ public class SiebelContextTest {
   private static final String IGNORED_CHARS_REGEX = "[\\()\\- ]";
   private static final String VALID_RESPONSE_DATA_PATH = "src/test/resources/validResponseData.txt";
   private static final String INVALID_RESPONSE_DATA_PATH = "src/test/resources/invalidResponseData.txt";
-  private static SampleResult validResponse = new SampleResult();
-  private static SampleResult invalidResponse = new SampleResult();
-  private SiebelContext siebelContext = new SiebelContext();
+  private static final SampleResult validResponse = new SampleResult();
+  private static final SampleResult invalidResponse = new SampleResult();
+  private final SiebelContext siebelContext = new SiebelContext();
   private Map<String, Field> paramRowFields;
 
   @BeforeClass

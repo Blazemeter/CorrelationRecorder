@@ -1,27 +1,21 @@
-in the following section, back again into the app
-<br>
-
 <h4 align="center">Correlations Recorder Plugin for JMeter</h4>
-
 <p align="center">Custom implementation of Correlations</p>
 
-<p align="center">
-  <a href="#requisites">Requisites</a> •
-  <a href="#rules-structure">Rules Strucuture</a> •
-  <a href="#references">References</a> •
-</p>
+# Summary
 
-## Requisites
+* [Requisites](#requisites)
+* [Correlation Rule Structure](#correlation-rule-structure)
+* [Considerations](#considerations)
+* [Final Words](#final-words)
 
-Before jumping into the code, there is certain requisites that you will need to have
+# Requisites
 
-### Language
+These are the minimum requisites that you will need to start:
 
-The developing language its **Java 8**, and the implementation should support until Java 11 LTS.
+Use java 1.8 
+Maven 1.3+ 
 
-### Dependencies
-
-We used maven to hold all our dependencies, its important that you share the same configuration that we are using. This its a reduced version of the minimum required for you to build a Correlation Extractor.
+It is important you share the same configuration that the one used by the plugin. The following it's a reduced example.
 
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -55,44 +49,44 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 </project>
 ```
 
-Also, you should add the lastest version of the plugin into your project, so you can extend the functionalities, classes and methods that we have prepared for you.
+Include the [latest release](https://github.com/Blazemeter/CorrelationRecorder/releases/) of the plugin into your project.
 
-One of the easiest ways to do so its adding JitPack to your dependency file and then point to the plugin repository and version. For further information on how add it to your project, refer to their [oficial documentantion](https://jitpack.io/).
+One of the easiest ways to do so it's adding JitPack to your dependency file and then point to the plugin repository and version. For further information on how to add it to your project, refer to their [Official Documentation](https://jitpack.io/).
 
-## Rules Structure
+# Correlation Rule Structure
 
-As mentioned in the Readme file, one rule its based in 3 parts:
+As mentioned in the Readme file, one Correlation Rule has 3 parts:
 
 * A Reference Variable
 * A Correlation Extractor
 * A Correlation Replacement
 
-Lets refresh those concepts
+## Reference Variable
+Generally, a Reference Variable is a bridge between a value extracted from Correlation Extractor and a Correlation Replacement.
 
-### Reference Variable
-A Reference Variable its kind of a bridge between A Correlation Extractor and a Correlation Replacements.
+Is the name of the variable where the information extracted from a Correlation Extractor, will be stored and, from where the Correlation Replacements will obtain the information to replace it in the configured Responses.
 
-Its the name of the variable where the information extracted from the Correlation Extractor, will be stored and, from where the Correlation Replacements will obtain the information to replace it in the configured Responses.
+## Correlation Extractor
 
-### Correlation Extractor
+A Correlation Extractor it's a part of the Rule that contains certain functions (like Regex, for example), that extracts from **each request**, the dynamic information and, stores it into the predefined Reference Variable.
 
-A Correlation Extractor its a part of the Rule that contains certain functions (like Regex, for example), that extracts from **each request**, the dynamic information and stores it into the predefined Reference Variable.
+## Correlation Replacement
 
-### Correlation Replacement
+Later on, in every subsequent response, the Correlation Replacement will figure out where it needs to replace the *extracted information*, that it’s stored in the *Reference Variable* corresponding to the Rule it belongs to. 
 
-Later on, in every subsequent response, the Correlation Replacement will figure out where it needs to replace the *extracted information*, that its stored in the *Reference Variable* corresponding to the Rule it belongs to. 
+## Order
 
-### Order
+It's important to take into consideration the order of the Correlation Rules, as they represent the priority in which they are applied. For example:
 
-Last, but not least, it's important to remind you the order on each Rule, and their C. Extractors/Replacements are applied:
+When a request is made, all C. Replacements will be applied first, in the order they appear in the list of rules.
+When a response is received, only the ones that pass the Content-Type filter will be considered for Extraction. If left blank, all responses will be considered.
+When a response is allowed, for the previous validation, all C. Extractors will be applied, in the order they appear in the list of rules.
 
-1st: The order they appear in the Rules container, in the plugin, will determine the priority of each one. The higher it is, the faster it will be applied.
-2nd: The C. Replacements will be applied first (in the case that any of the rules has a Replacement on it) in the request that its been performed.
-3rd: The C. Extractors will be applied, with the response obtained when the C. Replacements were applied and, only to the Responses that pass the "Response Filter" field. In case of left blank, no filtering will be applied.
+When making your own Custom Extension, consider the order of the extracted values if you are going to depend on stored variables and, each replacement will use variables that were stored before they are applied.
 
-### Relationships 
+## Relationships 
 
-The following diagram will contain all the relationships between the Rule and the previous mentioned parts.
+The following diagram will contain all the relationships between the Rule and the previously mentioned parts.
 
 ![diagram](docs/exampleDiagram.png)
 
@@ -106,68 +100,70 @@ Every Rule Will contain:
  
 During the process of making your Custom Correlation Extensions, you must extend one or another of the CorrelationRulePartTests elements, so the plugin can get the basic methods from it and place it with their respective set.
 
-Its highly recommended that you check all those classes before continue.
+Its highly recommended that you check all those classes before continuing.
 
-### CorrelationRulePartTestElement
-This class, located at: `com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement`, contains all the methods that allows the plugin, not only to build the interface which will be able to configure the Extension but also manages the Contexts.
+## CorrelationRulePartTestElement
+This class, located at: `com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement`, contains all the methods that allow the plugin, not only to build the interface which will be able to configure the Extension but also manages the Contexts.
 
-### CorrelationExtractor
-This class, located at: `com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor`, contains the basic structure to be able to target the Responses, save the values once configured and load the values from the files.
+## CorrelationExtractor
+This class, located at: `com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor`, contains the basic structure to be able to target the Responses, save the values once configured, and load the values from the files.
 
-### CorrelationReplacement
-This class, located at: `com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement`, contains the basic structure to be able to target the Request, save the values once configured and load the values from the files.
+## CorrelationReplacement
+This class, located at: `com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement`, contains the basic structure to be able to target the Request, save the values once, and load the values from the files.
 
 **Process of making your Extension**
 In order to develop your Custom Extensions, you can either:
 
 - Create from scratch a brand new Extension, *extending* CorrelationExtractor/CorrelationReplacement, and implementing the desired customizations.
-- Extend from an already created, tested and exposed CorrelationExtractor/CorrelationReplacement, and fix the logic so it behaves the way you want it to do.
+- Extend from an already created, tested, and exposed CorrelationExtractor/CorrelationReplacement, and fix the logic so it behaves the way you want it to do.
 
-We recommend that you do the later one, since its going to be easier to understand the flow of the plugin that way. You could take the whole, default installed, Siebel Extension pacakge, for example, located at `com.blazemeter.jmeter.correlation.siebel`. Each one of those Custom Extensions, extends from one our clases, and rewrite the logic to work on a Siebel Enviroment application.
+We recommend that you do the latter one since it's going to be easier to understand the flow of the plugin that way. You could take the whole, default installed, Siebel Extension package, for example, located at `com.blazemeter.jmeter.correlation.siebel`. Each one of those Custom Extensions, extend from one of the core classes and rewrite the logic to work on a Siebel Environment application.
 
 Take the time to look at those files before going into the rest of the sections?
 
-## Considerations
+# Considerations
 
-### A Valid Rule
+When developing and configuring a Correlation Rule, don't forget that there are certain parameters that need to be covered. Take them into account when implementing your extensions.
 
-A valid rule its the one that has all the necessary components to be able to be saved, loaded and applied when recording. Here are the considerations you need to have in mind while developing your own Custom Correlations:
+## A Valid Rule
 
-**Reference Variable**
-The Reference Variable must be *Unique* and *Non-Empty* for the rule to be considered a Valid One.
+A valid rule is one that has all the necessary components to be able to be saved, loaded, and applied when recording. For that, you need to consider:
 
-**Non Empty Rules**
-Every rule can work, be saved and be loaded, if it has, at least a Correlation Extractor o Correlation Replacement, selected. By this we mean:
+* The Reference Variable must always be *Non-Empty*.
+* Rules with only Reference Variables are not valid rules, and won’t allow either start recording or save the Correlation Template.
 
-* A Rule with: a Reference Variable, a Correlation Extractor and no Correlation Replacement, is a valid rule.
-* A Rule with: a Reference Variable, no correlation Extractor and a Correlation Replacement, is a valid rule.
-* A Rule with: a Reference Variable, no Correlation Extractor and no Correlation Replacement, is an invalid rule.
+## JComponents allowed for each rule
 
-### JComponents allowed for each rule
-
-At this very moment, when creating the fiels for an Extension, the only allowed Components to be set are:
+At this very moment, when defining the fields for an Extension, the only allowed Components to be rendered are:
 
 * JComboBox  (for list of static values)
 * JTextFields (for variable values)
 
-The values obtained by those Fields is received as an string, and will be set into the rule with the `setParams()` method.
-From that point on forward, you must validate the non empty state of those values, and the required conversions (casting) of those values.
+The values obtained by those Fields it’s received as a string and will be set into the rule with the `setParams(String ...)` method.
+From that point on forward, you must validate the non-empty state of those values, and the required conversions (casting) of those values.
 
-## Make your own extensions
+Read more about it in the [CustomCorrelationExtractor](examples/CustomCorrelationExtractor.java) example.
+
+## Unique class names
+
+*Better safe than sorry*
+
+Try always to use names that are not repeated or that might collapse with the ones that are already developed. You don't want to load a class into the plugin and end up using another one by mistake.
+
+# Make your own extensions
 
 **Its highly recommended that you check the Class diagram displayed in [Relationships](#relationships) before jumping into this section**
 
+## Basic Relationship on each rule part 
 
-### Basic Relationship on each rule part 
-
-The following set of rules should be followed in order to have correct access to all the capabilities that we program in the plugin. That been said, please follow this instructions:
+The following set of rules should be followed in order to have the correct access to all the capabilities that we program in the plugin. That been said, please follow these instructions:
 
 1. Each CorrelationExtractor or CorrelationReplacement extends `CorrelationRulePartTestElement` 
-2. Therefore, each Custom Extension that you develop should either extends CorrelationExtractor or CorrelationReplacement class, accordingly its type and moment it will be applied.
+2. Therefore, each Custom Extension that you develop should either extends CorrelationExtractor or CorrelationReplacement class, accordingly its type and the moment it will be applied.
 
-   **Note**: The only exception to this rule its when you want to enhance some functionalities of an already developed Extension, in that case, you could extends that class instead.
+   **Note**: The only exception to this rule it's when you want to enhance some functionalities of an already developed Extension, in that case, you could extend that class instead.
 
-3. Each CorrelationExtractor or CorrelationReplacement has the possibility to use a CorrelationContext, that will allow to cover a more inclusive and extensive set of variables. The CorrelationContexts are shared between each Extension that has it is assigned to. Depending of your personal needs and the complexity of your project, you might want to make your very own.
+3. Each CorrelationExtractor or CorrelationReplacement has the possibility to use a CorrelationContext, that will allow covering a more inclusive and extensive set of variables. The CorrelationContexts are shared between each Extension that has it is assigned to. Depending on your personal needs and the complexity of your project, you might want to make your very own.
 
 4. By default, none of the CorrelationExtractor or CorrelationReplacement has implemented the method `getSupportedContext()` from `CorrelationRulePartTestElement` unless it has its very set of complex variables that need to share between rules and Correlations. Like you could check in the Siebel's Extensions.
  
@@ -179,42 +175,10 @@ The following set of rules should be followed in order to have correct access to
 
 This is important, in most of the cases, to properly show the name of the Extension in the respective combo box.
 
-#### Example
+# Final Words
 
-We developed a CorrelationReplacement that, when it finds a number, it replaces it for a value stored in the Reference Variable. That function might be called: *ReplacingNumbers*
+Review these links for a further understanding of correlating concepts and examples:
 
-Based on the naming standard, the respective name of the Extension should be: ReplacingNumbersCorrelationReplacement.
-
-### Loading and Saving 
-
-There are functions that need to be correctly implemented in order to save and load your Extension when Test Plans are saved. Be sure to check our implementations in case you have any doubt
-
-#### Saving
-
-After doing the whole process of setting the values to make a rule work, the user might want to save it, to prevent that data to be lost. The method that has the responsability to do that its the `updateTestElem`, which will receive one `CorrelationRuleTestElement` that contains all the information regarding one rule, and store them, separately, in properties.
-
-```java
-  @Override
-  public void updateTestElem(CorrelationRuleTestElement testElem) {
-    super.updateTestElem(testElem);
-    testElem.setProperty("NAME_OF_VALUE_TO_SAVE", valueToSave);
-  }
-```
-
-#### Loading
-
-When thinking about loading the values of one correlation extension, the fundamental part needs to pay close attention its the `update` method. This will receive a `CorrelationRuleTestElement` that contains all the information regarding one Rule and stores those values as Properties.
-
-The values will be loaded from a property that has a name, that name **must be consistent** with the one used, for that same property, at the moment it was saved, to been able to recover it.
-
-```java
-  @Override
-  public void update(CorrelationRuleTestElement testElem) {
-    super.update(testElem);
-    tagType = testElem.getPropertyAsString("NAME_OF_VALUE_TO_SAVE");
-  }
-```
-
-
-
-
+* [Siebel's Custom Extension explained](customizing/siebel_extension_explanations.md): an explanation of Siebel CRM’s Custom Extension.
+* [Extensions and useful methods in the Flow](customizing/the_flow_explanation.md): detailed explanation of how correlation works.
+* [Examples](examples): basic structure for a Correlation Extension.

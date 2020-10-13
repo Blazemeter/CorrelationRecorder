@@ -7,7 +7,7 @@ import java.util.Objects;
 public class CorrelationTemplateReference {
 
   private transient String name;
-  private List<String> versions = new ArrayList<>();
+  private final List<String> versions = new ArrayList<>();
 
   //Constructor added to avoid issues with the serialization
   public CorrelationTemplateReference() {

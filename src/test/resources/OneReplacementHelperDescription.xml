@@ -1,0 +1,21 @@
+<html>
+  <head>
+
+  </head>
+  <body>
+    <b>One Replacement Description</b>
+
+    <ul>
+      <li>
+        Field 1
+      </li>
+      <li>
+        Field 2
+      </li>
+      <li>
+        Field 3
+      </li>
+    </ul>
+    <a href="localhost/regular-expression-replacement">regular-expression-replacement</a>
+  </body>
+</html>

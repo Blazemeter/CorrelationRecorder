@@ -1,9 +1,12 @@
 package com.blazemeter.jmeter.correlation.siebel;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
+import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
+import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.apache.jmeter.modifiers.JSR223PreProcessor;
@@ -13,15 +16,31 @@ import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.JMeterVariables;
 
+/**
+ * Siebel CRM Correlation Extension that calculates the difference of the SWEC variable, based on
+ * previous values, to correlate it.
+ */
 public class SiebelCounterCorrelationReplacement extends
     RegexCorrelationReplacement<SiebelContext> {
 
-  // Constructor added in order to satisfy json conversion
   public SiebelCounterCorrelationReplacement() {
+
   }
 
   public SiebelCounterCorrelationReplacement(String regex) {
     super(regex);
+  }
+
+  @Override
+  public String getDisplayName() {
+    return "Siebel Counter";
+  }
+
+  @Override
+  public List<ParameterDefinition> getParamsDefinition() {
+    return Collections.singletonList(
+        new TextParameterDefinition(REPLACEMENT_REGEX_PROPERTY_NAME,
+            REPLACEMENT_REGEX_PROPERTY_DESCRIPTION, REGEX_DEFAULT_VALUE));
   }
 
   @Override
@@ -67,21 +86,9 @@ public class SiebelCounterCorrelationReplacement extends
   }
 
   @Override
-  public void updateTestElem(CorrelationRuleTestElement testElem) {
-    super.updateTestElem(testElem);
-    testElem.setProperty(REPLACEMENT_REGEX_PROPERTY_NAME, regex);
-  }
-
-  @Override
-  public void update(CorrelationRuleTestElement testElem) {
-    super.update(testElem);
-    regex = testElem.getPropertyAsString(REPLACEMENT_REGEX_PROPERTY_NAME);
-  }
-
-  @Override
   public String toString() {
     return "SiebelCounterCorrelationReplacement{" +
-        "regex='" + regex + '\'' +
+        "paramValues=" + getParams() +
         '}';
   }
 

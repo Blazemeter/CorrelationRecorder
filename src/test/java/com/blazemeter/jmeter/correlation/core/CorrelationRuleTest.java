@@ -15,19 +15,19 @@ public class CorrelationRuleTest {
 
   private static final String VARIABLE_NAME = "variable";
 
-  private static final String EXPECTED_REGEX = "EXPECTED_REGEX";
-  private static final String EXPECTED_GROUP_NUMBER = "2";
-  private static final String EXPECTED_MATCH_NUMBER = "3";
+  private static final String EXPECTED_REGEX = "Test_SWEACn=(.*?)&";
+  private static final String EXPECTED_GROUP_NUMBER = "1";
+  private static final String EXPECTED_MATCH_NUMBER = "1";
   private static final String EXPECTED_TARGET = ResultField.BODY.name();
 
-  private RegexCorrelationExtractor correlationExtractor;
-  private RegexCorrelationReplacement correlationReplacement;
+  private RegexCorrelationExtractor<?> correlationExtractor;
+  private RegexCorrelationReplacement<?> correlationReplacement;
   private CorrelationRule correlationRule;
 
   @Before
   public void setup() {
     correlationExtractor = new RegexCorrelationExtractor(EXPECTED_REGEX, EXPECTED_GROUP_NUMBER,
-        EXPECTED_MATCH_NUMBER, EXPECTED_TARGET);
+        EXPECTED_MATCH_NUMBER, EXPECTED_TARGET, "false");
     correlationReplacement = new RegexCorrelationReplacement(EXPECTED_REGEX);
 
     correlationRule = new CorrelationRule(VARIABLE_NAME, correlationExtractor,
@@ -37,7 +37,7 @@ public class CorrelationRuleTest {
   @Test
   public void shouldReturnACorrelationRuleTestElement() {
     CorrelationRuleTestElement correlationRuleTestElementResult = correlationRule
-        .buildTestElement();
+        .buildTestElement(new CorrelationComponentsRegistry());
 
     CorrelationRuleTestElement expectedCorrelationRuleTestElement = buildExpectedCorrelationRule();
 
@@ -47,6 +47,6 @@ public class CorrelationRuleTest {
 
   private CorrelationRuleTestElement buildExpectedCorrelationRule() {
     return new CorrelationRuleTestElement(VARIABLE_NAME, correlationExtractor,
-        correlationReplacement);
+        correlationReplacement, new CorrelationComponentsRegistry());
   }
 }

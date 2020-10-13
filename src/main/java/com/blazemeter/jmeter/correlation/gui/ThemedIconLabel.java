@@ -5,7 +5,7 @@ import javax.swing.JLabel;
 
 public class ThemedIconLabel extends JLabel {
 
-  private String iconResourceName;
+  private final String iconResourceName;
 
   public ThemedIconLabel(String iconResourceName) {
     super(ThemedIcon.fromResourceName(iconResourceName));

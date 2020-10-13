@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation;
 
 import com.google.common.io.Resources;
-import java.awt.Component;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -13,8 +12,6 @@ import java.util.stream.Collectors;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
-import org.assertj.swing.core.Robot;
-import org.assertj.swing.finder.JOptionPaneFinder;
 
 public class TestUtils {
 
@@ -45,14 +42,6 @@ public class TestUtils {
 
   public static String getFileContent(String filePath, Class<?> testClass) throws IOException {
     return Resources.toString(testClass.getResource(filePath), Charset.defaultCharset());
-  }
-
-  public static void requireMessage(Robot robot, String requiredMessage) {
-    JOptionPaneFinder.findOptionPane().using(robot).requireMessage(requiredMessage);
-  }
-
-  public static <T extends Component> T findByName(Robot robot, String name, Class<T> cClazz) {
-    return robot.finder().findByName(name, cClazz);
   }
 
 }

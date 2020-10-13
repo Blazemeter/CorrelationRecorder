@@ -11,28 +11,31 @@
         "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
         "target": "RESPONSE_HEADERS",
         "regex": "SWEACn=([a-z])",
-        "matchNr": 2
+        "groupNr": 2
       },
       "correlationReplacement": {
         "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
         "regex": "SWEACn=([A-Z])"
-      }
+      },
+      "enabled": true
     },
     {
       "referenceName": "TestRuleTwo",
       "correlationExtractor": {
         "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
         "regex": "SWEACn=(ˆ[\\.\\.])",
-        "matchNr": 6,
-        "groupNr": 5
+        "matchNr": 5,
+        "groupNr": 6
       },
       "correlationReplacement": {
         "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
         "regex": "SWEACn=([(\\d)])"
-      }
+      },
+      "enabled": true
     }
   ],
   "dependencies": null,
   "repositoryId": "local",
-  "changes": ""
+  "changes": "",
+  "installed":false
 }

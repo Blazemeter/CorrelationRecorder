@@ -14,6 +14,8 @@ public abstract class CorrelationRulePartTestElement<T extends CorrelationContex
 
   public abstract List<ParameterDefinition> getParamsDefinition();
 
+  public abstract String getDisplayName();
+
   public Class<? extends CorrelationContext> getSupportedContext() {
     return null;
   }
@@ -24,5 +26,15 @@ public abstract class CorrelationRulePartTestElement<T extends CorrelationContex
 
   public void setContext(T context) {
     this.context = context;
+  }
+
+  public abstract String getDescription();
+
+  @Override
+  public String toString() {
+    return "CorrelationRulePartTestElement{" +
+        "name=" + getDisplayName() +
+        "params=[" + getParams() + "]"
+        + "}";
   }
 }

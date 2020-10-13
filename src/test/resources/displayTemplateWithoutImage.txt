@@ -1,9 +1,0 @@
-<html>
-  <head></head>
-  <body>
-    <p> <b> Repository </b>: Local. </p>
-    <p> <b>This version is installed.</b> </p>
-    <p><b>Description:</b></p>
-    <p>Description1</p>
-  </body>
-</html>

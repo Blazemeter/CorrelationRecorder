@@ -22,7 +22,7 @@ ResultFieldTest {
   private static final String RESPONSE_DATA =
       "<?xml version=\"1.0\"?><test>Test &quot;body&quot;</test>";
 
-  private SampleResult sampleResult = new SampleResult();
+  private final SampleResult sampleResult = new SampleResult();
 
   // we need this to avoid nasty logs about pdfbox
   @BeforeClass

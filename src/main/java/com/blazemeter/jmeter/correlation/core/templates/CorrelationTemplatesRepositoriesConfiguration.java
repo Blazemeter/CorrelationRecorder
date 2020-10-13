@@ -18,8 +18,8 @@ public class CorrelationTemplatesRepositoriesConfiguration {
 
   private static final Logger LOG = LoggerFactory
       .getLogger(CorrelationTemplatesRepositoriesConfiguration.class);
-  private LocalCorrelationTemplatesRepositoriesRegistry local;
-  private RemoteCorrelationTemplatesRepositoriesRegistry remote;
+  private final LocalCorrelationTemplatesRepositoriesRegistry local;
+  private final RemoteCorrelationTemplatesRepositoriesRegistry remote;
 
   public CorrelationTemplatesRepositoriesConfiguration(LocalConfiguration localConfiguration) {
     local = new LocalCorrelationTemplatesRepositoriesRegistry(localConfiguration);
@@ -32,10 +32,6 @@ public class CorrelationTemplatesRepositoriesConfiguration {
     } else {
       local.save(name, url);
     }
-  }
-
-  private static boolean isURL(String text) {
-    return text.toLowerCase().contains("http") || text.toLowerCase().contains("ftp");
   }
 
   public void deleteRepository(String name) throws IOException {
@@ -72,8 +68,9 @@ public class CorrelationTemplatesRepositoriesConfiguration {
     return local.isLocalTemplateVersionSaved(templateId, templateVersion);
   }
 
-  public void refreshRepositories(String configurationRoute,
+  public boolean refreshRepositories(String configurationRoute,
       Consumer<Integer> setProgressConsumer) {
+    boolean isUpToDate = true;
     String correlationTemplateInstallationPath = configurationRoute +
         LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER;
     List<CorrelationTemplatesRepository> repositories = getCorrelationRepositories();
@@ -88,17 +85,24 @@ public class CorrelationTemplatesRepositoriesConfiguration {
           correlationTemplateInstallationPath + repo.getName()
               + "/" + repo.getName() + REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION;
       try {
-        if (DigestUtils.md5Hex(getInputStream(url)).equals(DigestUtils.md5Hex(localFilePath))) {
-        continue;
+        if (DigestUtils.md5Hex(getInputStream(url))
+            .equals(DigestUtils.md5Hex(getInputStream(localFilePath)))) {
+          continue;
         }
         save(repo.getName(), url);
+        isUpToDate = false;
       } catch (IOException e) {
         LOG.error("Error while comparing MD5 url: {} localPath: {} ", url, localFilePath, e);
       }
     }
+    return isUpToDate;
   }
 
-  private static InputStream getInputStream(String path) throws IOException {
+  public static InputStream getInputStream(String path) throws IOException {
     return isURL(path) ? new URL(path).openStream() : new FileInputStream(path);
+  }
+
+  private static boolean isURL(String text) {
+    return text.toLowerCase().contains("http") || text.toLowerCase().contains("ftp");
   }
 }

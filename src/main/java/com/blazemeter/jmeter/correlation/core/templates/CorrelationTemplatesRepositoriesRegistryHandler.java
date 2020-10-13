@@ -36,6 +36,7 @@ public interface CorrelationTemplatesRepositoriesRegistryHandler {
   void resetJMeter();
 
   List<String> checkURL(String id, String url);
-  
-  void refreshRepositories(String localConfigurationRoute, Consumer<Integer> setProgressConsumer);
+
+  boolean refreshRepositories(String localConfigurationRoute,
+      Consumer<Integer> setProgressConsumer);
 }

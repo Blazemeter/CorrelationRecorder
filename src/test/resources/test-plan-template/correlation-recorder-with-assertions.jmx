@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="3.2" jmeter="3.2 r1790748">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <longProp name="ThreadGroup.start_time">1534882304000</longProp>
+        <longProp name="ThreadGroup.end_time">1534882304000</longProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
+      <hashTree/>
+    </hashTree>
+    <WorkBench guiclass="WorkBenchGui" testclass="WorkBench" testname="WorkBench" enabled="true">
+      <boolProp name="WorkBench.save">true</boolProp>
+    </WorkBench>
+    <hashTree/>
+  </hashTree>
+  <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Regex Extraction Assertion" enabled="true">
+    <stringProp name="cacheKey">true</stringProp>
+    <stringProp name="filename"></stringProp>
+    <stringProp name="parameters"></stringProp>
+    <stringProp name="script">def failedRegexExtractions = vars.entrySet()&#xa;    .findAll { it.value.equals(it.key + "_NOT_FOUND") &#x26;&#x26; !(vars[it.key + '_matchNr'] &#x26;&#x26; vars[it.key + '_matchNr'] != '0') }&#xa;    .collect { it.key }&#xa;    .each { vars.remove(it)&#xa;} &#xa;if (failedRegexExtractions) {&#xa;    AssertionResult.setFailureMessage(&quot;Couldn't extract value for the following variables: ${failedRegexExtractions}&quot;);&#xa;    AssertionResult.setFailure(true);&#xa;}
+    </stringProp>
+    <stringProp name="scriptLanguage">groovy</stringProp>
+  </JSR223Assertion>
+  <hashTree/>
+  <com.blazemeter.jmeter.correlation.CorrelationProxyControl guiclass="com.blazemeter.jmeter.correlation.CorrelationProxyControlGui" testclass="com.blazemeter.jmeter.correlation.CorrelationProxyControl" testname="Correlation Recorder" enabled="true">
+    <stringProp name="ProxyControlGui.port">8888</stringProp>
+    <collectionProp name="ProxyControlGui.exclude_list"/>
+    <collectionProp name="ProxyControlGui.include_list"/>
+    <boolProp name="ProxyControlGui.capture_http_headers">true</boolProp>
+    <intProp name="ProxyControlGui.grouping_mode">0</intProp>
+    <boolProp name="ProxyControlGui.add_assertion">false</boolProp>
+    <stringProp name="ProxyControlGui.sampler_type_name"></stringProp>
+    <boolProp name="ProxyControlGui.sampler_redirect_automatically">false</boolProp>
+    <boolProp name="ProxyControlGui.sampler_follow_redirects">true</boolProp>
+    <boolProp name="ProxyControlGui.use_keepalive">true</boolProp>
+    <boolProp name="ProxyControlGui.sampler_download_images">false</boolProp>
+    <intProp name="ProxyControlGui.proxy_http_sampler_naming_mode">0</intProp>
+    <stringProp name="ProxyControlGui.proxy_prefix_http_sampler_name"></stringProp>
+    <stringProp name="ProxyControlGui.proxy_pause_http_sampler"></stringProp>
+    <boolProp name="ProxyControlGui.notify_child_sl_filtered">false</boolProp>
+    <boolProp name="ProxyControlGui.regex_match">false</boolProp>
+    <stringProp name="ProxyControlGui.content_type_include"></stringProp>
+    <stringProp name="ProxyControlGui.content_type_exclude"></stringProp>
+  </com.blazemeter.jmeter.correlation.CorrelationProxyControl>
+</jmeterTestPlan>

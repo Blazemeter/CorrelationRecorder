@@ -8,7 +8,7 @@ public class CorrelationTemplatesRepositoryConfiguration {
 
   private String name;
   private String url;
-  private Map<String, String> installedTemplates = new HashMap<>();
+  private final Map<String, String> installedTemplates = new HashMap<>();
 
   //Added to satisfy the deserialization process
   public CorrelationTemplatesRepositoryConfiguration() {

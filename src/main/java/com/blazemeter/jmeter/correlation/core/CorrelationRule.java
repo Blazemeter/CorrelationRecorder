@@ -1,32 +1,22 @@
 package com.blazemeter.jmeter.correlation.core;
 
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
-import com.google.common.annotations.VisibleForTesting;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Objects;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
-import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.threads.JMeterVariables;
 
 public class CorrelationRule {
 
-  private final String referenceName;
-  private final CorrelationExtractor correlationExtractor;
-  private final CorrelationReplacement correlationReplacement;
+  private String referenceName;
+  private CorrelationExtractor<?> correlationExtractor;
+  private CorrelationReplacement<?> correlationReplacement;
+  private boolean enabled;
 
-  public CorrelationRule(String referenceName, String extractorRegex, String replacementRegex) {
-    this(referenceName, new RegexCorrelationExtractor(extractorRegex),
-        new RegexCorrelationReplacement(replacementRegex));
-  }
-
-  public CorrelationRule(String referenceName, CorrelationExtractor correlationExtractor,
-      CorrelationReplacement correlationReplacement) {
+  public CorrelationRule(String referenceName, CorrelationExtractor<?> correlationExtractor,
+      CorrelationReplacement<?> correlationReplacement) {
     this.referenceName = referenceName;
+    this.enabled = true;
     this.correlationExtractor = correlationExtractor;
     if (correlationExtractor != null) {
       correlationExtractor.setVariableName(referenceName);
@@ -42,11 +32,22 @@ public class CorrelationRule {
     referenceName = "";
     correlationExtractor = null;
     correlationReplacement = null;
+    enabled = true;
   }
 
-  public CorrelationRuleTestElement buildTestElement() {
-    CorrelationRuleTestElement testElem = new CorrelationRuleTestElement();
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  public CorrelationRuleTestElement buildTestElement(
+      CorrelationComponentsRegistry registry) {
+    CorrelationRuleTestElement testElem = new CorrelationRuleTestElement(registry);
     testElem.setReferenceName(referenceName);
+    testElem.setRuleEnable(enabled);
 
     if (correlationExtractor != null) {
       correlationExtractor.updateTestElem(testElem);
@@ -57,45 +58,42 @@ public class CorrelationRule {
     return testElem;
   }
 
-  public void applyReplacements(HTTPSamplerBase sampler, List<TestElement> children,
-      SampleResult result,
-      JMeterVariables vars) {
-    if (correlationReplacement != null) {
-      correlationReplacement.process(sampler, children, result, vars);
-    }
-  }
-
-  public void addExtractors(HTTPSamplerBase sampler, List<TestElement> children,
-      SampleResult result,
-      JMeterVariables vars) {
-    if (correlationExtractor != null) {
-      correlationExtractor.process(sampler, children, result, vars);
-    }
-  }
-
-  public CorrelationExtractor getCorrelationExtractor() {
+  public CorrelationExtractor<?> getCorrelationExtractor() {
     return correlationExtractor;
   }
 
-  public CorrelationReplacement getCorrelationReplacement() {
+  public void setCorrelationExtractor(
+      CorrelationExtractor<?> correlationExtractor) {
+    this.correlationExtractor = correlationExtractor;
+  }
+
+  public CorrelationReplacement<?> getCorrelationReplacement() {
     return correlationReplacement;
+  }
+
+  public void setCorrelationReplacement(
+      CorrelationReplacement<?> correlationReplacement) {
+    this.correlationReplacement = correlationReplacement;
   }
 
   public String getReferenceName() {
     return referenceName;
   }
 
-  @VisibleForTesting
+  public void setReferenceName(String referenceName) {
+    this.referenceName = referenceName;
+  }
+
   @Override
   public String toString() {
     return "CorrelationRule{" +
         "referenceName='" + referenceName + '\'' +
         ", correlationExtractor=" + correlationExtractor +
         ", correlationReplacement=" + correlationReplacement +
+        ", enabled=" + enabled +
         '}';
   }
 
-  @VisibleForTesting
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -113,5 +111,11 @@ public class CorrelationRule {
   @Override
   public int hashCode() {
     return Objects.hash(referenceName, correlationExtractor, correlationReplacement);
+  }
+
+  @JsonIgnore
+  public boolean isComplete() {
+    return correlationExtractor != null
+        || correlationReplacement != null;
   }
 }

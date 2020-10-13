@@ -1,5 +1,5 @@
 <template isTestPlan="true">
-  <name>Correlation Recorder</name>
+  <name>bzm - Correlation Recorder</name>
   <fileName>/bin/templates/correlation-recorder.jmx</fileName>
   <description><![CDATA[
         <h1>Template showing how to record Correlated Scripts</h1>

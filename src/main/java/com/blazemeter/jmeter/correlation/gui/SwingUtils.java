@@ -20,7 +20,7 @@ public class SwingUtils {
     component.setPreferredSize(minimumSize);
     return component;
   }
-
+  
   public static JButton buildJButton(String name, String text, String action,
       ActionListener listener) {
     String translatedText = JMeterUtils.getResString(text.toLowerCase());
@@ -30,4 +30,5 @@ public class SwingUtils {
     button.addActionListener(listener);
     return button;
   }
+
 }

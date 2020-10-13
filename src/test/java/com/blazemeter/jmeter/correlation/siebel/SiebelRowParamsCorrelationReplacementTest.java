@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.samplers.SampleResult;
@@ -27,10 +28,10 @@ public class SiebelRowParamsCorrelationReplacementTest {
   private static final String PARAM_VALUE_TWO = "3 CommmmT Does Not Match";
   private static final String INITIAL_RESPONSE_DATA_PATH = "src/test/resources/initialResponse.txt";
   private static SampleResult initialSampleResult;
-  private static List<TestElement> children = new ArrayList<>();
+  private static final List<TestElement> children = new ArrayList<>();
 
   private SiebelRowParamsCorrelationReplacement siebelRowParamsReplacement;
-  private SiebelContext siebelContext = new SiebelContext();
+  private final SiebelContext siebelContext = new SiebelContext();
   private HTTPSampler sampler;
   private SampleResult sampleResult;
   private JMeterVariables vars;
@@ -44,7 +45,8 @@ public class SiebelRowParamsCorrelationReplacementTest {
     sampleResult = new SampleResult();
     sampleResult.setSamplerData("SWERowId=" + ROW_ID_ONE + "&Test_Path=1");
     vars = new JMeterVariables();
-    siebelRowParamsReplacement = new SiebelRowParamsCorrelationReplacement(REGEX_THAT_MATCHES);
+    siebelRowParamsReplacement = new SiebelRowParamsCorrelationReplacement();
+    siebelRowParamsReplacement.setParams(Collections.singletonList(REGEX_THAT_MATCHES));
     siebelRowParamsReplacement.setContext(siebelContext);
     initialSampleResult = new SampleResult();
     initialSampleResult.setResponseData(TestUtils

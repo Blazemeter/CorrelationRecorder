@@ -21,7 +21,7 @@ public class BlazemeterLabsLogo extends JLabel {
 
   public BlazemeterLabsLogo() {
     super(BLAZEMETER_LOGO);
-    setBrowseOnClick("https://github.com/Blazemeter/SiebelPlugin");
+    setBrowseOnClick("https://github.com/Blazemeter/CorrelationRecorder");
   }
 
   @Override

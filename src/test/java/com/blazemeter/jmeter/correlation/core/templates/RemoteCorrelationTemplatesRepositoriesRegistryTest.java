@@ -6,15 +6,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.blazemeter.jmeter.correlation.TestUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -31,7 +28,7 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
   private static final String REPOSITORY_NAME = "base";
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
-  private WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+  private final WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
 
   private RemoteCorrelationTemplatesRepositoriesRegistry remote;
 
@@ -61,36 +58,30 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
     prepareURL("/second-1.0-template.json");
     skipURL("/second-1.0-snapshot.png");
 
-    remote.save(REPOSITORY_NAME,
-        "http://localhost:" + wireMockServer.port() + "/test-repository.json");
+    remote.save(REPOSITORY_NAME, getBaseURL() + "/test-repository.json");
 
     List<String> expectedFiles = Arrays
         .asList("first-1.0-template.json", "base-repository.json", "second-1.0-template.json",
             "first-1.1-template.json");
 
     List<String> actualFiles = getGeneratedFilesNames();
+    assertGeneratedFiles(expectedFiles, actualFiles);
 
+  }
+
+  private void assertGeneratedFiles(List<String> expectedFiles, List<String> actualFiles) {
     //with this we avoid the test failing because of the order or the files
     assertTrue(expectedFiles.size() == actualFiles.size() &&
         expectedFiles.containsAll(actualFiles) && actualFiles.containsAll(expectedFiles));
   }
 
-  private void prepareURL(String URL) {
+  private void prepareURL(String URL) throws IOException {
     wireMockServer.stubFor(get(urlEqualTo(URL)).willReturn(aResponse()
         .withStatus(200)
         .withHeader("Cache-Control", "no-cache")
         .withHeader("Content-Type", "application/json")
-        .withBody(getFileContent(URL))
+        .withBody(TestUtils.getFileContent(URL, getClass()))
     ));
-  }
-
-  private String getFileContent(String filePath) {
-
-    try {
-      return Resources.toString(getClass().getResource(filePath), Charset.defaultCharset());
-    } catch (IOException e) {
-      return "";
-    }
   }
 
   private void skipURL(String URL) {
@@ -99,13 +90,31 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
     ));
   }
 
+  private String getBaseURL() {
+    return "http://localhost:" + wireMockServer.port();
+  }
+
   private List<String> getGeneratedFilesNames() {
     return Arrays.stream(Objects.requireNonNull(
         new File(
             folder.getRoot().getAbsolutePath() + "/" + TEMPLATES_FOLDER + "/" + REPOSITORY_NAME)
             .list()))
-        .filter(f -> f.toLowerCase().endsWith("repository.json") || f.toLowerCase()
-            .endsWith("template.json"))
+        .filter(f -> f.toLowerCase().endsWith("repository.json") ||
+            f.toLowerCase().endsWith("template.json"))
         .collect(Collectors.toList());
+  }
+
+  @Test
+  public void shouldEncodeUrlWhenSaveWithSpecialCharacters() throws IOException {
+    prepareURL("/repository-with-spaced-templates.json");
+    prepareURL("/first%20spaced%20template-1.0-template.json");
+    skipURL("/first-1.0-snapshot.png");
+    remote.save(REPOSITORY_NAME, getBaseURL() + "/repository-with-spaced-templates.json");
+    List<String> expectedFiles = Arrays
+        .asList("base-repository.json", "first spaced template-1.0-template.json");
+
+    List<String> actualFiles = getGeneratedFilesNames();
+
+    assertGeneratedFiles(expectedFiles, actualFiles);
   }
 }

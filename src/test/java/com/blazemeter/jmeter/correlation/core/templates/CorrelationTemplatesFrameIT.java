@@ -1,31 +1,34 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.blazemeter.jmeter.correlation.TestUtils.findByName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
-import static org.assertj.swing.timing.Pause.pause;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.TestUtils;
+import com.blazemeter.jmeter.correlation.core.templates.gui.CorrelationTemplatesFrame;
+import com.blazemeter.jmeter.correlation.core.templates.gui.CorrelationTemplatesRepositoryConfigFrame;
 import com.blazemeter.jmeter.correlation.gui.StringUtils;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BooleanSupplier;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
-import javax.swing.JComboBox;
-import javax.swing.JTabbedPane;
-import javax.swing.SwingWorker;
+import javax.swing.JPanel;
 import javax.xml.parsers.ParserConfigurationException;
-import org.assertj.swing.finder.JOptionPaneFinder;
 import org.assertj.swing.fixture.FrameFixture;
+import org.assertj.swing.fixture.JButtonFixture;
+import org.assertj.swing.fixture.JComboBoxFixture;
+import org.assertj.swing.fixture.JLabelFixture;
+import org.assertj.swing.fixture.JListFixture;
 import org.assertj.swing.fixture.JProgressBarFixture;
-import org.assertj.swing.timing.Condition;
+import org.assertj.swing.fixture.JTextComponentFixture;
+import org.assertj.swing.timing.Timeout;
 import org.custommonkey.xmlunit.HTMLDocumentBuilder;
 import org.custommonkey.xmlunit.TolerantSaxDocumentBuilder;
 import org.custommonkey.xmlunit.XMLUnit;
@@ -34,46 +37,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import org.xmlunit.builder.DiffBuilder;
-import org.xmlunit.diff.Comparison;
-import org.xmlunit.diff.ComparisonResult;
-import org.xmlunit.diff.Diff;
-import org.xmlunit.diff.DifferenceEvaluator;
+import org.xmlunit.matchers.CompareMatcher;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SwingTestRunner.class)
 public class CorrelationTemplatesFrameIT {
 
   private static final String LOCAL_TEMPLATE_ID = "LocalTemplate (local)";
   private static final String EXTERNAL_TEMPLATE_ID = "ExternalTemplate (external)";
-
-  private static final String INSTALLED_TEMPLATE_LIST = "installedTemplatesList";
-  private static final String AVAILABLE_TEMPLATE_LIST = "availableTemplatesList";
-
-  private static final String SEARCH_FIELD_NAME = "searchField";
-  private static final String LOAD_BUTTON_NAME = "loadButton";
-  private static final String EXPECTED_HTML_WITH_IMAGE_PATH = "/displayTemplateWithImage.txt";
-  private static final String EXPECTED_HTML_WITHOUT_IMAGE_PATH = "/displayTemplateWithoutImage.txt";
-
-  private static final long TIMEOUT_MILLIS = 3000;
-
-  private static final String INSTALL_TEMPLATE_BUTTON_NAME = "installTemplate";
-  private static final String TEMPLATE_VERSIONS_COMBOBOX = "templateVersions";
-  private static final String FIRST_TEMPLATE_DESCRIPTION_FILE_PATH = "/firstTemplateDescription"
-      + ".txt";
-  private static final String VERSIONS_COMBO_NAME = "templateVersions";
-  private static final String ID_LABEL_NAME = "templateIdLabel";
-  private static final String SECOND_VERSION = "2.0";
-  private static final String FIRST_VERSION = "1.0";
+  private static final int HALF_PROGRESS = 50;
 
   private FrameFixture frame;
-  private CorrelationTemplatesFrame correlationTemplatesFrame;
-  private JTabbedPane templatesTab;
-  private BufferedImage snapshot;
 
   @Mock
   private CorrelationTemplatesRegistryHandler templatesRegistryHandler;
@@ -107,12 +82,10 @@ public class CorrelationTemplatesFrameIT {
     setupRepository(alphaRepository, "external",
         Collections.singletonList(firstVersionFirstTemplateExternalRepository));
 
-    correlationTemplatesFrame = new CorrelationTemplatesFrame(templatesRegistryHandler,
-        repositoriesRegistryHandler, lastTemplateHandler);
-    snapshot = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-
+    CorrelationTemplatesFrame correlationTemplatesFrame = new CorrelationTemplatesFrame(
+        templatesRegistryHandler, repositoriesRegistryHandler, lastTemplateHandler, new JPanel());
+    correlationTemplatesFrame.setConfigFrame(configFrame);
     frame = showInFrame(correlationTemplatesFrame.getContentPane());
-    templatesTab = (JTabbedPane) frame.robot().finder().findByName("templatesTabbedPane");
   }
 
   private void setupRepository(CorrelationTemplatesRepository repository, String name,
@@ -137,123 +110,113 @@ public class CorrelationTemplatesFrameIT {
 
   @Test
   public void shouldDisplayOnlyInstalledTemplatesWhenVisible() {
-    buildPauseForCondition(
-        () -> Arrays.equals(frame.list(INSTALLED_TEMPLATE_LIST).contents(),
-            new String[]{LOCAL_TEMPLATE_ID}), "Display only templates with installed versions");
+    assertThat(findInstalledTemplateList().contents())
+        .isEqualTo(new String[]{LOCAL_TEMPLATE_ID});
   }
 
-  private void buildPauseForCondition(BooleanSupplier condition, String description) {
-    pause(new Condition(description) {
-      @Override
-      public boolean test() {
-        return condition.getAsBoolean();
-      }
-    }, TIMEOUT_MILLIS);
+  private JListFixture findInstalledTemplateList() {
+    return frame.list("installedTemplatesList");
   }
 
   @Test
   public void shouldDisplayTemplateIDWhenTemplateSelected() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    buildPauseForCondition(() -> frame.label(ID_LABEL_NAME).text()
-            .equals(firstVersionFirstTemplateLocalRepository.getId()),
-        "Display Template's ID when Local Template Selected");
+    findTemplateIdLabel().requireText(firstVersionFirstTemplateLocalRepository.getId());
+  }
+
+  private JLabelFixture findTemplateIdLabel() {
+    return frame.label("templateIdLabel");
   }
 
   private void selectInstalledTemplate(String templateDisplayName) {
-    frame.list(INSTALLED_TEMPLATE_LIST).clickItem(templateDisplayName);
+    findInstalledTemplateList().clickItem(templateDisplayName);
   }
 
   @Test
   public void shouldEnableLoadButtonWhenTemplateInstalled() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    buildPauseForCondition(() -> buttonIsEnabled(LOAD_BUTTON_NAME),
-        "Load button is enabled when template is installed");
+    findLoadButton().requireEnabled();
+  }
+
+  private JButtonFixture findLoadButton() {
+    return frame.button("loadButton");
   }
 
   @Test
   public void shouldDisplayTemplateDescriptionWhenTemplateSelected() throws IOException {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
+    assertTemplateInfo("/firstTemplateDescription.html");
+  }
 
-    Diff myDiff = DiffBuilder
-        .compare(TestUtils.getFileContent(FIRST_TEMPLATE_DESCRIPTION_FILE_PATH, getClass()))
-        .withTest(correlationTemplatesFrame.getDisplayedText()).ignoreWhitespace()
-        .checkForSimilar()
-        .build();
+  private void assertTemplateInfo(String templateInfoFile) throws IOException {
+    CompareMatcher
+        .isIdenticalTo(buildTestDocument(
+            TestUtils.getFileContent(templateInfoFile, getClass())))
+        .throwComparisonFailure()
+        .matches(buildTestDocument(findDisplayInfoPane().text()));
+  }
 
-    assertFalse(myDiff.toString(), myDiff.hasDifferences());
+  // we need to use this for comparison to avoid xml malformed (img without closing tag) nature of html
+  private Document buildTestDocument(String html) {
+    try {
+      TolerantSaxDocumentBuilder tolerantSaxDocumentBuilder = new TolerantSaxDocumentBuilder(
+          XMLUnit.newTestParser());
+      HTMLDocumentBuilder htmlDocumentBuilder = new HTMLDocumentBuilder(tolerantSaxDocumentBuilder);
+      return htmlDocumentBuilder.parse(html);
+    } catch (ParserConfigurationException | SAXException | IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private JTextComponentFixture findDisplayInfoPane() {
+    return frame.textBox("displayInfoPanel");
   }
 
   @Test
   public void shouldSetInstalledVersionWhenSelectTemplateWithInstalledVersion() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    buildPauseForCondition(
-        () -> frame.comboBox(VERSIONS_COMBO_NAME).selectedItem().equals(SECOND_VERSION),
-        "Load the Installed Version in the Version's ComboBox");
+    findVersionsCombo().requireSelection("2.0");
+  }
+
+  private JComboBoxFixture findVersionsCombo() {
+    return frame.comboBox("templateVersions");
   }
 
   @Test
   public void shouldSetUninstallLabelWhenSelectTemplateWithInstalledVersion() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    buildPauseForCondition(() -> frame.button(INSTALL_TEMPLATE_BUTTON_NAME).text().equals(
-        "Uninstall"), "Set Uninstall label when Selected version is installed");
+    findInstallTemplateButton().requireText("Uninstall");
+  }
+
+  private JButtonFixture findInstallTemplateButton() {
+    return frame.button("installTemplate");
   }
 
   @Test
   public void shouldEnableInstallButtonWhenTemplateNotInstalled() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    selectVersion(FIRST_VERSION);
-    buildPauseForCondition(() -> buttonIsEnabled(INSTALL_TEMPLATE_BUTTON_NAME),
-        "Install button is enabled when template is not installed");
+    selectFirstVersion();
+    findInstallTemplateButton().requireEnabled();
   }
 
-  private void selectVersion(String version) {
-    frame.comboBox(VERSIONS_COMBO_NAME).selectItem(version);
+  private void selectFirstVersion() {
+    findVersionsCombo().selectItem("1.0");
   }
 
   @Test
   public void shouldDisableLoadButtonWhenTemplateNotInstalled() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    selectVersion(FIRST_VERSION);
-    buildPauseForCondition(() -> !buttonIsEnabled(LOAD_BUTTON_NAME),
-        "Disable load when selected Template is not installed");
-  }
-
-  @Test
-  public void shouldSetTemplateIDOnLabelWhenTemplateSelected() {
-    selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    assertEquals(firstVersionFirstTemplateLocalRepository.getVersion(),
-        ((CorrelationTemplate) findByName(frame.robot(), TEMPLATE_VERSIONS_COMBOBOX,
-            JComboBox.class).getModel()
-            .getElementAt(0)).getVersion());
+    selectFirstVersion();
+    findLoadButton().requireDisabled();
   }
 
   @Test
   public void shouldLoadWarningWhenInstallingVersionWithAnotherVersionInstalled() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    selectVersion(FIRST_VERSION);
-    clickButton(INSTALL_TEMPLATE_BUTTON_NAME);
-
-    JOptionPaneFinder.findOptionPane().using(frame.robot())
-        .requireMessage(
-            "There is another version of this Template installed. Want to overwrite it?")
-        .noButton()
-        .click();
-  }
-
-  private void clickButton(String buttonName) {
-    frame.button(buttonName).click();
-  }
-
-  private boolean buttonIsEnabled(String buttonName) {
-    return frame.button(buttonName).isEnabled();
-  }
-
-  private void setUpImage(CorrelationTemplate template) {
-    when((template.getSnapshot())).thenReturn(snapshot);
-  }
-
-  private void clickLoadButton() {
-    frame.button(LOAD_BUTTON_NAME).click();
+    selectFirstVersion();
+    findInstallTemplateButton().click();
+    frame.optionPane().requireMessage(
+        "There is another version of this Template installed. Want to overwrite it?");
   }
 
   @Test
@@ -261,177 +224,133 @@ public class CorrelationTemplatesFrameIT {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
     doThrow(new IOException()).when(templatesRegistryHandler)
         .onLoadTemplate("local", "LocalTemplate", "2.0");
-    clickLoadButton();
-    frame.optionPane().requireMessage("Error while trying to load " + "LocalTemplate");
+    findLoadButton().click();
+    frame.optionPane().requireMessage("Error while trying to load LocalTemplate");
   }
 
   @Test
   public void shouldFilterTemplatesWithContainingText() {
     searchForSpecificText(localRepository.getName());
-    buildPauseForCondition(() -> Arrays.equals(frame.list(INSTALLED_TEMPLATE_LIST).contents(),
-        new String[]{LOCAL_TEMPLATE_ID}), "Filter templates by text");
+    assertThat(findInstalledTemplateList().contents()).isEqualTo(new String[]{LOCAL_TEMPLATE_ID});
   }
 
   private void searchForSpecificText(String str) {
-    frame.textBox(SEARCH_FIELD_NAME).setText(str);
-  }
-
-
-  @Test
-  public void shouldDisplayTemplateInfoWithoutImage() throws IOException {
-    selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-
-    Diff myDiff = DiffBuilder
-        .compare(TestUtils.getFileContent(EXPECTED_HTML_WITHOUT_IMAGE_PATH, getClass()))
-        .withTest(correlationTemplatesFrame.getDisplayText()).ignoreWhitespace()
-        .withDifferenceEvaluator(new IgnoreAttributeDifferenceEvaluator("src"))
-        .checkForSimilar()
-        .build();
-
-    assertFalse(myDiff.toString(), myDiff.hasDifferences());
+    frame.textBox("searchField").setText(str);
   }
 
   @Test
   public void shouldDisplayTemplateInfoWithImage()
-      throws IOException, ParserConfigurationException, SAXException {
-    setUpImage(secondVersionFirstTemplateLocalRepository);
+      throws IOException {
+    when(secondVersionFirstTemplateLocalRepository.getSnapshot())
+        .thenReturn(new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB));
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-
-    Diff myDiff = DiffBuilder.compare(
-        buildTestDocument(TestUtils.getFileContent(EXPECTED_HTML_WITH_IMAGE_PATH, getClass())))
-        .withTest(buildTestDocument(correlationTemplatesFrame.getDisplayText())).ignoreWhitespace()
-        .withDifferenceEvaluator(new IgnoreAttributeDifferenceEvaluator("src"))
-        .checkForSimilar()
-        .build();
-
-    assertFalse(myDiff.toString(), myDiff.hasDifferences());
-  }
-
-  private Document buildTestDocument(String html)
-      throws ParserConfigurationException, IOException, SAXException {
-    TolerantSaxDocumentBuilder tolerantSaxDocumentBuilder = new TolerantSaxDocumentBuilder(
-        XMLUnit.newTestParser());
-    HTMLDocumentBuilder htmlDocumentBuilder = new HTMLDocumentBuilder(tolerantSaxDocumentBuilder);
-    return htmlDocumentBuilder.parse(html);
+    assertTemplateInfo("/displayTemplateWithImage.html");
   }
 
   @Test
   public void shouldDisplayOnlyUninstalledTemplatesWhenClickAvailableTab() {
     changeToAvailableTemplates();
-    buildPauseForCondition(() -> Arrays.equals(frame.list(AVAILABLE_TEMPLATE_LIST).contents(),
-        new String[]{EXTERNAL_TEMPLATE_ID}), "Display only uninstalled");
+    assertThat(findAvailableTemplatesList().contents())
+        .isEqualTo(new String[]{EXTERNAL_TEMPLATE_ID});
   }
 
   private void changeToAvailableTemplates() {
-    templatesTab.setSelectedIndex(1);
+    frame.tabbedPane("templatesTabbedPane").selectTab(1);
+  }
+
+  private JListFixture findAvailableTemplatesList() {
+    return frame.list("availableTemplatesList");
   }
 
   @Test
   public void shouldMoveAvailableTemplateToInstallListWhenInstall() {
     changeToAvailableTemplates();
     selectAvailableTemplate(EXTERNAL_TEMPLATE_ID);
-    clickButton(INSTALL_TEMPLATE_BUTTON_NAME);
-
-    JOptionPaneFinder.findOptionPane().using(frame.robot())
+    findInstallTemplateButton().click();
+    frame.optionPane()
         .requireMessage("The template was successfully installed")
         .okButton()
         .click();
-
     selectInstalledTemplate(EXTERNAL_TEMPLATE_ID);
-
-    buildPauseForCondition(() -> frame.label(ID_LABEL_NAME).text()
-            .equals(firstVersionFirstTemplateExternalRepository.getId()),
-        "Display Template's ID when External Template Selected after installed");
+    findTemplateIdLabel().requireText(firstVersionFirstTemplateExternalRepository.getId());
   }
 
   private void selectAvailableTemplate(String templateDisplayName) {
-    frame.list(AVAILABLE_TEMPLATE_LIST).clickItem(templateDisplayName);
+    findAvailableTemplatesList().clickItem(templateDisplayName);
   }
 
   @Test
   public void shouldMoveInstalledTemplateToAvailableListWhenUninstall() {
     selectInstalledTemplate(LOCAL_TEMPLATE_ID);
-    clickButton(INSTALL_TEMPLATE_BUTTON_NAME);
-
-    JOptionPaneFinder.findOptionPane().using(frame.robot())
+    findInstallTemplateButton().click();
+    frame.optionPane()
         .requireMessage("The template was successfully uninstalled")
         .okButton()
         .click();
-
     selectAvailableTemplate(LOCAL_TEMPLATE_ID);
-    buildPauseForCondition(() -> frame.label(ID_LABEL_NAME).text()
-            .equals(firstVersionFirstTemplateLocalRepository.getId()),
-        "Display Template's ID when Local Template Selected after uninstalled");
-  }
-
-  //With this we do custom XMLs Tags comparison
-  private static class IgnoreAttributeDifferenceEvaluator implements DifferenceEvaluator {
-
-    private final String attributeName;
-
-    private IgnoreAttributeDifferenceEvaluator(String attributeName) {
-      this.attributeName = attributeName;
-    }
-
-    @Override
-    public ComparisonResult evaluate(Comparison comparison, ComparisonResult outcome) {
-      if (outcome == ComparisonResult.EQUAL) {
-        return outcome;
-      }
-
-      final Node controlNode = comparison.getControlDetails().getTarget();
-      if (controlNode instanceof Attr) {
-        Attr attr = (Attr) controlNode;
-        if (attr.getName().equals(attributeName)) {
-          return ComparisonResult.SIMILAR;
-        }
-      }
-      return outcome;
-    }
+    findTemplateIdLabel().requireText(firstVersionFirstTemplateLocalRepository.getId());
   }
 
   @Test
-  public void shouldValidateLoadingDialogWhenRefreshButton() {
-    setupForRefreshRepository(false);
-    buildPauseForCondition(
-        () -> frame.robot().finder().findByName("loadingDialog", true).isVisible(),
-        "Waiting for loading dialog appears");
-
+  public void shouldShowProgressBarWhenPressRefresh() {
+    CountDownLatch refreshProgressLock = setupRefreshTaskWithUpdates();
+    try {
+      clickRefreshRepositories();
+      findProgressBar().requireVisible();
+    } finally {
+      refreshProgressLock.countDown();
+    }
   }
 
-  private void setupForRefreshRepository(boolean doCompleteFlow) {
-    correlationTemplatesFrame.setConfigFrame(configFrame);
-    correlationTemplatesFrame.setRefreshTask(buildRefreshTask(doCompleteFlow));
-    clickButton("refreshButton");
+  private CountDownLatch setupRefreshTaskWithUpdates() {
+    CountDownLatch latch = new CountDownLatch(1);
+    doAnswer(a -> {
+      Consumer<Integer> consumer = a.getArgument(1);
+      consumer.accept(HALF_PROGRESS);
+      latch.await();
+      consumer.accept(100);
+      return false;
+    }).when(repositoriesRegistryHandler).refreshRepositories(any(), any());
+    return latch;
   }
 
-  private SwingWorker<Object, Object> buildRefreshTask(boolean doCompleteFlow) {
-    return new SwingWorker<Object, Object>() {
-      @Override
-      protected Object doInBackground() throws Exception {
-        Thread.sleep(1000);
-        if (doCompleteFlow) {
-          IntStream.range(1, 6)
-              .forEach(i -> {
-                try {
-                  setProgress(i * 20);
-                  Thread.sleep(250);
-                } catch (InterruptedException e) {
-                  e.printStackTrace();
-                }
-              });
-        }
-        return null;
-      }
-    };
+  private void clickRefreshRepositories() {
+    frame.button("refreshButton").click();
+  }
+
+  private JProgressBarFixture findProgressBar() {
+    return frame.progressBar("loadingProgressBar");
   }
 
   @Test
   public void shouldIncrementProgressBarWhenRefreshRepositories() {
-    setupForRefreshRepository(true);
-    new JProgressBarFixture(frame.robot(),
-        "loadingProgressBar")
-        .waitUntilValueIs(80);
-
+    CountDownLatch refreshProgressLock = setupRefreshTaskWithUpdates();
+    try {
+      clickRefreshRepositories();
+      findProgressBar().waitUntilValueIs(HALF_PROGRESS);
+    } finally {
+      refreshProgressLock.countDown();
+    }
   }
+
+  @Test
+  public void shouldEnableConfirmRefreshButtonWhenRefreshWithChanges() {
+    refreshRepositories();
+    findConfirmRefreshButton().requireEnabled(Timeout.timeout(10000));
+  }
+
+  private void refreshRepositories() {
+    CountDownLatch refreshProgressLock = setupRefreshTaskWithUpdates();
+    try {
+      clickRefreshRepositories();
+    } finally {
+      refreshProgressLock.countDown();
+    }
+  }
+
+  private JButtonFixture findConfirmRefreshButton() {
+    return frame.button("confirmRefreshButton");
+  }
+
+
 }

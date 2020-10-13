@@ -33,11 +33,11 @@ public class SiebelCounterCorrelationReplacementTest {
   private static final JMeterVariables EMPTY_VARS = new JMeterVariables();
 
   private SiebelCounterCorrelationReplacement siebelCounterReplacement;
-  private SiebelContext siebelContext = new SiebelContext();
+  private final SiebelContext siebelContext = new SiebelContext();
   private HTTPSampler sampler;
   private SampleResult sampleResult;
   private JMeterVariables vars;
-  private JMeterVariables expectedVariables = new JMeterVariables();
+  private final JMeterVariables expectedVariables = new JMeterVariables();
 
   @Before
   public void setup() {
@@ -46,7 +46,8 @@ public class SiebelCounterCorrelationReplacementTest {
     sampler.setPath("/" + PARAM_NAME_ONE + "=" + PARAM_VALUE_ONE + "&Test_Path=1");
     sampleResult = new SampleResult();
     vars = new JMeterVariables();
-    siebelCounterReplacement = new SiebelCounterCorrelationReplacement(REGEX_THAT_MATCHES);
+    siebelCounterReplacement = new SiebelCounterCorrelationReplacement();
+    siebelCounterReplacement.setParams(Collections.singletonList(REGEX_THAT_MATCHES));
     siebelCounterReplacement.setContext(siebelContext);
     siebelCounterReplacement.setVariableName(VARIABLE_NAME);
   }

@@ -7,7 +7,7 @@ public class TemplateItem {
 
   private String id;
   private boolean hasInstalled;
-  private List<CorrelationTemplate> versions;
+  private final List<CorrelationTemplate> versions;
 
   public TemplateItem(String id, boolean hasInstalled) {
     this.id = id;

@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.core;
 
 import java.util.ArrayList;
-import org.apache.jmeter.JMeter;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.PatternMatcherInput;

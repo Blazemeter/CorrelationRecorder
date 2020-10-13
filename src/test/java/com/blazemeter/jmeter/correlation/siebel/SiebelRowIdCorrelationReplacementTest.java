@@ -17,13 +17,14 @@ public class SiebelRowIdCorrelationReplacementTest {
 
   private JMeterVariables vars;
   private SiebelRowIdCorrelationReplacement siebelRowIdReplacement;
-  private SiebelContext siebelContext = new SiebelContext();
+  private final SiebelContext siebelContext = new SiebelContext();
 
   @Before
   public void setup() {
     vars = new JMeterVariables();
-    siebelRowIdReplacement = new SiebelRowIdCorrelationReplacement(REGEX_THAT_MATCHES);
+    siebelRowIdReplacement = new SiebelRowIdCorrelationReplacement();
     siebelRowIdReplacement.setContext(siebelContext);
+    siebelRowIdReplacement.setVariableName("SWERowID");
   }
 
   @Test

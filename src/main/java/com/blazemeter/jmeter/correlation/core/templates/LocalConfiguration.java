@@ -31,9 +31,9 @@ public class LocalConfiguration {
   public static final String CENTRAL_REPOSITORY_URL = "https://raw.githubusercontent"
       + ".com/Blazemeter/CorrelationsRecorderTemplates/master/central/central-repository.json";
   public static final String CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER = "/correlation-templates/";
-  protected static final String INSTALL = "install";
-  protected static final String UNINSTALL = "uninstall";
-  protected static final String LOCAL_REPOSITORY_NAME = "local";
+  public static final String INSTALL = "install";
+  public static final String UNINSTALL = "uninstall";
+  public static final String LOCAL_REPOSITORY_NAME = "local";
   protected static final String JSON_FILE_EXTENSION = ".json";
   protected static final String LOCAL_CONFIGURATION_FILE_NAME = "repositories";
   protected static final String REPOSITORY_NAME_SUFFIX = "-repository";

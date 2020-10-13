@@ -65,7 +65,7 @@ public class LocalConfigurationTest {
   private CorrelationTemplatesRepositoryConfiguration repositoryWithInstalledTemplates;
   @Mock
   private CorrelationTemplatesRepositoryConfiguration localRepositoryConfiguration;
-  private WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+  private final WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
   private LocalConfiguration configuration;
   private String dependenciesFolder;
 
@@ -89,7 +89,8 @@ public class LocalConfigurationTest {
   @Test
   public void shouldNotAddRepositoryWhenRepositoryAlreadyExists() {
     configuration.addRepository(firstRepository.getName(), firstRepositoryURL);
-    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID, localRepository.getName(), firstRepository.getName()),
+    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID, localRepository.getName(),
+        firstRepository.getName()),
         configuration.getRepositoriesNames());
   }
 

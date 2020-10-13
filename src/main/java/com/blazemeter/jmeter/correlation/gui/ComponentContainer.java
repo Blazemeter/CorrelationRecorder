@@ -11,11 +11,11 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 class ComponentContainer extends JPanel {
-
+  
   private static final Dimension LABEL_PREFERRED_SIZE = new Dimension(150, 35);
   private static final Dimension TEXTAREA_PREFERRED_SIZE = new Dimension(800, 150);
 
-  private JTextArea componentsTextArea;
+  private final JTextArea componentsTextArea;
 
   public ComponentContainer(Consumer<String> componentsValidations) {
     JLabel customExtensionsDescription = SwingUtils
@@ -53,7 +53,8 @@ class ComponentContainer extends JPanel {
         String componentsTextAreaText = componentsTextArea.getText().replace("\n", "");
         componentsValidations.accept(componentsTextAreaText);
         //Proper formatting requires removing all previous ones
-        componentsTextArea.setText(componentsTextAreaText.replace("\n", "").replace(",", ",\n"));
+        componentsTextArea.setText(componentsTextArea.getText()
+            .replace("\n", "").replace(",", ",\n"));
       }
     };
   }
@@ -64,9 +65,5 @@ class ComponentContainer extends JPanel {
 
   public String getCorrelationComponents() {
     return componentsTextArea.getText();
-  }
-
-  public void clear() {
-    componentsTextArea.setText("");
   }
 }

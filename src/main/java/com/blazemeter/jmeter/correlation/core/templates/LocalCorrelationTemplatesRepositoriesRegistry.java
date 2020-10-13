@@ -173,7 +173,8 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
       FileUtils.deleteDirectory(repositoryFolder);
     } else {
       LOG.warn(
-          "The repository {} doesn't seems to have a folder, {} was found instead. Only removed from the configuration.",
+          "The repository {} doesn't seems to have a folder, {} was found instead. Only removed " 
+              + "from the configuration.",
           name, repositoryFolder.getName());
     }
   }

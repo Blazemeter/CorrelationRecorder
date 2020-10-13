@@ -21,7 +21,7 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
   private static final String TEMPLATE_SUFFIX = "-template";
   public static final String TEMPLATE_FILE_SUFFIX = TEMPLATE_SUFFIX + JSON_FILE_EXTENSION;
 
-  private LocalConfiguration localConfiguration;
+  private final LocalConfiguration localConfiguration;
 
   public LocalCorrelationTemplatesRegistry(LocalConfiguration localConfiguration) {
     this.localConfiguration = localConfiguration;

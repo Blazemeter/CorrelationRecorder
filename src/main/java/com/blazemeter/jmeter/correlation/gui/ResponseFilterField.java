@@ -11,7 +11,7 @@ import javax.swing.JTextField;
 
 public class ResponseFilterField extends JTextField {
 
-  private Consumer<String> filteringHandler;
+  private final Consumer<String> filteringHandler;
 
   public ResponseFilterField(String name, Dimension preferredSize,
       Consumer<String> filteringHandler) {
@@ -47,4 +47,5 @@ public class ResponseFilterField extends JTextField {
             .collect(Collectors.joining(", ")) + ".");
     setText(filtered.stream().map(String::trim).collect(Collectors.joining(", ")));
   }
+
 }

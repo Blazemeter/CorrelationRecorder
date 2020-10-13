@@ -3,8 +3,6 @@ package com.blazemeter.jmeter.correlation;
 import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
-import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder;
@@ -18,6 +16,7 @@ import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRulesTestElement;
+import com.blazemeter.jmeter.correlation.gui.InvalidRulePartElementException;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -47,14 +46,12 @@ public class CorrelationProxyControl extends ProxyControl implements
   private static final String CORRELATION_COMPONENTS = "CorrelationProxyControl.components";
   private static final String RESPONSE_FILTER = "CorrelationProxyControl.responseFilter";
   private static final String TEMPLATE_PATH = "CorrelationProxyControl.templatePath";
-  private static final String RECORDER_NAME = "Correlation Recorder";
-
+  private static final String RECORDER_NAME = "bzm - Correlation Recorder";
+  private final CorrelationComponentsRegistry componentsRegistry;
+  private final CorrelationTemplatesRepositoriesConfiguration correlationTemplatesRepositoriesConfiguration;
   private LocalConfiguration localConfiguration;
-
   private CorrelationEngine correlationEngine;
-  private CorrelationComponentsRegistry componentsRegistry;
   private CorrelationTemplatesRegistry correlationTemplatesRegistry;
-  private CorrelationTemplatesRepositoriesConfiguration correlationTemplatesRepositoriesConfiguration;
 
   public CorrelationProxyControl() {
     correlationEngine = new CorrelationEngine();
@@ -63,7 +60,7 @@ public class CorrelationProxyControl extends ProxyControl implements
     correlationTemplatesRegistry = new LocalCorrelationTemplatesRegistry(localConfiguration);
     correlationTemplatesRepositoriesConfiguration =
         new CorrelationTemplatesRepositoriesConfiguration(
-        localConfiguration);
+            localConfiguration);
 
     setName(RECORDER_NAME);
   }
@@ -76,7 +73,7 @@ public class CorrelationProxyControl extends ProxyControl implements
     correlationTemplatesRegistry = new LocalCorrelationTemplatesRegistry(localConfiguration);
     correlationTemplatesRepositoriesConfiguration =
         new CorrelationTemplatesRepositoriesConfiguration(
-        localConfiguration);
+            localConfiguration);
 
     setName(RECORDER_NAME);
   }
@@ -115,41 +112,45 @@ public class CorrelationProxyControl extends ProxyControl implements
     return (CorrelationRulesTestElement) getProperty(CORRELATION_RULES).getObjectValue();
   }
 
-  private List<CorrelationRule> buildCorrelationRules(
-      CorrelationRulesTestElement correlationRulesTestElement) {
-    if (correlationRulesTestElement == null) {
+  private List<CorrelationRule> getCorrelationRulesFromTestElement(
+      CorrelationRulesTestElement testElement) {
+    if (testElement == null) {
       return new ArrayList<>();
     }
 
-    return correlationRulesTestElement.getRules().stream()
-        /*
-         * We need the rules that contains at least 1 Extractor/Replacement and,
-         * the selected ones, need to be pass the Components Validations
-         * */
-        .filter(t -> (t.getExtractorClass() != null || t.getReplacementClass() != null) &&
-            (t.getExtractorClass() == null || componentsRegistry
-                .containsExtractor(t.getExtractorClass())) &&
-            (t.getReplacementClass() == null || componentsRegistry
-                .containsReplacement(t.getReplacementClass()))
-        )
-        .map(t -> new CorrelationRule(t.getReferenceName(),
-            t.getExtractorClass() != null ? buildCorrelationExtractor(t) : null,
-            t.getReplacementClass() != null ? buildCorrelationReplacement(t) : null))
+    return testElement.getRules().stream()
+        .map(e -> {
+          CorrelationRule correlationRule = new CorrelationRule();
+          String referenceName = e.getReferenceName();
+          correlationRule.setReferenceName(referenceName);
+          updateExtractorFromTestElement(e, correlationRule, referenceName);
+          updateReplacementFromTestElement(e, correlationRule, referenceName);
+          return correlationRule;
+        })
+        .filter(CorrelationRule::isComplete)
         .collect(Collectors.toList());
   }
 
-  private CorrelationExtractor buildCorrelationExtractor(CorrelationRuleTestElement t) {
-    CorrelationExtractor extractor = componentsRegistry
-        .getCorrelationExtractor(t.getExtractorClass().getCanonicalName(), new ArrayList<>());
-    extractor.update(t);
-    return extractor;
+  private void updateExtractorFromTestElement(CorrelationRuleTestElement e,
+      CorrelationRule correlationRule, String referenceName) {
+    try {
+      //Only when no Extractor was selected, this method returns null
+      correlationRule.setCorrelationExtractor(e.getCorrelationExtractor());
+    } catch (InvalidRulePartElementException exception) {
+      LOG.warn("Couldn't load Correlation Extractor for Rule with {}'s refVar.", referenceName,
+          exception);
+    }
   }
 
-  private CorrelationReplacement buildCorrelationReplacement(CorrelationRuleTestElement t) {
-    CorrelationReplacement replacement = componentsRegistry
-        .getCorrelationReplacement(t.getReplacementClass().getCanonicalName(), new ArrayList<>());
-    replacement.update(t);
-    return replacement;
+  private void updateReplacementFromTestElement(CorrelationRuleTestElement e,
+      CorrelationRule correlationRule, String referenceName) {
+    try {
+      //Only when no Replacement was selected, this method returns null
+      correlationRule.setCorrelationReplacement(e.getCorrelationReplacement());
+    } catch (InvalidRulePartElementException exception) {
+      LOG.warn("Couldn't load Correlation Replacement for Rule with {}'s refVar.", referenceName,
+          exception);
+    }
   }
 
   @Override
@@ -177,17 +178,14 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private List<CorrelationRule> getCorrelationRules() {
-    CorrelationRulesTestElement correlationRulesTestElement =
-        (CorrelationRulesTestElement) getProperty(
-        CORRELATION_RULES).getObjectValue();
-
-    return buildCorrelationRules(correlationRulesTestElement);
+    return getCorrelationRulesFromTestElement(
+        (CorrelationRulesTestElement) getProperty(CORRELATION_RULES).getObjectValue());
   }
 
   public void setCorrelationRules(List<CorrelationRule> correlationRules) {
     setProperty(new TestElementProperty(CORRELATION_RULES,
         correlationRules != null ? new CorrelationRulesTestElement(correlationRules.stream()
-            .map(CorrelationRule::buildTestElement)
+            .map(correlationRule -> correlationRule.buildTestElement(componentsRegistry))
             .collect(Collectors.toList())) : new CorrelationRulesTestElement()));
     correlationEngine.setCorrelationRules(correlationRules, componentsRegistry);
   }
@@ -196,17 +194,9 @@ public class CorrelationProxyControl extends ProxyControl implements
     return getPropertyAsString(CORRELATION_COMPONENTS);
   }
 
-  @VisibleForTesting
   public void setCorrelationComponents(String correlationComponents) {
-    setProperty(CORRELATION_COMPONENTS, correlationComponents);
-    List<String> components = parseComponentString(correlationComponents);
-    components.forEach(c -> {
-      try {
-        componentsRegistry.addComponent(c);
-      } catch (IllegalArgumentException | ClassNotFoundException e) {
-        LOG.error("There was an issue trying to add the component {}. ", c, e);
-      }
-    });
+    setProperty(CORRELATION_COMPONENTS,
+        componentsRegistry.updateActiveComponents(correlationComponents, new ArrayList<>()));
   }
 
   public String getResponseFilter() {
@@ -284,22 +274,9 @@ public class CorrelationProxyControl extends ProxyControl implements
     return correlationTemplatesRegistry.getInstalledTemplates();
   }
 
-  private List<String> parseComponentString(String correlationComponents) {
-    if (correlationComponents.isEmpty()) {
-      return new ArrayList<>();
-    }
-
-    return Arrays.asList(correlationComponents
-        .replace("\n", "")
-        .replace("\r", "")
-        .split(","));
-  }
-
   public void update(String correlationComponents, List<CorrelationRule> correlationRules,
       String responseFilter) {
-    if (correlationComponents != null && !correlationComponents.isEmpty()) {
-      setCorrelationComponents(correlationComponents);
-    }
+    setCorrelationComponents(correlationComponents);
     setCorrelationRules(correlationRules);
     setResponseFilter(responseFilter);
   }
@@ -381,9 +358,9 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   @Override
-  public void refreshRepositories(String localConfigurationRoute,
+  public boolean refreshRepositories(String localConfigurationRoute,
       Consumer<Integer> setProgressConsumer) {
-    correlationTemplatesRepositoriesConfiguration
+    return correlationTemplatesRepositoriesConfiguration
         .refreshRepositories(localConfigurationRoute, setProgressConsumer);
   }
 
@@ -396,8 +373,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   public List<CorrelationRule> getRules() {
     CorrelationRulesTestElement correlationRulesTestElement =
         (CorrelationRulesTestElement) getProperty(
-        CORRELATION_RULES).getObjectValue();
+            CORRELATION_RULES).getObjectValue();
 
-    return buildCorrelationRules(correlationRulesTestElement);
+    return getCorrelationRulesFromTestElement(correlationRulesTestElement);
   }
 }

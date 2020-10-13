@@ -31,7 +31,7 @@ public enum ResultField {
 
   private final String description;
   private final Function<SampleResult, String> getFieldFunction;
-  private String code;
+  private final String code;
 
   ResultField(String description, String code, Function<SampleResult, String> getFieldFunction) {
     this.description = description;

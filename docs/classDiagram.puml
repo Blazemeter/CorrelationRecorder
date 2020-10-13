@@ -289,13 +289,13 @@ title __Correlations Recorder's Class Diagram__\n
           {static} - RULES : String
       }
 
-      class com.blazemeter.jmeter.correlation.gui.RulePanel {
+      class com.blazemeter.jmeter.correlation.gui.RuleConfiguration {
           - referenceVariableField : JTextField
-          - extractorHandler : ContainerPanelsHandler
-          - replacementHandler : ContainerPanelsHandler
+          - extractorConfigurationPanel : ConfigurationPanel
+          - replacementConfigurationPanel : ConfigurationPanel
       }
 
-       class com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler {
+       class com.blazemeter.jmeter.correlation.gui.RuleConfiguration.ConfigurationPanel {
            - comboBox : JComboBox
            - containerPanel : JPanel
            - listComponents : ArrayList<Component>
@@ -455,14 +455,13 @@ title __Correlations Recorder's Class Diagram__\n
   com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement o-- com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement : replacementDefinitions
 
 
-  com.blazemeter.jmeter.correlation.gui.RulePanel o-- com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler : extractorHandler
-  com.blazemeter.jmeter.correlation.gui.RulePanel o-- com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler : replacementHandler
-  com.blazemeter.jmeter.correlation.gui.RulePanel +-down- com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler
+  com.blazemeter.jmeter.correlation.gui.RuleConfiguration o-- com.blazemeter.jmeter.correlation.gui.ConfigurationPanel : extractorConfigurationPanel
+  com.blazemeter.jmeter.correlation.gui.RuleConfiguration o-- com.blazemeter.jmeter.correlation.gui.ConfigurationPanel : replacementConfigurationPanel
+  com.blazemeter.jmeter.correlation.gui.RuleConfiguration +-down- com.blazemeter.jmeter.correlation.gui.RuleConfiguration.ContainerPanelsHandler
 
   com.blazemeter.jmeter.correlation.gui.RulesContainer .up.|> com.blazemeter.jmeter.correlation.gui.ComponentsValidations
   com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.gui.ComponentContainer : componentContainer
   com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry : componentsRepository
-  com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.gui.RulePanel : lastActivePanel
 
   com.blazemeter.jmeter.correlation.siebel.SiebelArrayFunction -up-|> org.apache.jmeter.functions.AbstractFunction
   com.blazemeter.jmeter.correlation.siebel.SiebelContext .up.|> com.blazemeter.jmeter.correlation.core.CorrelationContext

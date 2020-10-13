@@ -36,9 +36,9 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   protected static final String SIEBEL_CORRELATION_TEMPLATE = "siebel-1.0-template.json";
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationProxyControlGui.class);
   private static final String CORRELATION_RECORDER_TEST_PLAN = "correlation-recorder.jmx";
-  private static final String CORRELATION_RECORDER_TEMPLATE_DESC = "correlation-recorder-template" 
+  private static final String CORRELATION_RECORDER_TEMPLATE_DESC = "correlation-recorder-template"
       + "-description.xml";
-  private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "Correlation Recorder";
+  private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "bzm - Correlation Recorder";
   private final RulesContainer rulesContainer;
   private CorrelationProxyControl model;
 
@@ -64,19 +64,19 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   }
 
   private void installDefaultFiles() {
-    installSiebelTemplateTestPlan();
+    installCorrelationRecorderTemplateTestPlan();
     installSiebelCorrelationTemplate();
   }
 
-  private void installSiebelTemplateTestPlan() {
+  private void installCorrelationRecorderTemplateTestPlan() {
     TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
         getJMeterDirPath() + "/bin" + TEMPLATES_FOLDER_PATH);
+    
     templateRepository
-        .addSiebelTemplate(
-            CORRELATION_RECORDER_TEST_PLAN, TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEST_PLAN,
+        .addCorrelationRecorderTemplate(CORRELATION_RECORDER_TEST_PLAN, TEMPLATES_FOLDER_PATH,
             TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEMPLATE_DESC,
             CORRELATION_RECORDER_TEMPLATE_NAME);
-    LOG.info("Correlation Recorder Test Plan Template installed");
+    LOG.info("bzm - Correlation Recorder Test Plan Template installed");
   }
 
   private String getJMeterDirPath() {
@@ -98,15 +98,14 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   private void installSiebelCorrelationTemplate() {
     TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
         getJMeterDirPath() + LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
-    templateRepository.addSiebelCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
-        LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER
-            + SIEBEL_CORRELATION_TEMPLATE);
+    templateRepository.addCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
+        LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
     LOG.info("Siebel Correlation's Template installed");
   }
 
   @Override
   public String getStaticLabel() {
-    return "Correlation Recorder";
+    return "bzm - Correlation Recorder";
   }
 
   @Override
@@ -255,8 +254,8 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   }
 
   @Override
-  public void refreshRepositories(String localConfigurationRoute,
+  public boolean refreshRepositories(String localConfigurationRoute,
       Consumer<Integer> setProgressConsumer) {
-    model.refreshRepositories(localConfigurationRoute, setProgressConsumer);
+    return model.refreshRepositories(localConfigurationRoute, setProgressConsumer);
   }
 }

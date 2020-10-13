@@ -1,6 +1,6 @@
 package com.blazemeter.jmeter.correlation.siebel;
 
-import com.blazemeter.jmeter.correlation.core.CorrelationContext;
+import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -8,7 +8,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.jmeter.samplers.SampleResult;
 
-public class SiebelContext implements CorrelationContext {
+/**
+ * Context needed in order to keep all the Siebel CRM variables updated. All the Correlation
+ * Extractors and Replacements for Siebel Extension support this {@link BaseCorrelationContext}
+ */
+public class SiebelContext extends BaseCorrelationContext {
 
   private final Map<String, BCI> bcis = new HashMap<>();
   private final Map<String, Field> paramRowFields = new HashMap<>();
@@ -20,8 +24,16 @@ public class SiebelContext implements CorrelationContext {
     return this.paramRowFields;
   }
 
+  /**
+   * Obtains the information needed to update BCIs, RowVars and RowFields from the response. All
+   * Contexts are updated in the method <code>process</code> on the {@link
+   * com.blazemeter.jmeter.correlation.core.CorrelationEngine}
+   *
+   * @param sampleResult the result from the request obtained from the server
+   */
   @Override
   public void update(SampleResult sampleResult) {
+
     String responseAsString = sampleResult.getResponseDataAsString();
     if (responseAsString.startsWith("@0")) {
       String delimiter = Pattern.quote(responseAsString.substring(2, 3));
@@ -30,6 +42,11 @@ public class SiebelContext implements CorrelationContext {
     }
   }
 
+  /**
+   * Reset all the variables for this context. Will be executed when the
+   * <code>startProxy()</code> is called, on
+   * {@link com.blazemeter.jmeter.correlation.CorrelationProxyControl}
+   */
   @Override
   public void reset() {
     bcis.clear();
@@ -117,7 +134,7 @@ public class SiebelContext implements CorrelationContext {
 
   private static class BCI {
 
-    private Map<Integer, Field> fields = new HashMap<>();
+    private final Map<Integer, Field> fields = new HashMap<>();
 
     private void addField(Field field) {
       field.position = fields.size();

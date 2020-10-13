@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.siebel;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
+import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext.Field;
@@ -17,6 +18,12 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.oro.text.regex.Perl5Compiler;
 
+/**
+ * Siebel CRM Custom Extension that handles the replacements of the Parameters based on the
+ * existence of the values in the Siebel Correlation Context.
+ *
+ * @see com.blazemeter.jmeter.correlation.siebel.SiebelContext
+ */
 public class SiebelRowParamsCorrelationReplacement extends
     RegexCorrelationReplacement<SiebelContext> {
 
@@ -35,19 +42,19 @@ public class SiebelRowParamsCorrelationReplacement extends
   }
 
   @Override
+  public String getDisplayName() {
+    return "Siebel Row Params";
+  }
+
+  @Override
   public List<String> getParams() {
     return Collections.singletonList(regex);
   }
 
   @Override
-  public void setParams(List<String> params) {
-    regex = params.size() > 0 ? params.get(0) : "";
-  }
-
-  @Override
   public List<ParameterDefinition> getParamsDefinition() {
-    return Collections.singletonList(new ParameterDefinition(REPLACEMENT_REGEX_PROPERTY_NAME,
-        REPLACEMENT_REGEX_PROPERTY_DESCRIPTION, REGEX_DEFAULT_VALUE, null));
+    return Collections.singletonList(new TextParameterDefinition(REPLACEMENT_REGEX_PROPERTY_NAME,
+        REPLACEMENT_REGEX_PROPERTY_DESCRIPTION, REGEX_DEFAULT_VALUE));
   }
 
   @Override
@@ -58,6 +65,22 @@ public class SiebelRowParamsCorrelationReplacement extends
     super.process(sampler, children, result, vars);
   }
 
+  /**
+   * Handles the replacement of the row fields parameters
+   *
+   * Receives an input and apply replacement for all known Siebel CRM row fields parameters (the
+   * ones following the s_\d+\d+\d+_\d+ pattern)'. The rowId comes from the ones stored into the
+   * {@link SiebelContext}.
+   *
+   * Works together with the
+   * {@link com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor}
+   *
+   * @param input the input against the condition will test and replacements will be applied
+   * @param regex the regular expression used to eval the input
+   * @param variableName the variable name ignored in this case
+   * @param vars the stored values during the recording
+   * @return the resultant input. Will be the same if it doesn't meet the condition
+   */
   @Override
   protected String replaceWithRegex(String input, String regex, String variableName,
       JMeterVariables vars)
@@ -73,7 +96,7 @@ public class SiebelRowParamsCorrelationReplacement extends
       String varValue = vars.get(varName);
       Predicate<String> matchCondition = match -> varValue != null && varValue
           .equals(match.replaceAll(entry.getValue().getIgnoredCharsRegex(), ""));
-      input = replaceExpression(input, paramRegex, varName, matchCondition);
+      input = replaceWithRegexAndPredicate(input, paramRegex, varName, matchCondition);
     }
     return input;
   }
@@ -81,8 +104,7 @@ public class SiebelRowParamsCorrelationReplacement extends
   @Override
   public String toString() {
     return "SiebelRowParamsCorrelationReplacement{" +
-        "regex=" + regex +
-        "rowVarPrefix='" + rowVarPrefix + '}';
+        "paramValues=" + getParams() + '}';
   }
 
   @Override

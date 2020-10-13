@@ -1,48 +1,40 @@
 package com.blazemeter.jmeter.correlation.gui;
 
-import static com.blazemeter.jmeter.correlation.gui.RulePanel.DEFAULT_COMBO_VALUE;
 import static javax.swing.BorderFactory.createEmptyBorder;
 
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
-import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateFrame;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesFrame;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
-import com.blazemeter.jmeter.correlation.gui.RulePanel.ContainerPanelsHandler;
+import com.blazemeter.jmeter.correlation.core.templates.gui.CorrelationTemplateFrame;
+import com.blazemeter.jmeter.correlation.core.templates.gui.CorrelationTemplatesFrame;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -50,15 +42,20 @@ import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.border.EtchedBorder;
 import org.apache.http.entity.ContentType;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
+import org.apache.jorphan.gui.GuiUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RulesContainer extends JPanel implements ActionListener {
 
+  protected static final int MAIN_CONTAINER_WIDTH = 800;
+  private static final int FIELD_PREFERRED_HEIGHT = 25;
+  protected static final Dimension FIELD_PREFERRED_SIZE = new Dimension(150,
+      FIELD_PREFERRED_HEIGHT);
+  protected static final int ROW_PREFERRED_HEIGHT = FIELD_PREFERRED_HEIGHT + 10;
   private static final Logger LOG = LoggerFactory.getLogger(RulesContainer.class);
   private static final String ADD = "add";
   private static final String DELETE = "delete";
@@ -68,17 +65,14 @@ public class RulesContainer extends JPanel implements ActionListener {
   private static final String LOAD = "load";
   private static final String CLEAR = "clear";
   private static final String TEMPLATE_ACTIONS_BUTTON_SUFFIX_TEXT = " Template";
-  private static final Dimension MAIN_CONTAINER_DEFAULT_DIMENSION = new Dimension(800, 110);
-  private static final Dimension MAIN_CONTAINER_SCROLL_DIMENSION = new Dimension(700, 200);
-  private static final Dimension FIELD_PREFERRED_SIZE = new Dimension(150, 35);
-  private static final int DEFAULT_EXTRA_GAP_BETWEEN_RULES = 5;
+  private static final Dimension MAIN_CONTAINER_DEFAULT_DIMENSION = new Dimension(
+      MAIN_CONTAINER_WIDTH, 300);
+
   private final CorrelationTemplatesRegistryHandler templatesRegistryHandler;
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
-  private final CorrelationComponentsRegistry componentsRepository;
+  private final CorrelationComponentsRegistry componentsRegistry;
   private final Runnable modelUpdater;
-  private RulePanel lastActivePanel;
-  private ArrayList<RulePanel> rules;
-  private JPanel mainContainer;
+  private final Set<CorrelationTemplate> loadedTemplates;
   private JButton deleteButton;
   private JButton upButton;
   private JButton downButton;
@@ -88,22 +82,29 @@ public class RulesContainer extends JPanel implements ActionListener {
   private CorrelationTemplateFrame templateFrame;
   private CorrelationTemplatesFrame loadFrame;
   private ComponentContainer componentContainer;
-  private Set<CorrelationTemplate> loadedTemplates;
-  private boolean isSiebelTestplan;
+  private boolean isSiebelTestPlan;
+  private RulesTable rulesTable;
 
   public RulesContainer(CorrelationTemplatesRegistryHandler correlationTemplatesRegistryHandler,
       Runnable modelUpdater) {
     templatesRegistryHandler = correlationTemplatesRegistryHandler;
     repositoriesRegistryHandler =
         (CorrelationTemplatesRepositoriesRegistryHandler) correlationTemplatesRegistryHandler;
-    //Used to avoid creating unnecessary interfaces
+    //Used to update model from GUI
     this.modelUpdater = modelUpdater;
-
-    componentsRepository = new CorrelationComponentsRegistry();
-    rules = new ArrayList<>();
+    componentsRegistry = new CorrelationComponentsRegistry();
     loadedTemplates = new HashSet<>();
-
     makeContainer();
+  }
+
+  @VisibleForTesting
+  public void setLoadFrame(CorrelationTemplatesFrame loadFrame) {
+    this.loadFrame = loadFrame;
+  }
+
+  @VisibleForTesting
+  public void setTemplateFrame(CorrelationTemplateFrame templateFrame) {
+    this.templateFrame = templateFrame;
   }
 
   private void makeContainer() {
@@ -111,10 +112,10 @@ public class RulesContainer extends JPanel implements ActionListener {
     GroupLayout layout = new GroupLayout(this);
     setLayout(layout);
 
-    JScrollPane mainPanel = makeMainPanel();
+    prepareRulesTable();
     JPanel templateButtonPanel = makeTemplateButtonPanel();
     JPanel buttonPanel = makeRulesButtonsPanel();
-    CollapsiblePanel componentPanel = makeAdvancedComponentPanel();
+    CollapsiblePanelsList componentPanel = makeAdvancedComponentPanel();
 
     JLabel responseFilterLabel = SwingUtils
         .createComponent("responseFilterLabel", new JLabel("Response Filters: "),
@@ -151,7 +152,7 @@ public class RulesContainer extends JPanel implements ActionListener {
     layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
         .addComponent(templateButtonPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             Short.MAX_VALUE)
-        .addComponent(mainPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+        .addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             Short.MAX_VALUE)
         .addComponent(buttonPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             Short.MAX_VALUE)
@@ -168,7 +169,7 @@ public class RulesContainer extends JPanel implements ActionListener {
     layout.setVerticalGroup(layout.createSequentialGroup()
         .addComponent(templateButtonPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             GroupLayout.PREFERRED_SIZE)
-        .addComponent(mainPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+        .addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             GroupLayout.PREFERRED_SIZE)
         .addComponent(buttonPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             GroupLayout.PREFERRED_SIZE)
@@ -189,32 +190,25 @@ public class RulesContainer extends JPanel implements ActionListener {
         .addGap(GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
         .addComponent(componentPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
             GroupLayout.PREFERRED_SIZE));
-
-    reDraw();
   }
 
-
-  private JScrollPane makeMainPanel() {
-    mainContainer = new JPanel(new GridBagLayout());
-    mainContainer.setPreferredSize(MAIN_CONTAINER_DEFAULT_DIMENSION);
-    mainContainer.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-    mainContainer.add(new JPanel(), getFirstAdd());
-
-    scrollPane = new JScrollPane();
-    scrollPane.setViewportView(mainContainer);
-    scrollPane.setPreferredSize(MAIN_CONTAINER_SCROLL_DIMENSION);
-    scrollPane.createVerticalScrollBar();
-    scrollPane.createHorizontalScrollBar();
-
-    return scrollPane;
+  private void prepareRulesTable() {
+    rulesTable = SwingUtils
+        .createComponent("rulesTable", new RulesTable(), MAIN_CONTAINER_DEFAULT_DIMENSION);
+    rulesTable.getSelectionModel().addListSelectionListener(e -> checkButtonsStatus());
+    scrollPane = new JScrollPane(null, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+        JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+    scrollPane.setViewportView(rulesTable);
+    scrollPane.addComponentListener(new ComponentAdapter() {
+      @Override
+      public void componentResized(ComponentEvent e) {
+        rulesTable.doTableResize();
+      }
+    });
   }
 
-  private GridBagConstraints getFirstAdd() {
-    GridBagConstraints constraints = new GridBagConstraints();
-    constraints.gridwidth = GridBagConstraints.REMAINDER;
-    constraints.weightx = 1;
-    constraints.weighty = 1;
-    return constraints;
+  public void updateTable() {
+    rulesTable.doTableResize();
   }
 
   private JPanel makeTemplateButtonPanel() {
@@ -261,28 +255,29 @@ public class RulesContainer extends JPanel implements ActionListener {
   }
 
   private void checkButtonsStatus() {
-    int totalRules = rules.size();
+    int totalRules = rulesTable.getRules().size();
     deleteButton.setEnabled(totalRules > 0);
-    boolean morePositionsAvailable = totalRules > 1;
-    upButton.setEnabled(
-        morePositionsAvailable && (lastActivePanel == null || rules.indexOf(lastActivePanel) > 0));
-    downButton.setEnabled(morePositionsAvailable && (lastActivePanel == null
-        || rules.indexOf(lastActivePanel) < totalRules - 1));
-    reDrawScroll();
+    int[] selectedRows = rulesTable.getSelectedRows();
+    upButton.setEnabled(selectedRows.length > 0 && selectedRows[0] > 0);
+    downButton.setEnabled(
+        selectedRows.length > 0
+            && selectedRows[selectedRows.length - 1] < rulesTable.getRules().size() - 1);
   }
 
-  public void reDrawScroll() {
-    scrollPane.repaint();
-    scrollPane.revalidate();
-  }
+  private CollapsiblePanelsList makeAdvancedComponentPanel() {
+    componentContainer = new ComponentContainer(this::validateRulesConsistency);
 
-  private CollapsiblePanel makeAdvancedComponentPanel() {
-    componentContainer =
-        new ComponentContainer(this::validateRulesConsistency);
-    CollapsiblePanel collapsiblePane = SwingUtils
-        .createComponent("CollapsiblePane", new CollapsiblePanel("Custom Extensions"));
-    collapsiblePane.setMinimumSize(new Dimension(800, 0));
-    collapsiblePane.add(componentContainer);
+    HeaderPanel extensionsHeader = new HeaderPanel("Custom Extensions");
+    extensionsHeader.setPreferredSize(new Dimension(300, 30));
+
+    JPanel extensionsBody = componentContainer;
+    extensionsBody.setPreferredSize(new Dimension(300, 200));
+    extensionsBody.setBorder(new JTextField().getBorder());
+
+    CollapsiblePanel collapsiblePanel = new CollapsiblePanel(extensionsBody, extensionsHeader,
+        true);
+    CollapsiblePanelsList collapsiblePane = new CollapsiblePanelsList();
+    collapsiblePane.addComponent(collapsiblePanel);
     return collapsiblePane;
   }
 
@@ -308,7 +303,7 @@ public class RulesContainer extends JPanel implements ActionListener {
       case SAVE:
         if (templateFrame == null) {
           templateFrame = new CorrelationTemplateFrame(templatesRegistryHandler,
-              getSnapshotBufferedImage(), this::updateLoadedTemplate);
+              getSnapshotBufferedImage(), this::updateLoadedTemplate, this);
         }
         if (rulesAreIncomplete()) {
           JOptionPane.showMessageDialog(this,
@@ -320,16 +315,14 @@ public class RulesContainer extends JPanel implements ActionListener {
       case LOAD:
         if (loadFrame == null) {
           loadFrame = new CorrelationTemplatesFrame(templatesRegistryHandler,
-              repositoriesRegistryHandler, this::updateLoadedTemplate);
+              repositoriesRegistryHandler, this::updateLoadedTemplate, this);
         }
-        LOG.info("[Before loading templates] Rules locally {}.", rules.size());
         loadFrame.showFrame();
         break;
       default:
         throw new UnsupportedOperationException(action);
     }
     checkButtonsStatus();
-    reDraw();
   }
 
   private void clearContainer() {
@@ -341,6 +334,7 @@ public class RulesContainer extends JPanel implements ActionListener {
      * and will be appended on LoadTemplate
      * */
     modelUpdater.run();
+    rulesTable.doTableResize();
   }
 
   private void displaySaveTemplateFrame() {
@@ -353,214 +347,148 @@ public class RulesContainer extends JPanel implements ActionListener {
   }
 
   private boolean rulesAreIncomplete() {
-    if (rules.isEmpty()) {
+    if (rulesTable.getRules().isEmpty()) {
       return true;
     }
 
-    return rules.stream()
-        .anyMatch(r -> (r.getReferenceVariableField().getText().isEmpty() ||
-            r.getExtractorHandler().getComboBox().getSelectedItem().equals(DEFAULT_COMBO_VALUE) &&
-                r.getReplacementHandler().getComboBox().getSelectedItem()
-                    .equals(DEFAULT_COMBO_VALUE)));
+    return rulesTable.getRules().stream()
+        .anyMatch(r -> !r.isComplete());
   }
 
   private void deleteRule() {
-    if (lastActivePanel != null) {
-      mainContainer.remove(lastActivePanel);
-      rules.remove(lastActivePanel);
-      lastActivePanel = null;
-      reDrawScroll();
+    GuiUtils.cancelEditing(rulesTable);
+    int[] rowsSelected = rulesTable.getSelectedRows();
+    int anchorSelection = rulesTable.getSelectionModel().getAnchorSelectionIndex();
+    rulesTable.clearSelection();
+
+    if (rowsSelected.length > 0) {
+      for (int i = rowsSelected.length - 1; i >= 0; i--) {
+        rulesTable.removeRow(rowsSelected[i]);
+      }
+    }
+
+    if (rulesTable.getRowCount() > 0) {
+      if (anchorSelection >= rulesTable.getRowCount()) {
+        anchorSelection = rulesTable.getRowCount() - 1;
+      }
+      rulesTable.setRowSelectionInterval(anchorSelection, anchorSelection);
     }
   }
 
   private void addRule() {
-    addRule(new RulePanel(this));
+    RuleConfiguration rule = new RuleConfiguration(rulesTable.getRowCount() + 1, this::updateTable,
+        componentsRegistry);
+    //Setting default extractor and replacement when a rule is created
+    rule.getExtractorConfigurationPanel().setSelectedItem(new RegexCorrelationExtractor<>());
+    rule.getReplacementConfigurationPanel().setSelectedItem(new RegexCorrelationReplacement<>());
+    addRule(rule);
   }
 
-  public Dimension getSizePanelThatContainsRules() {
-    return mainContainer.getSize();
-  }
-
-  public void updatePanelThatContainsRules(int width) {
-    /*
-     * setSize will be ignored by parent component layout
-     * So we need to force the min and the preferred in order
-     * to resize to the minimum size that allows the components
-     * in the "rule" to be displayed horizontally
-     * */
-    Dimension requiredSize = new Dimension(width + 10, mainContainer.getHeight());
-    mainContainerUpdateDimension(requiredSize);
-  }
-
-  private void mainContainerUpdateDimension(Dimension requiredSize) {
-    mainContainer.setMinimumSize(requiredSize);
-    mainContainer.setPreferredSize(requiredSize);
-  }
-
-  private void addRule(RulePanel rule) {
-    rules.add(rule);
+  private void addRule(RuleConfiguration rule) {
+    if (!rulesTable.getRules().isEmpty()) {
+      GuiUtils.stopTableEditing(rulesTable);
+    }
+    rulesTable.addRow(rule);
     updateMainContainerRequiredHeight();
-    mainContainer.add(rule, getAddingConstraints(), rules.size() - 1);
     moveScrollToLastRule();
+    updateTable();
+    rule.paintHandlers();
     checkButtonsStatus();
   }
 
-  public void updateMainContainerRequiredHeight() {
-    int totalRequiredHeight =
-        (rules.size() + 1) * (RulePanel.RULE_HEIGHT + DEFAULT_EXTRA_GAP_BETWEEN_RULES);
-    if (totalRequiredHeight >= mainContainer.getHeight()) {
-      mainContainerUpdateDimension(new Dimension(mainContainer.getWidth(), totalRequiredHeight));
-    } else if (rules.size() == 0) {
+  private void updateMainContainerRequiredHeight() {
+    int totalRequiredHeight = rulesTable.getRules().size() * ROW_PREFERRED_HEIGHT;
+    if (totalRequiredHeight >= rulesTable.getHeight()) {
+      mainContainerUpdateDimension(new Dimension(rulesTable.getWidth(), totalRequiredHeight));
+    } else if (rulesTable.getRules().size() == 0) {
       mainContainerUpdateDimension(MAIN_CONTAINER_DEFAULT_DIMENSION);
     }
   }
 
-  private GridBagConstraints getAddingConstraints() {
-    GridBagConstraints addingConstrains = new GridBagConstraints();
-    addingConstrains.gridwidth = GridBagConstraints.REMAINDER;
-    addingConstrains.weightx = 1;
-    addingConstrains.fill = GridBagConstraints.HORIZONTAL;
-    return addingConstrains;
+  private void mainContainerUpdateDimension(Dimension requiredSize) {
+    rulesTable.setMinimumSize(requiredSize);
+    rulesTable.setPreferredSize(requiredSize);
   }
 
   private void moveScrollToLastRule() {
-    JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
-    verticalScrollBar.setValue(verticalScrollBar.getMaximum());
+    if ((rulesTable.getRules().size() * FIELD_PREFERRED_SIZE.height) > rulesTable.getHeight()) {
+      JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+      verticalScrollBar.setValue(verticalScrollBar.getMaximum());
+    }
   }
 
   private void moveUp() {
-    int position = rules.indexOf(lastActivePanel);
-    if (position > 0) {
-      movePanel(position, position - 1);
-    }
-  }
+    // get the selected rows before stopping editing
+    // or the selected rows will be unselected
+    int[] selectedRows = rulesTable.getSelectedRows();
+    GuiUtils.stopTableEditing(rulesTable);
 
-  private void movePanel(int origin, int dest) {
-    Collections.swap(rules, origin, dest);
-    rules.forEach(r -> {
-      r.removeFocusBackground();
-      mainContainer.remove(r);
-      mainContainer.add(r, getAddingConstraints(), rules.size() - 1);
-    });
-    lastActivePanel.setFocusBackground();
-  }
+    if (selectedRows.length > 0 && selectedRows[0] > 0) {
+      rulesTable.clearSelection();
+      for (int selectedIndex : selectedRows) {
+        rulesTable.switchRows(selectedIndex, selectedIndex - 1);
+      }
 
-  private void moveDown() {
-    int position = rules.indexOf(lastActivePanel);
-    if (position < rules.size() - 1) {
-      movePanel(position, position + 1);
-    }
-  }
-
-  public void updateLastActivePanel(RulePanel activePanel) {
-    if (lastActivePanel != null) {
-      lastActivePanel.removeFocusBackground();
-    }
-    //This handles the unclick/removes focus for the actual active rule
-    if (lastActivePanel != null && lastActivePanel.getName().equals(activePanel.getName())) {
-      lastActivePanel = null;
-    } else {
-      lastActivePanel = activePanel;
-      lastActivePanel.setFocusBackground();
+      for (int rowSelected : selectedRows) {
+        rulesTable.addRowSelectionInterval(rowSelected - 1, rowSelected - 1);
+      }
     }
     checkButtonsStatus();
   }
 
-  private void reDraw() {
-    scrollPane.repaint();
-    mainContainer.repaint();
-    repaint();
+  private void moveDown() {
+    int[] rowsSelected = rulesTable.getSelectedRows();
+    GuiUtils.stopTableEditing(rulesTable);
+
+    if (rowsSelected.length > 0
+        && rowsSelected[rowsSelected.length - 1] < rulesTable.getRowCount() - 1) {
+      rulesTable.clearSelection();
+      for (int i = rowsSelected.length - 1; i >= 0; i--) {
+        int rowSelected = rowsSelected[i];
+        rulesTable.switchRows(rowSelected, rowSelected + 1);
+      }
+      for (int rowSelected : rowsSelected) {
+        rulesTable.addRowSelectionInterval(rowSelected + 1, rowSelected + 1);
+      }
+    }
   }
 
   public List<CorrelationRule> getCorrelationRules() {
-    return rules.stream().filter(RulePanel::isComplete).map(this::getCorrelationRule)
+    return rulesTable.getRules().stream()
+        .filter(RuleConfiguration::isComplete)
+        .map(RuleConfiguration::getCorrelationRule)
         .collect(Collectors.toList());
   }
 
-  private void setCorrelationRules(CorrelationProxyControl correlationProxyControl) {
-    if (correlationProxyControl.getCorrelationRulesTestElement() != null) {
-      for (JMeterProperty jMeterProperty : correlationProxyControl
-          .getCorrelationRulesTestElement()) {
-        setCorrelationRules((CorrelationRuleTestElement) jMeterProperty.getObjectValue());
+  private void setCorrelationRules(CorrelationRulesTestElement rulesTestElement) {
+    if (rulesTestElement != null) {
+      for (JMeterProperty jMeterProperty : rulesTestElement) {
+        CorrelationRuleTestElement rule =
+            (CorrelationRuleTestElement) jMeterProperty.getObjectValue();
+        addRuleConfiguration(rule.ensureBackwardCompatibility());
       }
     }
-    reDraw();
   }
 
-  private void setCorrelationRules(CorrelationRuleTestElement ruleTestElement) {
-    RulePanel rulePanel = new RulePanel(this);
+  private void addRuleConfiguration(CorrelationRuleTestElement ruleTestElement) {
+    RuleConfiguration ruleConfiguration = new RuleConfiguration(rulesTable.getRowCount() + 1,
+        this::updateTable, componentsRegistry);
 
-    String referenceName = ruleTestElement.getReferenceName();
-    rulePanel.setReferenceVariableNameText(referenceName);
+    ruleConfiguration.setEnable(ruleTestElement.isEnabled());
+    ruleConfiguration.setVariableName(ruleTestElement.getReferenceName());
+    ruleConfiguration.setExtractorFromRulePart(ruleTestElement.getExtractorRulePart());
+    ruleConfiguration.setReplacementFromRulePart(ruleTestElement.getReplacementRulePart());
 
-    LOG.info("> RefVar {}", referenceName);
-    CorrelationRulePartTestElement extractorValues = ruleTestElement.getExtractorRulePart();
-    //Rules are allowed to be standalone extractors/replacements
-    if (extractorValues != null) {
-      rulePanel.setValuesFromRulePart(extractorValues, rulePanel.getExtractorHandler());
+    if (rulesTable.getRules().stream().noneMatch(r -> r.equals(ruleConfiguration))) {
+      addRule(ruleConfiguration);
     }
-
-    CorrelationRulePartTestElement replacementValues = ruleTestElement.getReplacementRulePart();
-    if (replacementValues != null) {
-      rulePanel.setValuesFromRulePart(replacementValues, rulePanel.getReplacementHandler());
-    }
-
-    if (rules.stream().noneMatch(r -> r.equals(rulePanel))) {
-      LOG.info("Added Rule with {} {} {}", referenceName,
-          extractorValues != null ? extractorValues.getType() : "",
-          replacementValues != null ? replacementValues.getType() : "");
-      addRule(rulePanel);
-    }
-  }
-
-  private CorrelationRule getCorrelationRule(RulePanel rulePanel) {
-    String referenceName = rulePanel.getReferenceVariableField().getText();
-    CorrelationReplacement correlationReplacement = createReplacement(
-        rulePanel.getReplacementHandler());
-    CorrelationExtractor correlationExtractor = createExtractor(rulePanel.getExtractorHandler());
-
-    return new CorrelationRule(referenceName, correlationExtractor, correlationReplacement);
-  }
-
-  private CorrelationReplacement createReplacement(ContainerPanelsHandler handler) {
-
-    String selectedCorrelationType = getComboBoxSelectedValue(handler.getComboBox());
-    if (selectedCorrelationType.isEmpty() || selectedCorrelationType
-        .equals(DEFAULT_COMBO_VALUE)) {
-      return null;
-    }
-    return componentsRepository
-        .getCorrelationReplacement(selectedCorrelationType, getParams(handler));
-  }
-
-  private String getComboBoxSelectedValue(JComboBox comboBox) {
-    return comboBox != null && comboBox.getSelectedItem() != null ? comboBox.getSelectedItem()
-        .toString() : DEFAULT_COMBO_VALUE;
-  }
-
-  private List<String> getParams(ContainerPanelsHandler handler) {
-    return handler.getListComponents().stream().map(
-        c -> c instanceof JTextField ? ((JTextField) c).getText()
-            : getComboBoxSelectedValue(((JComboBox) c))).collect(Collectors.toList());
-  }
-
-  private CorrelationExtractor createExtractor(ContainerPanelsHandler handler) {
-    String selectedCorrelationType = getComboBoxSelectedValue(handler.getComboBox());
-    if (selectedCorrelationType.isEmpty() || selectedCorrelationType
-        .equals(DEFAULT_COMBO_VALUE)) {
-      return null;
-    }
-    return componentsRepository
-        .getCorrelationExtractor(selectedCorrelationType, getParams(handler));
   }
 
   public void configure(CorrelationProxyControl correlationProxyControl) {
-    String correlationComponents = buildCorrelationComponents(correlationProxyControl);
-
-    setCorrelationComponents(correlationComponents);
-    setResponseFilter(isSiebelTestplan ?
-        ContentType.TEXT_HTML.getMimeType() : correlationProxyControl.getResponseFilter());
-    setCorrelationRules(correlationProxyControl);
+    setCorrelationComponents(buildCorrelationComponents(correlationProxyControl));
+    setResponseFilter(isSiebelTestPlan ? ContentType.TEXT_HTML.getMimeType()
+        : correlationProxyControl.getResponseFilter());
+    setCorrelationRules(correlationProxyControl.getCorrelationRulesTestElement());
     updateMainContainerRequiredHeight();
   }
 
@@ -570,23 +498,13 @@ public class RulesContainer extends JPanel implements ActionListener {
       //if empty could mean that comes from CRM-Siebel.
       correlationComponents = getSiebelCRMComponents(
           correlationProxyControl.getCorrelationRulesTestElement());
-      isSiebelTestplan = !correlationComponents.isEmpty();
+      isSiebelTestPlan = !correlationComponents.isEmpty();
     }
     return correlationComponents;
   }
 
-  private List<String> parseCorrelationComponentString(String correlationComponents) {
-    if (correlationComponents.isEmpty()) {
-      return new ArrayList<>();
-    }
-    return Arrays.asList(correlationComponents
-        .replace("\n", "")
-        .replace("\r", "")
-        .split(","));
-  }
-
-  public ArrayList<RulePanel> getRules() {
-    return rules;
+  public List<RuleConfiguration> getRules() {
+    return rulesTable.getRules();
   }
 
   private BufferedImage getSnapshotBufferedImage() {
@@ -600,24 +518,10 @@ public class RulesContainer extends JPanel implements ActionListener {
   }
 
   private void clearLocalConfiguration() {
-    loadedTemplates = new HashSet<>();
-    clearRules();
+    loadedTemplates.clear();
+    rulesTable.clear();
     setResponseFilter("");
     componentContainer.setComponentsTextArea("");
-  }
-
-  public void clearRules() {
-    rules.forEach(r -> mainContainer.remove(r));
-    rules.clear();
-    componentContainer.clear();
-    /*
-     * We need to return the mainContainer to its original size
-     * If not, it will have a size unnecessarily wide
-     * For an empty container
-     * */
-    updatePanelThatContainsRules(MAIN_CONTAINER_DEFAULT_DIMENSION.width);
-    updateMainContainerRequiredHeight();
-    reDrawScroll();
   }
 
   public String getCorrelationComponents() {
@@ -625,47 +529,39 @@ public class RulesContainer extends JPanel implements ActionListener {
   }
 
   private void setCorrelationComponents(String correlationComponents) {
-    componentContainer.setComponentsTextArea(correlationComponents);
-    List<String> components = parseCorrelationComponentString(correlationComponents);
-    components.forEach(c -> {
-      try {
-        componentsRepository.addComponent(c);
-      } catch (IllegalArgumentException | ClassNotFoundException e) {
-        LOG.error("There was an issue trying to add the component {}. ", c, e);
-      }
-    });
+    componentContainer.setComponentsTextArea(componentsRegistry
+        .updateActiveComponents(correlationComponents, new ArrayList<>()));
   }
 
-  private String getSiebelCRMComponents(
-      CorrelationRulesTestElement correlationRulesTestElement) {
+  private String getSiebelCRMComponents(CorrelationRulesTestElement correlationRulesTestElement) {
     StringBuilder componentsBuilder = new StringBuilder();
 
     if (correlationRulesTestElement == null) {
       return "";
     }
+
     correlationRulesTestElement.getRules()
         .forEach(r -> {
-          String extractorClassName = r.getExtractorClass() != null ?
-              r.getExtractorClass().getCanonicalName() : "";
-          String replacementClassName = r.getReplacementClass() != null ?
-              r.getReplacementClass().getCanonicalName() : "";
-          if (!RegexCorrelationExtractor.class.getCanonicalName().equals(extractorClassName)
-              && !RegexCorrelationReplacement.class.getCanonicalName()
-              .equals(replacementClassName)) {
+          Class<? extends CorrelationExtractor<?>> extractorClass = r.getExtractorClass();
+          String extractorClassName =
+              extractorClass != null ? extractorClass.getCanonicalName() : "";
+          Class<? extends CorrelationReplacement<?>> replacementClass = r.getReplacementClass();
+          String replacementClassName =
+              replacementClass != null ? replacementClass.getCanonicalName() : "";
+
+          if (!RegexCorrelationExtractor.class.equals(extractorClass) &&
+              !RegexCorrelationReplacement.class.equals(replacementClass)) {
             if (!extractorClassName.isEmpty() && !componentsBuilder.toString()
                 .contains(extractorClassName)) {
-              componentsBuilder.append(extractorClassName);
-              componentsBuilder.append(",");
-              componentsBuilder.append("\n");
+              componentsBuilder.append(extractorClassName).append(",\n");
             }
             if (!replacementClassName.isEmpty() && !componentsBuilder.toString()
                 .contains(replacementClassName)) {
-              componentsBuilder.append(replacementClassName);
-              componentsBuilder.append(",");
-              componentsBuilder.append("\n");
+              componentsBuilder.append(replacementClassName).append(",\n");
             }
           }
         });
+
     String components = componentsBuilder.toString();
     components =
         components.endsWith(",\n") ? components.substring(0, components.length() - 2) : components;
@@ -676,159 +572,68 @@ public class RulesContainer extends JPanel implements ActionListener {
     return responseFilterField.getText();
   }
 
-  public void setResponseFilter(String responseFilter) {
+  private void setResponseFilter(String responseFilter) {
     responseFilterField.setText(responseFilter);
   }
 
-  private void resetCorrelationComponents() {
-    componentsRepository.reset();
-  }
-
-  private void addCorrelationComponents(String correlationComponents) {
-    List<String> components = parseCorrelationComponentString(correlationComponents);
-    components.forEach(c -> {
-      try {
-        componentsRepository.addComponent(c);
-      } catch (IllegalArgumentException | ClassNotFoundException e) {
-        LOG.error("There was an issue trying to add the component {}. ", c, e);
-      }
-    });
-  }
-
-  private boolean containsExtractor(String simpleClassName) {
-    return componentsRepository.containsExtractor(simpleClassName);
-  }
-
-  private boolean containsReplacement(String simpleClassName) {
-    return componentsRepository.containsReplacement(simpleClassName);
-  }
-
-  public List<String> getExtractors() {
-    return componentsRepository.getExtractorsComponents();
-  }
-
-  public List<String> getReplacements() {
-    return componentsRepository.getReplacementsComponents();
-  }
-
-  public List<ParameterDefinition> getExtractorParamsDefinition(String extractorName) {
-    CorrelationRulePartTestElement correlationRulePartTestElement = componentsRepository
-        .getCorrelationExtractor(extractorName, new ArrayList<>());
-    return correlationRulePartTestElement != null ? correlationRulePartTestElement
-        .getParamsDefinition() : new ArrayList<>();
-  }
-
-  List<ParameterDefinition> getReplacementParamsDefinition(String replacementName) {
-    CorrelationRulePartTestElement correlationRulePartTestElement = componentsRepository
-        .getCorrelationReplacement(replacementName, new ArrayList<>());
-    return correlationRulePartTestElement != null ? correlationRulePartTestElement
-        .getParamsDefinition() : new ArrayList<>();
-  }
-
   public void validateRulesConsistency(String componentsText) {
-    resetCorrelationComponents();
-    addCorrelationComponents(componentsText);
-
-    ArrayList<RulePanel> rules = getRules();
-    if (rules == null) {
-      return;
+    List<RuleConfiguration> rules = getRules();
+    List<String> missingSelectedExtensions = getUsedExtensions(rules).stream()
+        .filter(extension -> !componentsText.contains(extension.getCanonicalName()))
+        .map(Class::getCanonicalName)
+        .collect(Collectors.toList());
+    
+    if (!missingSelectedExtensions.isEmpty()) {
+      displayErrors(missingSelectedExtensions);
     }
 
-    List<String> comboBoxValidationErrors = validateRulePanels(rules);
-    if (!comboBoxValidationErrors.isEmpty()) {
-      displayErrors(comboBoxValidationErrors);
-      return;
-    }
-
+    String activeComponents = componentsRegistry.updateActiveComponents(componentsText, missingSelectedExtensions);
     rules.forEach(r -> {
-      setCorrelationComboValues(r.getExtractorHandler(), getExtractors());
-      setCorrelationComboValues(r.getReplacementHandler(), getReplacements());
+      r.getExtractorConfigurationPanel().updateComboOptions(componentsRegistry.buildActiveExtractors());
+      r.getReplacementConfigurationPanel().updateComboOptions(componentsRegistry.buildActiveReplacements());
     });
+    componentContainer.setComponentsTextArea(activeComponents);
   }
-
-  private List<String> validateRulePanels(ArrayList<RulePanel> rules) {
-    List<String> rulePanelsErrors = new ArrayList<>();
-    rules.forEach(r -> {
-      String referenceVar = r.getReferenceVariableField().getText();
-
-      if (!DEFAULT_COMBO_VALUE.equals(r.getExtractorHandler().getComboBox().getSelectedItem())) {
-        String extractorValidationResult = validateCorrelationContainer(referenceVar,
-            r.getExtractorHandler(), this::containsExtractor);
-        if (!extractorValidationResult.isEmpty()) {
-          rulePanelsErrors.add(extractorValidationResult);
-        }
+  
+  private Set<Class<?>> getUsedExtensions(List<RuleConfiguration> rules) {
+    Set<Class<?>> usedExtensions = new HashSet<>();
+    rules.forEach(rule ->{
+      CorrelationRulePartTestElement<?> selectedItem = rule.getExtractorConfigurationPanel().getSelectedItem();
+      if (componentsRegistry.isExtractorExtension(selectedItem.getClass())) {
+        usedExtensions.add(selectedItem.getClass());        
       }
 
-      if (!DEFAULT_COMBO_VALUE.equals(r.getReplacementHandler().getComboBox().getSelectedItem())) {
-        String replacementValidationResult = validateCorrelationContainer(referenceVar,
-            r.getReplacementHandler(), this::containsReplacement);
-        if (!replacementValidationResult.isEmpty()) {
-          rulePanelsErrors.add(replacementValidationResult);
-        }
+      selectedItem = rule.getReplacementConfigurationPanel().getSelectedItem();
+      if (componentsRegistry.isReplacementExtension(selectedItem.getClass())) {
+        usedExtensions.add(selectedItem.getClass());
       }
     });
-    return rulePanelsErrors;
+    return usedExtensions;
   }
 
-  private String validateCorrelationContainer(String referenceVar,
-      ContainerPanelsHandler correlationPartContainer, Function<String, Boolean> contained) {
-    String selectedCorrelation = (String) correlationPartContainer.getComboBox().getSelectedItem();
-    if (!contained.apply(selectedCorrelation)) {
-      return "The rule with reference variable '" + referenceVar + "' depends on the "
-          + selectedCorrelation
-          + " component, which isn't considered in the allowed.";
-    }
-
-    return "";
-  }
-
-  private void setCorrelationComboValues(ContainerPanelsHandler correlationPartContainer,
-      List<String> componentNames) {
-    JComboBox correlationPartCombo = correlationPartContainer.getComboBox();
-    ItemListener[] listeners = correlationPartCombo.getItemListeners();
-    Arrays.stream(listeners).forEach(correlationPartCombo::removeItemListener);
-    Object selectedItem = correlationPartCombo.getSelectedItem();
-
-    correlationPartCombo.removeAllItems();
-    correlationPartCombo.addItem(DEFAULT_COMBO_VALUE);
-    componentNames.forEach(correlationPartCombo::addItem);
-    correlationPartCombo.setSelectedItem(selectedItem);
-    Arrays.stream(listeners).forEach(correlationPartCombo::addItemListener);
-  }
-
-  private void displayErrors(List<String> rulesErrors) {
-    if (rulesErrors.size() > 0) {
+  private void displayErrors(List<String> componentsInUse) {
+    if (componentsInUse.size() > 0) {
       JPanel errorsPanel = new JPanel();
       errorsPanel.setLayout(new BorderLayout(5, 5));
       errorsPanel.setBorder(createEmptyBorder(10, 10, 10, 10));
       errorsPanel
-          .add(new JLabel("After validating all the components, the following errors were found:"),
+          .add(new JLabel("The following component can't be removed since they are been used:"),
               BorderLayout.NORTH);
-      JScrollPane scrollPane = new JScrollPane(new JList(rulesErrors.toArray()));
+      JScrollPane scrollPane = new JScrollPane(new JList<>(componentsInUse.toArray()));
       errorsPanel.add(scrollPane, BorderLayout.SOUTH);
-      JOptionPane.showMessageDialog(null, errorsPanel);
+      JOptionPane.showMessageDialog(this, errorsPanel);
     }
   }
 
   public void updateLoadedTemplate(CorrelationTemplate template) {
     if (loadedTemplates.add(template)) {
-      LOG.info("Updated loaded templates. New Total={}. 'Last Template' = {}. ",
+      LOG.debug("Updated loaded templates. New Total={}. 'Last Template' = {}. ",
           loadedTemplates.size(), template);
     }
   }
-
+  
   @VisibleForTesting
-  public void setLastLoadedTemplates(Set<CorrelationTemplate> loadedTemplates) {
-    this.loadedTemplates = loadedTemplates;
-  }
-
-  @VisibleForTesting
-  public Set<CorrelationTemplate> getLoadedTemplates() {
-    return loadedTemplates;
-  }
-
-  @VisibleForTesting
-  public void setComponents(String components) {
-    this.componentContainer.setComponentsTextArea(components);
+  public void clean() {
+    clearContainer();
   }
 }

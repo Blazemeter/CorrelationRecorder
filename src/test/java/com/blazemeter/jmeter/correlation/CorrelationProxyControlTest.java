@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate;
@@ -61,9 +60,9 @@ public class CorrelationProxyControlTest {
   private CorrelationTemplatesRepositoriesConfiguration configuration;
   @Mock
   private CorrelationTemplate testTemplate;
-  private TestElement[] testElements = new TestElement[0];
-  private SampleResult sampleResult = new SampleResult();
-  private HTTPSampler sampler = new HTTPSampler();
+  private final TestElement[] testElements = new TestElement[0];
+  private final SampleResult sampleResult = new SampleResult();
+  private final HTTPSampler sampler = new HTTPSampler();
 
   @Before
   public void setup() {
@@ -136,11 +135,11 @@ public class CorrelationProxyControlTest {
     when(correlationComponentsRegistry.findByID(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION))
         .thenReturn(Optional.of(testTemplate));
 
-    when(testTemplate.getResponseFilters()).thenReturn(buildArrayFromListOfStrings("Filter 1", "Filter 2"));
+    when(testTemplate.getResponseFilters())
+        .thenReturn(buildArrayFromListOfStrings("Filter 1", "Filter 2"));
 
     String expectedComponents = buildArrayFromListOfStrings(
-        RegexCorrelationExtractor.class.getName(),
-        FunctionCorrelationReplacement.class.getName());
+        RegexCorrelationExtractor.class.getName());
 
     when(testTemplate.getComponents()).thenReturn(expectedComponents);
 
@@ -149,7 +148,8 @@ public class CorrelationProxyControlTest {
 
     correlationProxyControl.onLoadTemplate(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION);
 
-    softly.assertThat(correlationProxyControl.getResponseFilter()).isEqualTo("Filter 0, Filter 1, Filter 2");
+    softly.assertThat(correlationProxyControl.getResponseFilter())
+        .isEqualTo("Filter 0, Filter 1, Filter 2");
     softly.assertThat(correlationProxyControl.getCorrelationComponents())
         .isEqualTo(expectedComponents);
     softly.assertThat(correlationProxyControl.getRules()).isEqualTo(expectedCorrelationRules);
@@ -157,9 +157,17 @@ public class CorrelationProxyControlTest {
 
   private void setInitialValues() {
     correlationProxyControl.setResponseFilter("Filter 0");
-    correlationProxyControl.setCorrelationComponents(SiebelRowParamsCorrelationReplacement.class.getName());
-    correlationProxyControl.setCorrelationRules(
-        Collections.singletonList(new CorrelationRule("RefVar0", "=(1)", "=(2)")));
+    correlationProxyControl
+        .setCorrelationComponents(SiebelRowParamsCorrelationReplacement.class.getName());
+
+    RegexCorrelationExtractor regexExtractor = new RegexCorrelationExtractor();
+    regexExtractor.setParams(Collections.singletonList("=(1)"));
+
+    RegexCorrelationReplacement regexReplacement = new RegexCorrelationReplacement();
+    regexReplacement.setParams(Collections.singletonList("=(2)"));
+
+    correlationProxyControl.setCorrelationRules(Collections
+        .singletonList(new CorrelationRule("RefVar0", regexExtractor, regexReplacement)));
   }
 
   private String buildArrayFromListOfStrings(String... strings) {
@@ -175,15 +183,14 @@ public class CorrelationProxyControlTest {
         buildArrayFromListOfStrings("Filter 1", "Filter 2", "Filter 2", "Filter 2", "Filter 2"));
     when(testTemplate.getComponents()).thenReturn(
         buildArrayFromListOfStrings(RegexCorrelationExtractor.class.getName(),
-            RegexCorrelationExtractor.class.getName(), RegexCorrelationExtractor.class.getName(),
-            FunctionCorrelationReplacement.class.getName()));
+            RegexCorrelationExtractor.class.getName(), RegexCorrelationExtractor.class.getName()));
     when(testTemplate.getRules()).thenReturn(prepareRepeatedRulesWithoutCorrelationReplacements());
 
     correlationProxyControl.onLoadTemplate(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION);
 
     String expectedFilters = buildArrayFromListOfStrings("Filter 1", "Filter 2");
     String expectedComponents = buildArrayFromListOfStrings(
-        RegexCorrelationExtractor.class.getName(), FunctionCorrelationReplacement.class.getName());
+        RegexCorrelationExtractor.class.getName());
     List<CorrelationRule> expectedCorrelationRules = prepareRulesWithoutCorrelationReplacements();
 
     softly.assertThat(correlationProxyControl.getResponseFilter()).isEqualTo(expectedFilters);
@@ -194,7 +201,8 @@ public class CorrelationProxyControlTest {
 
   private List<CorrelationRule> prepareRepeatedRulesWithoutCorrelationReplacements() {
     RegexCorrelationExtractor regexExtractor = new RegexCorrelationExtractor();
-    CorrelationRule oneRule = new CorrelationRule(FIRST_RULE_REF_VAR_NAME, regexExtractor, null);
+    CorrelationRule oneRule = new CorrelationRule(FIRST_RULE_REF_VAR_NAME, regexExtractor,
+        null);
     return Arrays.asList(oneRule, oneRule, oneRule,
         new CorrelationRule(SECOND_RULE_REF_VAR_NAME, regexExtractor, null));
   }

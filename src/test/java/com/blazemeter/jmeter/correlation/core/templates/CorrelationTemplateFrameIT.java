@@ -1,20 +1,15 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.blazemeter.jmeter.correlation.TestUtils.requireMessage;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
-import static org.assertj.swing.timing.Pause.pause;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder;
-import java.awt.Dimension;
-import java.awt.Point;
+import com.blazemeter.jmeter.correlation.core.templates.gui.CorrelationTemplateFrame;
+import java.awt.Container;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,42 +18,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import org.assertj.swing.finder.JOptionPaneFinder;
+import javax.swing.JPanel;
 import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.fixture.JButtonFixture;
-import org.assertj.swing.fixture.JPanelFixture;
-import org.assertj.swing.timing.Condition;
+import org.assertj.swing.fixture.JLabelFixture;
+import org.assertj.swing.fixture.JTextComponentFixture;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SwingTestRunner.class)
 public class CorrelationTemplateFrameIT {
 
   private static final String TEMPLATE_DESCRIPTION = "TestDescription";
   private static final String TEMPLATE_CHANGES = "TestChanges";
   private static final String TEMPLATE_VERSION = "1.0.0";
   private static final String TEMPLATE_ID = "TestID";
-  private static final String TEMPLATE_TYPE = "local";
-  private static final String TEMPLATE_ID_FIELD_NAME = "correlationTemplateIdField";
-  private static final String TEMPLATE_CHANGES_TEXT_AREA = "correlationTemplateChangesField";
-  private static final String TEMPLATE_VERSION_FIELD_NAME = "correlationTemplateVersionField";
-  private static final String TEMPLATE_DESCRIPTION_TEXT_AREA_NAME = "correlationTemplateDescriptionTextArea";
 
-  private static final String DEPENDENCY_ADD_BUTTON_NAME = "addDependencyRow";
-  private static final String DEPENDENCY_CLEAR_BUTTON_NAME = "clearDependencyTable";
-  private static final String DEPENDENCY_SAVE_BUTTON_NAME = "saveTemplateButton";
-  private static final String COLLAPSIBLE_PANE_NAME = "dependenciesCollapsiblePanel";
-  private static final long TIMEOUT_MILLIS = 10000;
   private FrameFixture frame;
-
   @Mock
-  private CorrelationTemplatesRegistryHandler correlationTemplatesRegistry;
+  private CorrelationTemplatesRegistryHandler templatesRegistry;
   @Mock
   private CorrelationTemplate registeredTemplate;
   @Mock
@@ -72,17 +53,15 @@ public class CorrelationTemplateFrameIT {
   @Mock
   private Consumer<CorrelationTemplate> lastTemplateHandler;
   private CorrelationTemplateFrame correlationTemplateFrame;
-  private JButtonFixture saveButton;
   private Set<CorrelationTemplate> lastLoadedTemplates;
 
   @Before
   public void setup() {
-    correlationTemplateFrame = new CorrelationTemplateFrame(correlationTemplatesRegistry, null,
-        lastTemplateHandler);
+    correlationTemplateFrame = new CorrelationTemplateFrame(templatesRegistry, null,
+        lastTemplateHandler, new JPanel());
     lastLoadedTemplates = new HashSet<>(Collections.singletonList(registeredTemplate));
-    frame = showInFrame(correlationTemplateFrame.getContentPane());
-    saveButton = frame.button(DEPENDENCY_SAVE_BUTTON_NAME);
-    frame.resizeTo(new Dimension(300, 900));
+    Container contentPane = correlationTemplateFrame.getContentPane();
+    frame = showInFrame(contentPane);
   }
 
   @After
@@ -91,57 +70,67 @@ public class CorrelationTemplateFrameIT {
   }
 
   @Test
-  public void shouldShowErrorMessageWhenEmptyFields() {
-    frame.textBox(TEMPLATE_ID_FIELD_NAME).setText(TEMPLATE_ID);
+  public void shouldNotifyListenerWhenSaveButton() throws IOException, ConfigurationException {
+    fillFields();
     clickSaveButton();
-    requireMessage(frame.robot(), "All fields are required");
+    verify(templatesRegistry).onSaveTemplate(buildTemplate());
+  }
+
+  private void fillFields() {
+    findTemplateIdField().setText(TEMPLATE_ID);
+    findTemplateVersionField().setText(TEMPLATE_VERSION);
+    findTemplateDescriptionField().setText(TEMPLATE_DESCRIPTION);
+    findTemplateChangesField().setText(TEMPLATE_CHANGES);
+  }
+
+  private JTextComponentFixture findTemplateIdField() {
+    return frame.textBox("correlationTemplateIdField");
+  }
+
+  private JTextComponentFixture findTemplateVersionField() {
+    return frame.textBox("correlationTemplateVersionField");
+  }
+
+  private JTextComponentFixture findTemplateDescriptionField() {
+    return frame.textBox("correlationTemplateDescriptionTextArea");
+  }
+
+  private JTextComponentFixture findTemplateChangesField() {
+    return frame.textBox("correlationTemplateChangesField");
   }
 
   private void clickSaveButton() {
     frame.button("saveTemplateButton").click();
   }
 
-  @Test
-  public void shouldNotifyListenerWhenSaveButton() throws IOException, ConfigurationException {
-    fillFields();
-    clickSaveButton();
-    verify(correlationTemplatesRegistry).onSaveTemplate(getTemplateBuilderWithTestingValues());
-  }
-
-  private void fillFields() {
-    frame.textBox(TEMPLATE_ID_FIELD_NAME).setText(TEMPLATE_ID);
-    frame.textBox(TEMPLATE_VERSION_FIELD_NAME).setText(TEMPLATE_VERSION);
-    frame.textBox(TEMPLATE_CHANGES_TEXT_AREA).setText(TEMPLATE_CHANGES);
-    frame.textBox(TEMPLATE_DESCRIPTION_TEXT_AREA_NAME).setText(TEMPLATE_DESCRIPTION);
-  }
-
-  private Builder getTemplateBuilderWithTestingValues() {
+  private Builder buildTemplate() {
     return new Builder()
         .withId(TEMPLATE_ID)
         .withVersion(TEMPLATE_VERSION)
         .withChanges(TEMPLATE_CHANGES)
         .withDescription(TEMPLATE_DESCRIPTION)
-        .withRepositoryId(TEMPLATE_TYPE)
+        .withRepositoryId("local")
         .withDependencies(new ArrayList<>());
   }
 
   @Test
   public void shouldShowErrorToUserWhenExceptionOnSaveTemplate()
       throws IOException, ConfigurationException {
-    doThrow(new IOException()).when(correlationTemplatesRegistry).onSaveTemplate(any());
+    doThrow(new IOException()).when(templatesRegistry).onSaveTemplate(buildTemplate());
     fillFields();
     clickSaveButton();
-    requireMessage(frame.robot(), "Error while trying to save template");
+    requireMessage("Error while trying to save template");
+  }
+
+  private void requireMessage(String message) {
+    frame.optionPane().requireMessage(message);
   }
 
   @Test
-  public void shouldShowErrorWhenRegisteredTemplateIDAndRepeatedVersion() {
-    fillFields();
+  public void shouldShowTemplateIDWhenSetLoadedTemplatesWithOneLoadedTemplate() {
     prepareRegisteredTemplate();
-    when(correlationTemplatesRegistry.isLocalTemplateVersionSaved(TEMPLATE_ID, TEMPLATE_VERSION))
-        .thenReturn(true);
-    clickSaveButton();
-    requireMessage(frame.robot(), "That version is already in use. Try a new one.");
+    correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
+    assertThat(findTemplateIdField().text()).isEqualTo(TEMPLATE_ID);
   }
 
   private void prepareRegisteredTemplate() {
@@ -152,34 +141,19 @@ public class CorrelationTemplateFrameIT {
         .thenReturn(Arrays.asList(firstDependency, secondDependency));
   }
 
-  @Test
-  public void shouldShowTemplateIDWhenSetLoadedTemplatesWithOneLoadedTemplate() {
-    prepareRegisteredTemplate();
-    correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
-    assertEquals(TEMPLATE_ID,
-        frame.robot().finder()
-            .findByName(TEMPLATE_ID_FIELD_NAME, JTextField.class)
-            .getText());
-  }
 
   @Test
   public void shouldSetupVersionFieldWhenSetLoadTemplatesWithOneLoadedTemplate() {
     prepareRegisteredTemplate();
     correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
-    assertEquals(TEMPLATE_VERSION,
-        frame.robot().finder()
-            .findByName(TEMPLATE_VERSION_FIELD_NAME, JTextField.class)
-            .getText());
+    assertThat(findTemplateVersionField().text()).isEqualTo(TEMPLATE_VERSION);
   }
 
   @Test
   public void shouldSetupDescriptionFieldWhenSetLoadTemplatesWithOneLoadedTemplate() {
     prepareRegisteredTemplate();
     correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
-    assertEquals(TEMPLATE_DESCRIPTION,
-        frame.robot().finder()
-            .findByName(TEMPLATE_DESCRIPTION_TEXT_AREA_NAME, JTextArea.class)
-            .getText());
+    assertThat(findTemplateDescriptionField().text()).isEqualTo(TEMPLATE_DESCRIPTION);
   }
 
   @Test
@@ -187,10 +161,7 @@ public class CorrelationTemplateFrameIT {
     prepareRegisteredTemplate();
     lastLoadedTemplates.add(lastLoadedTemplate);
     correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
-    assertEquals("",
-        frame.robot().finder()
-            .findByName(TEMPLATE_ID_FIELD_NAME, JTextField.class)
-            .getText());
+    assertThat(findTemplateIdField().text()).isEmpty();
   }
 
   @Test
@@ -198,49 +169,51 @@ public class CorrelationTemplateFrameIT {
     prepareRegisteredTemplate();
     lastLoadedTemplates.add(lastLoadedTemplate);
     correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
-    assertEquals("",
-        frame.robot().finder()
-            .findByName(TEMPLATE_DESCRIPTION_TEXT_AREA_NAME, JTextArea.class)
-            .getText());
+    assertThat(findTemplateDescriptionField().text()).isEmpty();
   }
 
   @Test
   public void shouldCleanAllFieldsAfterSuccessfulSaveWhenSaveButton() {
     fillFields();
     clickSaveButton();
-
-    pause(new Condition("Should clean all") {
-      @Override
-      public boolean test() {
-        return frame.textBox(TEMPLATE_ID_FIELD_NAME).text().isEmpty();
-      }
-    }, TIMEOUT_MILLIS);
+    findTemplateIdField().requireEmpty();
   }
 
   @Test
-  public void shouldAddRowsWhenAddPressed() {
-    toggleAdvancedSectionPanel(frame.panel(COLLAPSIBLE_PANE_NAME));
-    frame.button(DEPENDENCY_ADD_BUTTON_NAME).click();
-    List<CorrelationTemplateDependency> rules = correlationTemplateFrame.getDependencies();
-    assertFalse(rules.isEmpty());
+  public void shouldShowAdvanceSectionWhenExpandPanel() {
+    openAdvancedSectionPanel();
+    findDependencyAddButton().requireEnabled();
+  }
+
+  private void openAdvancedSectionPanel() {
+    frame.label("headerPanel-expandedIcon").click();
+    frame.target().pack();
+  }
+
+  private JButtonFixture findDependencyAddButton() {
+    return frame.button("addDependencyRow");
+  }
+
+  @Test
+  public void shouldAddDependencyWhenAddPressed() {
+    openAdvancedSectionPanel();
+    findDependencyAddButton().click();
+    assertThat(correlationTemplateFrame.getDependencies()).isNotEmpty();
   }
 
   @Test
   public void shouldClearRulesWhenClearPressed() {
-    toggleAdvancedSectionPanel(frame.panel(COLLAPSIBLE_PANE_NAME));
-    frame.button(DEPENDENCY_ADD_BUTTON_NAME).click();
-    frame.button(DEPENDENCY_CLEAR_BUTTON_NAME).click();
-
-    List<CorrelationTemplateDependency> rules = correlationTemplateFrame.getDependencies();
-    assertTrue(rules.isEmpty());
+    openAdvancedSectionPanel();
+    findDependencyAddButton().click();
+    frame.button("clearDependencyTable").click();
+    assertThat(correlationTemplateFrame.getDependencies()).isEmpty();
   }
 
   @Test
   public void shouldSetDependenciesWhenSetDependencies() {
     List<CorrelationTemplateDependency> dependencies = buildExpectedDependencies();
     correlationTemplateFrame.setDependencies(dependencies);
-
-    assertEquals(correlationTemplateFrame.getDependencies().size(), dependencies.size());
+    assertThat(correlationTemplateFrame.getDependencies().size()).isEqualTo(dependencies.size());
   }
 
   private List<CorrelationTemplateDependency> buildExpectedDependencies() {
@@ -250,13 +223,10 @@ public class CorrelationTemplateFrameIT {
   @Test
   public void shouldDisplayWarningWhenSaveWithRepeatedDependencies() {
     prepareDependencies();
-
-    List<CorrelationTemplateDependency> dependencies = buildExpectedDependencies();
-    correlationTemplateFrame.setDependencies(dependencies);
+    correlationTemplateFrame.setDependencies(buildExpectedDependencies());
     fillFields();
-    saveButton.click();
-    JOptionPaneFinder.findOptionPane().using(frame.robot())
-        .requireMessage("There are dependencies that are repeated. Want to overwrite them?");
+    clickSaveButton();
+    requireMessage("There are dependencies that are repeated. Want to overwrite them?");
   }
 
   private void prepareDependencies() {
@@ -273,19 +243,9 @@ public class CorrelationTemplateFrameIT {
     when(dependency.getName()).thenReturn(dependencyName);
     when(dependency.getVersion()).thenReturn(dependencyVersion);
     when(dependency.getUrl()).thenReturn(dependencyURL);
-    when(correlationTemplatesRegistry
+    when(templatesRegistry
         .isValidDependencyURL(dependencyURL, dependencyName, dependencyVersion))
         .thenReturn(urlValidity);
-  }
-
-  @Test
-  public void shouldShowAdvanceSectionWhenExpandPanel() {
-    toggleAdvancedSectionPanel(frame.panel(COLLAPSIBLE_PANE_NAME));
-    assertThat(frame.button(DEPENDENCY_ADD_BUTTON_NAME).isEnabled()).isTrue();
-  }
-
-  private void toggleAdvancedSectionPanel(JPanelFixture panel) {
-    frame.robot().click(panel.target(), new Point(0, 0));
   }
 
   @Test
@@ -294,9 +254,8 @@ public class CorrelationTemplateFrameIT {
     when(firstDependency.getName()).thenReturn("");
     correlationTemplateFrame.setDependencies(buildExpectedDependencies());
     fillFields();
-    saveButton.click();
-    JOptionPaneFinder.findOptionPane().using(frame.robot())
-        .requireMessage("There are incomplete dependencies. Fill or delete them before continue.");
+    clickSaveButton();
+    requireMessage("There are incomplete dependencies. Fill or delete them before continue.");
   }
 
   @Test
@@ -305,11 +264,10 @@ public class CorrelationTemplateFrameIT {
     prepareDependencyAndUrlValidity(secondDependency, 2, false);
     correlationTemplateFrame.setDependencies(buildExpectedDependencies());
     fillFields();
-    saveButton.click();
-    JOptionPaneFinder.findOptionPane().using(frame.robot())
-        .requireMessage(
-            "There are some issues with some dependency's URLs, please fix then before continue.\n"
-                + "Check the logs for more information.");
+    clickSaveButton();
+    requireMessage(
+        "There are some issues with some dependency's URLs, please fix then before continue.\n"
+            + "Check the logs for more information.");
   }
 
   @Test
@@ -320,9 +278,102 @@ public class CorrelationTemplateFrameIT {
         .thenReturn(Collections.singletonList(thirdDependency));
     lastLoadedTemplates.add(lastLoadedTemplate);
     correlationTemplateFrame.setLoadedTemplates(lastLoadedTemplates);
+    assertThat(correlationTemplateFrame.getDependencies().size()).isEqualTo(3);
+  }
 
-    List<CorrelationTemplateDependency> dependencies = Arrays
-        .asList(firstDependency, secondDependency, thirdDependency);
-    assertEquals(correlationTemplateFrame.getDependencies().size(), dependencies.size());
+  @Test
+  public void shouldDisableSaveButtonWhenFormHasErrors() {
+    findTemplateIdField().setText(TEMPLATE_ID + " /");
+    findTemplateVersionField().setText(TEMPLATE_VERSION + "@");
+    findTemplateDescriptionField().setText("");
+    findTemplateChangesField().setText(TEMPLATE_CHANGES);
+    assertThat(findSaveButton().isEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldDisableSaveButtonWhenFormIsLoaded() {
+    assertThat(findSaveButton().target().isEnabled()).isFalse();
+  }
+
+  private JButtonFixture findSaveButton() {
+    return frame.button("saveTemplateButton");
+  }
+
+  @Test
+  public void shouldDisplayIdErrorMessageWhenIdFieldLeftEmpty() {
+    findTemplateIdField().setText("");
+    findTemplateVersionField().setText("");
+    assertThat(findIdValidationLabel().text()).isEqualTo(buildEmptyFieldMessage());
+  }
+
+  private String buildEmptyFieldMessage() {
+    return "This field can't be empty";
+  }
+
+
+  private JLabelFixture findIdValidationLabel() {
+    return frame.label("idValidation");
+  }
+
+  @Test
+  public void shouldDisplayIdErrorMessageWhenIdFieldWithSpaces() {
+    findTemplateIdField().setText(TEMPLATE_ID + " " + TEMPLATE_ID);
+    findTemplateVersionField().setText("");
+    assertThat(findIdValidationLabel().text()).isEqualTo(buildInvalidCharacterMessage());
+  }
+
+  private String buildInvalidCharacterMessage() {
+    return "Use only alphanumeric values and dashes (- and _).";
+  }
+
+
+  @Test
+  public void shouldDisplayIdErrorMessageWhenIdFieldWithSpecialCharacters() {
+    findTemplateIdField().setText("ID@test/");
+    findTemplateVersionField().setText("");
+    assertThat(findIdValidationLabel().text()).isEqualTo(buildInvalidCharacterMessage());
+  }
+
+  @Test
+  public void shouldDisplayVersionErrorMessageWhenVersionFieldWithSpecialCharacters() {
+    findTemplateVersionField().setText("Version@test/");
+    findTemplateIdField().setText("");
+    assertThat(findVersionValidationLabel().text()).isEqualTo(buildInvalidCharacterMessage());
+  }
+
+  private JLabelFixture findVersionValidationLabel() {
+    return frame.label("versionValidation");
+  }
+
+  @Test(expected = org.assertj.swing.exception.ComponentLookupException.class)
+  public void shouldNotDisplayIdErrorMessageWhenIdFieldLoseFocusWithText() {
+    findTemplateIdField().setText(TEMPLATE_ID);
+    findTemplateVersionField().setText("");
+    findIdValidationLabel();
+  }
+
+  @Test
+  public void shouldDisplayVersionErrorMessageWhenVersionFieldLeftEmpty() {
+    findTemplateVersionField().setText("");
+    findTemplateIdField().setText(TEMPLATE_ID);
+    assertThat(findVersionValidationLabel().text()).isEqualTo(buildEmptyFieldMessage());
+  }
+
+  @Test
+  public void shouldDisplayVersionErrorMessageWhenVersionIsRepeated() {
+    when(templatesRegistry.isLocalTemplateVersionSaved(TEMPLATE_ID, TEMPLATE_VERSION))
+        .thenReturn(true);
+
+    findTemplateIdField().setText(TEMPLATE_ID);
+    findTemplateVersionField().setText(TEMPLATE_VERSION);
+    findTemplateDescriptionField().setText(TEMPLATE_DESCRIPTION);
+    assertThat(findVersionValidationLabel().text()).isEqualTo("This Version is already in use");
+  }
+
+  @Test
+  public void shouldEnableSaveButtonWhenFillFieldWithValidTexts() {
+    fillFields();
+    findSaveButton().focus();
+    assertThat(findSaveButton().isEnabled()).isTrue();
   }
 }

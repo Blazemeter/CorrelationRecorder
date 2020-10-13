@@ -85,7 +85,7 @@ public class CorrelationTemplate {
     this.repositoryId = repositoryId;
   }
 
-  boolean isInstalled() {
+  public boolean isInstalled() {
     return isInstalled;
   }
 

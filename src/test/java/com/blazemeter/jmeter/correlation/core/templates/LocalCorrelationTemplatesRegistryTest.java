@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.TestUtils;
+import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.ResultField;
@@ -45,6 +46,8 @@ public class LocalCorrelationTemplatesRegistryTest {
   @Mock
   private CorrelationEngine correlationEngine;
   private CorrelationProxyControl proxyControl;
+  @Mock
+  private CorrelationComponentsRegistry registry;
 
   @Before
   public void setup() {
@@ -102,12 +105,12 @@ public class LocalCorrelationTemplatesRegistryTest {
     rules.add(
         new CorrelationRule("TestRuleOne",
             new RegexCorrelationExtractor("SWEACn=([a-z])", "1", "2",
-                ResultField.RESPONSE_HEADERS.name()),
+                ResultField.RESPONSE_HEADERS.name(), ""),
             new RegexCorrelationReplacement("SWEACn=([A-Z])")));
     rules.add(
         new CorrelationRule("TestRuleTwo",
             new RegexCorrelationExtractor("SWEACn=(ˆ[\\.\\.])", "5", "6",
-                DEFAULT_TARGET.name()),
+                DEFAULT_TARGET.name(), ""),
             new RegexCorrelationReplacement("SWEACn=([(\\d)])")));
     return rules;
   }
@@ -136,7 +139,7 @@ public class LocalCorrelationTemplatesRegistryTest {
 
   private CorrelationRulesTestElement buildCorrelationRulesTestElement() {
     return new CorrelationRulesTestElement(buildCorrelationRules().stream()
-        .map(CorrelationRule::buildTestElement)
+        .map(correlationRule -> correlationRule.buildTestElement(new CorrelationComponentsRegistry()))
         .collect(Collectors.toList()));
   }
 

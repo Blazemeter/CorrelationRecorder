@@ -1,0 +1,50 @@
+<style type="text/css">
+.tg {border-collapse:collapse;border-spacing:0;}
+.tg td {border-color:grey;border-style:solid;border-width:1px;font-family:Arial, sans-serif; overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th {border-color:grey;border-style:solid;border-width:1px;font-family:Arial, sans-serif; font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-0lax {text-align:left;vertical-align:top}
+</style>
+
+<h2>Repository Manager</h2>
+<p>Here you can add both Local and External Repositories into your plugin, allowing you to load and save them whenever you need to access them.</p>
+
+<h3 style="border-bottom: 1px solid #eaecef;">Column's Description</h3>
+<p>This are the fields that are <b>required</b> for each repository</p>
+
+<br>
+<table class="tg">
+  <thead>
+  <tr>
+    <th>Column</th>
+    <th>Description</th>
+    <th>Allowed Values</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>ID</td>
+    <td>Represents the identifier of the repository. It has to be unique</td>
+    <td>Letters, numbers and special characters: "_" or "-" (without the quotes)</td>
+  </tr>
+  <tr>
+    <td>URL</td>
+    <td>Represents the URL/Path of the repository file</td>
+    <td>All but spaces</td>
+  </tr>
+  </tbody>
+</table>
+
+
+<p>By default, the <b>central</b> is added to the plugin, and all the Repositories shared by the community will be  automatically downloaded into your machine <br>when they are released in the <a href="https://github.com/Blazemeter/CorrelationsRecorderTemplates">Central Repository</a>. </p>
+
+<h3 style="border-bottom: 1px solid #eaecef;">Usage Instructions</h3>
+
+<ul>
+  <li>To add a repository: click on the "Add" button and fill the required information. </li>
+  <li>To delete repository: click on the row for the repository to delete, and press the "Delete" button</li>
+  <li>To save changes of this table, press the "Save" button. Validations will be applied at this point</li>
+</ul>
+
+<p><span style="font-style: italic!important;">NOTE:</span> If you have any issue when saving your changes, there are two choises: you either fix the <br>problems or discard the changes made on the table. Saved changes wont take place until no issues are found. </p>
+
+<p>For more information about repositories, how to share or create them, please check the Documentation at <a href="README.md#external-repository">External Repositories</a></p>

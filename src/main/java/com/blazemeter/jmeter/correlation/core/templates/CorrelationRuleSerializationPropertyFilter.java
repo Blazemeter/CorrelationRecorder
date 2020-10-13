@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
+import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -21,12 +22,18 @@ public class CorrelationRuleSerializationPropertyFilter extends SimpleBeanProper
       PropertyWriter writer) throws Exception {
     if (include(writer)) {
 
-      CorrelationRulePartTestElement correlationElement = (CorrelationRulePartTestElement) object;
+      CorrelationRulePartTestElement<?> correlationElement =
+          (CorrelationRulePartTestElement<?>) object;
 
+      if (correlationElement.equals(CorrelationComponentsRegistry.NONE_EXTRACTOR) ||
+          correlationElement.equals(CorrelationComponentsRegistry.NONE_REPLACEMENT)) {
+        return;
+      }
+      
       List<ParameterDefinition> paramsDefinition = correlationElement.getParamsDefinition();
       for (int i = 0; i < paramsDefinition.size(); i++) {
         if (paramsDefinition.get(i).getName().endsWith(writer.getName())) {
-          String currentObjectValue = correlationElement.getParams().get(i).toString();
+          String currentObjectValue = correlationElement.getParams().get(i);
           String defaultObjectValue = paramsDefinition.get(i)
               .getDefaultValue();
 

@@ -6,14 +6,14 @@
   <groupId>jmeter.plugins.correlation.recorder</groupId>
   <artifactId>jmeter-bzm-correlation-recorder</artifactId>
   <packaging>jar</packaging>
-  <version>1.0</version>
+  <version>1.1</version>
   <name>Correlation Recorder as JMeter plugin</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <jmeter.version>3.3</jmeter.version>
+    <jmeter.version>4.0</jmeter.version>
   </properties>
 
   <scm>
@@ -69,21 +69,21 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>kg.apc</groupId>
-      <artifactId>jmeter-plugins-cmn-jmeter</artifactId>
-      <scope>test</scope>
-      <version>0.5</version>
-    </dependency>
-    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.9.1</version>
+      <version>3.11.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-swing-junit</artifactId>
-      <version>3.8.0</version>
+      <version>3.9.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.java.openjdk.cacio</groupId>
+      <artifactId>cacio-tta</artifactId>
+      <version>1.9</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -113,39 +113,17 @@
       <version>2.25.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+    <groupId>org.apache.jmeter</groupId>
+    <artifactId>ApacheJMeter_functions</artifactId>
+    <version>${jmeter.version}</version>
+    <scope>test</scope>
+  </dependency>
   </dependencies>
 
   <build>
     <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
-          <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.1.0</version>
-          <executions>
-            <execution>
-              <id>validate</id>
-              <phase>validate</phase>
-              <configuration>
-                <configLocation>checkstyle.xml</configLocation>
-                <failsOnError>true</failsOnError>
-                <consoleOutput>true</consoleOutput>
-              </configuration>
-              <goals>
-                <goal>check</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -161,12 +139,42 @@
           <version>2.22.2</version>
           <configuration>
             <useSystemClassLoader>false</useSystemClassLoader>
+            <!-- use cacio-tta to avoid GUI in swing tests -->
+            <systemPropertyVariables>
+              <java.awt.headless>false</java.awt.headless>
+              <awt.toolkit>net.java.openjdk.cacio.ctc.CTCToolkit</awt.toolkit>
+              <java.awt.graphicsenv>net.java.openjdk.cacio.ctc.CTCGraphicsEnvironment
+              </java.awt.graphicsenv>
+              <cacio.managed.screensize>1280x800</cacio.managed.screensize>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
-
 
   <profiles>
     <profile>
@@ -177,7 +185,7 @@
             <plugin>
               <groupId>org.sonarsource.scanner.maven</groupId>
               <artifactId>sonar-maven-plugin</artifactId>
-              <version>3.4.0.905</version>
+              <version>3.6.0.1398</version>
             </plugin>
           </plugins>
         </pluginManagement>
@@ -185,7 +193,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.0</version>
+            <version>0.8.4</version>
             <configuration>
               <append>true</append>
             </configuration>
