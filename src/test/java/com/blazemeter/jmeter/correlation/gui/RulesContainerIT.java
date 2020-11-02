@@ -20,12 +20,13 @@ import com.blazemeter.jmeter.correlation.core.templates.gui.CorrelationTemplates
 import com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement;
 import java.awt.Color;
 import java.awt.Component;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
+import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.swing.core.MouseButton;
 import org.assertj.swing.core.Robot;
 import org.assertj.swing.data.TableCell;
@@ -53,21 +54,25 @@ public class RulesContainerIT {
   private static final Color DISABLE_FONT_RULE_COLOR = new JTextField().getDisabledTextColor();
 
   @Mock
-  private CorrelationProxyControl repositoryHandler;
+  private CorrelationProxyControl model;
   @Mock
   private Runnable modelUpdate;
   @Mock
   private CorrelationTemplateFrame templateFrame;
   @Mock
   private CorrelationTemplatesFrame loadFrame;
+  @Mock
+  private CorrelationComponentsRegistry componentsRegistry;
 
   private FrameFixture frame;
   private RulesContainer rulesContainer;
   private JTableFixture rulesTable;
 
+  public JUnitSoftAssertions softly = new JUnitSoftAssertions();
+
   @Before
   public void setup() {
-    rulesContainer = new RulesContainer(repositoryHandler, modelUpdate);
+    rulesContainer = new RulesContainer(model, modelUpdate);
     rulesContainer.setTemplateFrame(templateFrame);
     rulesContainer.setLoadFrame(loadFrame);
     frame = showInFrame(rulesContainer);
@@ -168,17 +173,6 @@ public class RulesContainerIT {
     clickRuleByIndex(1);
     findUpButton().click();
     findUpButton().requireDisabled();
-  }
-
-  @Test
-  public void shouldShowErrorMessageWhenClickSaveTemplateWithEmptyRule() {
-    addRule();
-    rulesContainer.getRules().get(0).setVariableName("");
-    selectNonExtractorComboByRuleIndex(0);
-    selectNonReplacementComboByRuleIndex(0);
-    saveTemplate();
-    frame.optionPane()
-        .requireMessage("Rules are incomplete or empty, please fill them before continue saving.");
   }
 
   private void saveTemplate() {
@@ -358,45 +352,68 @@ public class RulesContainerIT {
   public void shouldNotSetRulesWhenConfigureWithNullTestElement() {
     prepareRepositoryHandler("", "", null);
     rulesContainer.clean();
-    rulesContainer.configure(repositoryHandler);
+    rulesContainer.configure(model);
     assertThat(rulesContainer.getCorrelationRules())
         .isEqualTo(Collections.EMPTY_LIST);
   }
 
   private void prepareRepositoryHandler(String correlationComponents, String responseFilters,
       CorrelationRulesTestElement rules) {
-    when(repositoryHandler.getCorrelationComponents()).thenReturn(correlationComponents);
-    when(repositoryHandler.getResponseFilter()).thenReturn(responseFilters);
-    when(repositoryHandler.getCorrelationRulesTestElement()).thenReturn(rules);
+    when(model.getCorrelationComponents()).thenReturn(correlationComponents);
+    when(model.getResponseFilter()).thenReturn(responseFilters);
+    when(model.getCorrelationRulesTestElement()).thenReturn(rules);
   }
 
   @Test
   public void shouldSetRulesWhenConfigure() {
     List<CorrelationRule> rules = Collections.singletonList(new CorrelationRule("refVar1",
         new RegexCorrelationExtractor<>(), new RegexCorrelationReplacement<>()));
-    prepareRepositoryHandler("", "", buildCorrelationRulesTestElementFromRules(rules));
-    rulesContainer.configure(repositoryHandler);
+    when(model.getRules()).thenReturn(rules);
+    when(model.getCorrelationComponents()).thenReturn("");
+    when(model.getResponseFilter()).thenReturn("");
+    
+    rulesContainer.configure(model);
     assertThat(rulesContainer.getCorrelationRules())
         .isEqualTo(rules);
   }
-
-  private CorrelationRulesTestElement buildCorrelationRulesTestElementFromRules(
-      List<CorrelationRule> rules) {
-    return new CorrelationRulesTestElement(rules.stream()
-        .map(correlationRule -> correlationRule
-            .buildTestElement(new CorrelationComponentsRegistry()))
-        .collect(Collectors.toList()));
-  }
-
+  
   @Test
   public void shouldUpdateComponentsContainerWithNewCorrelationComponents() {
     String extensionComponentString = SiebelCounterCorrelationReplacement.class.getCanonicalName();
     prepareRepositoryHandler(extensionComponentString, "", null);
-    rulesContainer.configure(repositoryHandler);
+    rulesContainer.configure(model);
     assertThat(rulesContainer.getCorrelationComponents())
         .isEqualTo(extensionComponentString);
   }
 
+  @Test
+  public void shouldUpdateValuesWhenConfigureWithDifferentModel() {
+    CorrelationRule firstRule = new CorrelationRule("refVar1",
+        new RegexCorrelationExtractor<>(), new RegexCorrelationReplacement<>());
+    List<CorrelationRule> rules = Collections.singletonList(firstRule);
+    when(model.getRules()).thenReturn(rules);
+    when(model.getCorrelationComponents()).thenReturn("");
+    when(model.getResponseFilter()).thenReturn("");
+
+    rulesContainer.configure(model);
+
+    CorrelationRule secondRule = new CorrelationRule("refVar2", null,
+        new SiebelCounterCorrelationReplacement());
+    secondRule.setEnabled(false);
+    List<CorrelationRule> expectedRules = Arrays.asList(firstRule, secondRule);
+    
+    when(model.getRules()).thenReturn(expectedRules);
+    String expectedComponents = SiebelCounterCorrelationReplacement.class.getCanonicalName();
+    when(model.getCorrelationComponents()).thenReturn(expectedComponents);
+    String expectedFilter = "someText";
+    when(model.getResponseFilter()).thenReturn(expectedFilter);
+    rulesContainer.configure(model);
+
+    softly.assertThat(rulesContainer.getCorrelationRules()).isEqualTo(expectedRules);
+    softly.assertThat(rulesContainer.getResponseFilter()).isEqualTo(expectedFilter);
+    softly.assertThat(rulesContainer.getCorrelationComponents()).isEqualTo(expectedComponents);
+  }
+  
   private static class MyCellWriter extends AbstractJTableCellWriter {
 
     private final JTableTextComponentEditorCellWriter textComponentWriter;

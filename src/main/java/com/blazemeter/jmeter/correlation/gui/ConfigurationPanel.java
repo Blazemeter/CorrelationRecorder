@@ -37,6 +37,7 @@ public class ConfigurationPanel extends JPanel {
   private HelperDialog helperDialog;
   private String description = "";
   private Runnable updateFieldListeners;
+  private boolean enabled = true;
 
   public ConfigurationPanel(Runnable update, String name,
       List<CorrelationRulePartTestElement<?>> options) {
@@ -167,6 +168,8 @@ public class ConfigurationPanel extends JPanel {
 
     addFields();
     updateFieldListeners.run();
+    //Added to apply disabled on fields even if the combo changes values
+    setEnabled(this.enabled); 
     revalidate();
     repaint();
     update.run();
@@ -253,6 +256,7 @@ public class ConfigurationPanel extends JPanel {
   //simulate the enable/disable by changing font color
   @Override
   public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
     comboBox.setForeground(COLOR_PROVIDER.apply(enabled));
     listComponents.forEach(c -> c.setForeground(COLOR_PROVIDER.apply(enabled)));
   }

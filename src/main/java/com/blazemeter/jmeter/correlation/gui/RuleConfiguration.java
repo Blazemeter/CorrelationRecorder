@@ -211,11 +211,12 @@ public class RuleConfiguration implements Serializable {
 
   @Override
   public String toString() {
-    return "To String = " + referenceVariableField.getText() +
+    return "RuleConfiguration= {" + referenceVariableField.getText() +
+        ", enabled = " + enable + 
         ", extractor " + extractorConfigurationPanel.getSelectedItem().getDisplayName() +
         "=" + extractorConfigurationPanel.getValues() +
         ", replacement " + replacementConfigurationPanel.getSelectedItem().getDisplayName() +
-        "=" + replacementConfigurationPanel.getValues();
+        "=" + replacementConfigurationPanel.getValues() + "}";
   }
 
   @Override
@@ -254,11 +255,6 @@ public class RuleConfiguration implements Serializable {
     if (rulePartTestElement != null) {
       getReplacementConfigurationPanel().setValuesFromRulePart(rulePartTestElement);
     }
-  }
-
-  public boolean isComplete() {
-    return (!getReplacementConfigurationPanel().isNoneSelected()
-            || !getExtractorConfigurationPanel().isNoneSelected());
   }
 
   public boolean isEnable() {

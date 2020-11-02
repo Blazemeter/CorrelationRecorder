@@ -132,25 +132,6 @@ public class RuleConfigurationIT {
   }
 
   @Test
-  public void shouldReturnCompleteWhenRuleHasExtractorSelected() {
-    selectExtractor(extractor);
-    assertThat(ruleConfiguration.isComplete()).isTrue();
-  }
-
-  @Test
-  public void shouldReturnCompleteWhenRuleHasReplacementSelected() {
-    selectReplacement(replacement);
-    assertThat(ruleConfiguration.isComplete()).isTrue();
-  }
-
-  @Test
-  public void shouldReturnIncompleteWhenNoReplacementAndExtractor() {
-    selectExtractor(noneExtractor);
-    selectReplacement(noneReplacement);
-    assertThat(ruleConfiguration.isComplete()).isFalse();
-  }
-
-  @Test
   public void shouldDisplayHelperWhenNoneNotSelected() {
     selectExtractor(noneExtractor);
     selectExtractor(extractor);

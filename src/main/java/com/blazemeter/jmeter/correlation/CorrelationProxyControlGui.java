@@ -11,6 +11,7 @@ import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.gui.BlazemeterLabsLogo;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
 import com.blazemeter.jmeter.correlation.gui.TestPlanTemplatesRepository;
+import com.google.common.annotations.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -48,6 +49,12 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
     Objects.requireNonNull(siebelPane).add("Correlation Rules", rulesContainer);
     add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
     installDefaultFiles();
+  }
+  
+  @VisibleForTesting
+  public CorrelationProxyControlGui(CorrelationProxyControl model, RulesContainer container) {
+    this.model = model;
+    this.rulesContainer = container;
   }
 
   private JTabbedPane findTabbedPane() {
@@ -257,5 +264,15 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   public boolean refreshRepositories(String localConfigurationRoute,
       Consumer<Integer> setProgressConsumer) {
     return model.refreshRepositories(localConfigurationRoute, setProgressConsumer);
+  }
+
+  @VisibleForTesting
+  protected RulesContainer getRulesContainer() {
+    return rulesContainer;
+  }
+
+  @VisibleForTesting
+  protected CorrelationProxyControl getCorrelationProxyControl() {
+    return model;
   }
 }

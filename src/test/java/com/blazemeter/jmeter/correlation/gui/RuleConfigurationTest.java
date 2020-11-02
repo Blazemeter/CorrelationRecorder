@@ -11,7 +11,6 @@ import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtract
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,23 +77,6 @@ public class RuleConfigurationTest {
     ruleConfiguration.setExtractorFromRulePart(null);
     assertThat(getExtractorValues())
         .isEqualTo(originalValues);
-  }
-
-  @Test
-  public void shouldNotBeCompleteWhenCreated() {
-    assertThat(ruleConfiguration.isComplete()).isFalse();
-  }
-
-  @Test
-  public void shouldBeCompleteWhenSetExtractorFromRulePart() {
-    ruleConfiguration.setExtractorFromRulePart(DEFAULT_EXTRACTOR);
-    assertThat(ruleConfiguration.isComplete()).isTrue();
-  }
-
-  @Test
-  public void shouldBeCompleteWhenSetReplacementFromRulePart() {
-    ruleConfiguration.setReplacementFromRulePart(DEFAULT_REPLACEMENT);
-    assertThat(ruleConfiguration.isComplete()).isTrue();
   }
 
   @Test

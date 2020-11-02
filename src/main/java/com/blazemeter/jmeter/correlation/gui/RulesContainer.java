@@ -43,7 +43,6 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import org.apache.http.entity.ContentType;
-import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.gui.GuiUtils;
 import org.slf4j.Logger;
@@ -305,11 +304,6 @@ public class RulesContainer extends JPanel implements ActionListener {
           templateFrame = new CorrelationTemplateFrame(templatesRegistryHandler,
               getSnapshotBufferedImage(), this::updateLoadedTemplate, this);
         }
-        if (rulesAreIncomplete()) {
-          JOptionPane.showMessageDialog(this,
-              "Rules are incomplete or empty, please fill them before continue saving.");
-          break;
-        }
         displaySaveTemplateFrame();
         break;
       case LOAD:
@@ -346,15 +340,6 @@ public class RulesContainer extends JPanel implements ActionListener {
     templateFrame.showFrame();
   }
 
-  private boolean rulesAreIncomplete() {
-    if (rulesTable.getRules().isEmpty()) {
-      return true;
-    }
-
-    return rulesTable.getRules().stream()
-        .anyMatch(r -> !r.isComplete());
-  }
-
   private void deleteRule() {
     GuiUtils.cancelEditing(rulesTable);
     int[] rowsSelected = rulesTable.getSelectedRows();
@@ -384,6 +369,29 @@ public class RulesContainer extends JPanel implements ActionListener {
     addRule(rule);
   }
 
+  private RuleConfiguration buildRuleConfiguration(CorrelationRule rule) {
+    RuleConfiguration ruleConfiguration = new RuleConfiguration(rulesTable.getRowCount() + 1,
+        this::updateTable, componentsRegistry);
+    ruleConfiguration.setVariableName(rule.getReferenceName());
+    ruleConfiguration.setEnable(rule.isEnabled());
+    CorrelationExtractor<?> extractor = rule.getCorrelationExtractor();
+    if (extractor != null) {
+      ConfigurationPanel panel = ruleConfiguration.getExtractorConfigurationPanel();
+      panel.setSelectedItem(extractor);
+      panel.setParamValues(extractor.getParams());
+      panel.setEnabled(rule.isEnabled());
+    }
+
+    CorrelationReplacement<?> replacement = rule.getCorrelationReplacement();
+    if (replacement != null) {
+      ConfigurationPanel panel = ruleConfiguration.getReplacementConfigurationPanel();
+      panel.setSelectedItem(replacement);
+      panel.setParamValues(replacement.getParams());
+      panel.setEnabled(rule.isEnabled());
+    }
+    return ruleConfiguration;
+  }
+  
   private void addRule(RuleConfiguration rule) {
     if (!rulesTable.getRules().isEmpty()) {
       GuiUtils.stopTableEditing(rulesTable);
@@ -455,42 +463,26 @@ public class RulesContainer extends JPanel implements ActionListener {
 
   public List<CorrelationRule> getCorrelationRules() {
     return rulesTable.getRules().stream()
-        .filter(RuleConfiguration::isComplete)
         .map(RuleConfiguration::getCorrelationRule)
         .collect(Collectors.toList());
   }
-
-  private void setCorrelationRules(CorrelationRulesTestElement rulesTestElement) {
-    if (rulesTestElement != null) {
-      for (JMeterProperty jMeterProperty : rulesTestElement) {
-        CorrelationRuleTestElement rule =
-            (CorrelationRuleTestElement) jMeterProperty.getObjectValue();
-        addRuleConfiguration(rule.ensureBackwardCompatibility());
-      }
-    }
+  
+  private void clear() {
+    componentContainer.setComponentsTextArea("");
+    rulesTable.clear();
+    responseFilterField.setText("");
   }
-
-  private void addRuleConfiguration(CorrelationRuleTestElement ruleTestElement) {
-    RuleConfiguration ruleConfiguration = new RuleConfiguration(rulesTable.getRowCount() + 1,
-        this::updateTable, componentsRegistry);
-
-    ruleConfiguration.setEnable(ruleTestElement.isEnabled());
-    ruleConfiguration.setVariableName(ruleTestElement.getReferenceName());
-    ruleConfiguration.setExtractorFromRulePart(ruleTestElement.getExtractorRulePart());
-    ruleConfiguration.setReplacementFromRulePart(ruleTestElement.getReplacementRulePart());
-
-    if (rulesTable.getRules().stream().noneMatch(r -> r.equals(ruleConfiguration))) {
-      addRule(ruleConfiguration);
-    }
+  
+  public void configure(CorrelationProxyControl model) {
+    clear();
+    setCorrelationComponents(buildCorrelationComponents(model));
+    setResponseFilter(isSiebelTestPlan ? ContentType.TEXT_HTML.getMimeType() : model.getResponseFilter());
+    model.getRules()
+        .forEach(rule->addRule(buildRuleConfiguration(rule)));
+    
+    checkButtonsStatus();
   }
-
-  public void configure(CorrelationProxyControl correlationProxyControl) {
-    setCorrelationComponents(buildCorrelationComponents(correlationProxyControl));
-    setResponseFilter(isSiebelTestPlan ? ContentType.TEXT_HTML.getMimeType()
-        : correlationProxyControl.getResponseFilter());
-    setCorrelationRules(correlationProxyControl.getCorrelationRulesTestElement());
-    updateMainContainerRequiredHeight();
-  }
+  
 
   private String buildCorrelationComponents(CorrelationProxyControl correlationProxyControl) {
     String correlationComponents = correlationProxyControl.getCorrelationComponents();
@@ -636,4 +628,6 @@ public class RulesContainer extends JPanel implements ActionListener {
   public void clean() {
     clearContainer();
   }
+  
+
 }
