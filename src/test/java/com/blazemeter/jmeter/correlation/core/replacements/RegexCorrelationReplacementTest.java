@@ -9,6 +9,7 @@ import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
 import com.blazemeter.jmeter.correlation.core.ResultField;
 import java.util.Collections;
 import java.util.function.Function;
+import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.extractor.RegexExtractor;
 import org.apache.jmeter.extractor.XPathExtractor;
 import org.apache.jmeter.extractor.gui.RegexExtractorGui;
@@ -293,5 +294,18 @@ public class RegexCorrelationReplacementTest {
     replacer.process(sampler, Collections.emptyList(), null, vars);
     assertThat(getFirstArgumentValue())
         .isEqualTo("${__javaScript(${TEST_SWEACN#1_2} + '3')}");
+  }
+
+
+  @Test
+  public void shouldNotRemoveEqualSignsFromArgumentsValue() {
+    Arguments arguments = new Arguments();
+    String argumentValue = "{\"arg1\":\"value = 1\"}";
+    arguments.addArgument("", argumentValue);
+
+    sampler.setArguments(arguments);
+    replacer.process(sampler, Collections.singletonList(
+        createRegexExtractor(PARAM_NAME + "=" + PARAM_VALUE + "&")), null, vars);
+    assertThat(sampler.getArguments().getArgument(0).getValue()).isEqualTo(argumentValue);
   }
 }
