@@ -203,12 +203,12 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
       return;
     }
     /*
-     to normalize replacement and allow to specify a particular argument for replacement when using
-     argument (HTTP request body), we include argument name and '=' to the input to then apply the
-     replacement and then remove the normalization to only leave the replaced value.
-      */
-    input = replaceString(arg.getName() + "=" + arg.getValue(), vars)
-        .replace(arg.getName() + "=", "");
+      To normalize the replacement on arguments for HTTP requests, we include the argument name and
+      '=' to the input, apply the replacement logic, and remove it afterward. This doesn't applies 
+      when the argument has no name (eg: Data Body is a JSON/XML).
+    */
+    String prefix = arg.getName().isEmpty() ? "" : arg.getName() + "=";
+    input = replaceString(prefix + arg.getValue(), vars).replace(prefix, "");
     arg.setValue(input);
   }
 
