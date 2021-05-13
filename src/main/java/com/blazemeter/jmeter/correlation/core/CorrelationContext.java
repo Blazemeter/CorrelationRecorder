@@ -5,7 +5,6 @@ import org.apache.jmeter.samplers.SampleResult;
 
 /**
  * Stores information relevant for the recorded flow to help correlating different variables.
- *
  * Contains the basic method for all the Contexts to being able to update and reset the variables
  * shared by their Correlation Components.
  */

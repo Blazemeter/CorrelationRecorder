@@ -1,8 +1,8 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -25,8 +25,8 @@ public class CorrelationRuleSerializationPropertyFilter extends SimpleBeanProper
       CorrelationRulePartTestElement<?> correlationElement =
           (CorrelationRulePartTestElement<?>) object;
 
-      if (correlationElement.equals(CorrelationComponentsRegistry.NONE_EXTRACTOR) ||
-          correlationElement.equals(CorrelationComponentsRegistry.NONE_REPLACEMENT)) {
+      if (correlationElement.equals(CorrelationComponentsRegistry.NONE_EXTRACTOR)
+          || correlationElement.equals(CorrelationComponentsRegistry.NONE_REPLACEMENT)) {
         return;
       }
       

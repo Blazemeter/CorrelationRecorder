@@ -2,8 +2,8 @@ package com.blazemeter.jmeter.correlation.core.replacements;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
+import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationRuleSerializationPropertyFilter;
-import com.blazemeter.jmeter.correlation.core.templates.DescriptionContent;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -56,7 +56,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   /**
    * Default constructor added in order to satisfy the JSON conversion.
    *
-   * Implementing a Custom Correlation Extractor requires to mimic this behavior
+   * <p>Implementing a Custom Correlation Extractor requires to mimic this behavior
    */
   public CorrelationReplacement() {
   }
@@ -78,8 +78,8 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * Handles the saving of values of the Correlation Replacement into a {@link
    * CorrelationRuleTestElement} for later storage in Test Plans and CorrelationTemplates.
    *
-   * This method has to be overwritten when implementing custom Correlation Replacements, otherwise,
-   * only the class name will be saved
+   * <p>This method has to be overwritten when implementing custom Correlation Replacements,
+   * otherwise, only the class name will be saved
    *
    * @param testElem CorrelationRuleTestElement where the fields will be stored
    */
@@ -90,9 +90,9 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   /**
    * Process every request sent to the server and apply replacements over specific values.
    *
-   * The logic of correlating values during the recording is contained here.
+   * <p>The logic of correlating values during the recording is contained here.
    *
-   * Both the properties in the recorded sampler and its children will be processed
+   * <p>Both the properties in the recorded sampler and its children will be processed
    *
    * @param sampler recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the condition is matched, components
@@ -113,8 +113,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   /**
    * Method that performs recursive calls to replace the arguments of the TestElement provided.
    *
-   *
-   * This method works applying replacement, in a recursive way, to parameter and headers
+   * <p>This method works applying replacement, in a recursive way, to parameter and headers
    * assignments, inside the TestElement. If one value exists in the JMeterVariables for the
    * Reference Variable Name, and does match the condition configured for this Correlation
    * Replacement, the value will be replaced in the String as <code>${referenceVariableName}</code>,
@@ -237,9 +236,9 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   /**
    * Handles the loading of values from Test Plans and CorrelationTemplates.
    *
-   * Gets the values using the property names used to store it on the
-   * <code>updateTestElem(CorrelationRuleTestElement testElem)</code> method. This method has to be
-   * overwritten when implementing custom Correlation Extractors
+   * <p>Gets the values using the property names used to store it on the <code>updateTestElem
+   * (CorrelationRuleTestElement testElem)</code> method. This method has to be overwritten when
+   * implementing custom Correlation Extractors
    *
    * @param ruleTestElement CorrelationRuleTestElement that contains the values
    */

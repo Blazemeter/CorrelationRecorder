@@ -43,9 +43,8 @@ public class CorrelationRule {
     this.enabled = enabled;
   }
 
-  public CorrelationRuleTestElement buildTestElement(
-      CorrelationComponentsRegistry registry) {
-    CorrelationRuleTestElement testElem = new CorrelationRuleTestElement(registry);
+  public CorrelationRuleTestElement buildTestElement() {
+    CorrelationRuleTestElement testElem = new CorrelationRuleTestElement();
     testElem.setReferenceName(referenceName);
     testElem.setRuleEnable(enabled);
 

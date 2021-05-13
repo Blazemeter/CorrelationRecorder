@@ -6,7 +6,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
-import com.blazemeter.jmeter.correlation.core.ResultField;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import java.util.Collections;
 import java.util.function.Function;
 import org.apache.jmeter.config.Arguments;
@@ -295,7 +295,6 @@ public class RegexCorrelationReplacementTest {
     assertThat(getFirstArgumentValue())
         .isEqualTo("${__javaScript(${TEST_SWEACN#1_2} + '3')}");
   }
-
 
   @Test
   public void shouldNotRemoveEqualSignsFromArgumentsValue() {

@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.google.common.base.Charsets;
 import java.net.MalformedURLException;
 import java.net.URL;

@@ -9,28 +9,37 @@ import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
+import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.proxy.ComparableCookie;
+import com.blazemeter.jmeter.correlation.core.proxy.PendingProxy;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
+import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
+import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
+import org.apache.jmeter.gui.tree.JMeterTreeNode;
+import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.logging.log4j.util.Strings;
 import org.assertj.core.api.JUnitSoftAssertions;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -50,8 +59,12 @@ public class CorrelationProxyControlTest {
       .withRepositoryId(LOCAL_REPOSITORY_ID)
       .withId("TestTemplateID")
       .withDescription("TestTemplateDescription");
+  private final TestElement[] testElements = new TestElement[0];
+  private final HTTPSampler sampler = buildSampler();
   public JUnitSoftAssertions softly = new JUnitSoftAssertions();
-  private CorrelationProxyControl correlationProxyControl;
+  private CorrelationProxyControlBuilder builder;
+  private SampleResult sampleResult = new SampleResult();
+
   @Mock
   private CorrelationEngine correlationEngine;
   @Mock
@@ -59,30 +72,62 @@ public class CorrelationProxyControlTest {
   @Mock
   private CorrelationTemplatesRepositoriesConfiguration configuration;
   @Mock
-  private CorrelationTemplate testTemplate;
-  private final TestElement[] testElements = new TestElement[0];
-  private final SampleResult sampleResult = new SampleResult();
-  private final HTTPSampler sampler = new HTTPSampler();
+  private LocalConfiguration localConfiguration;
+  @Mock
+  private TemplateVersion testTemplate;
+  @Mock
+  private JMeterTreeNode target;
+
+  private CorrelationProxyControl model;
+
+  private HTTPSampler buildSampler() {
+    HTTPSampler ret = new HTTPSampler();
+    // we need to set domain to avoid filters to filter it out
+    ret.setDomain("localhost");
+    return ret;
+  }
+
+  @BeforeClass
+  public static void setupClass() {
+    JMeterTestUtils.setupJmeterEnv();
+  }
 
   @Before
   public void setup() {
-    correlationProxyControl = new CorrelationProxyControl(correlationComponentsRegistry,
-        configuration);
+    builder = new CorrelationProxyControlBuilder()
+        .withCorrelationTemplatesRegistry(correlationComponentsRegistry)
+        .withCorrelationTemplatesRepositoriesConfiguration(configuration)
+        .withLocalConfiguration(localConfiguration)
+        .withTarget(target);
+    when(target.children()).thenReturn(Collections.emptyEnumeration());
+    GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
+  }
+
+  @After
+  public void tearDown() {
+    if (model != null) {
+      model.stopProxy();
+    }
   }
 
   @Test
   public void shouldNotInvokeCorrelationEngineProcessWhenSamplerIsNull() {
     GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
-    correlationProxyControl.deliverSampler(null, testElements, sampleResult);
+    CorrelationProxyControl build = builder.build();
+    build.startedProxy(Thread.currentThread());
+    build.deliverSampler(null, testElements, sampleResult);
     verify(correlationEngine, never()).process(any(), any(), any(), any());
   }
 
   @Test
   public void shouldInvokeCorrelationEngineProcessWhenSamplerIsNotNull() {
-    correlationProxyControl.setCorrelationEngine(correlationEngine);
-
     GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
-    correlationProxyControl.deliverSampler(sampler, testElements, sampleResult);
+    CorrelationProxyControl proxyControl = builder.withCorrelationEngine(correlationEngine)
+        .build();
+    sampleResult = new HTTPSampleResult();
+    proxyControl.startedProxy(Thread.currentThread());
+    proxyControl.deliverSampler(sampler, testElements, sampleResult);
+    proxyControl.endedProxy(Thread.currentThread());
     List<TestElement> children = new ArrayList<>();
     verify(correlationEngine, times(1))
         .process(sampler, children, sampleResult, DEFAULT_RESPONSE_FILTER);
@@ -92,46 +137,56 @@ public class CorrelationProxyControlTest {
   public void shouldBuildCorrelationRulesWhenOnSaveTemplateWithRulesWithoutCorrelationExtractor()
       throws IOException, ConfigurationException {
     List<CorrelationRule> rules = prepareRulesWithoutCorrelationExtractors();
+    RulesGroup.Builder groupsBuilder = new RulesGroup.Builder();
+    groupsBuilder.withRules(rules);
+    List<RulesGroup> groups = Collections.singletonList(groupsBuilder.build());
+    model = builder
+        .withCorrelationEngine(correlationEngine)
+        .build();
 
-    correlationProxyControl.setCorrelationRules(rules);
-    correlationProxyControl.onSaveTemplate(BASE_TEMPLATE_BUILDER);
+    model.setCorrelationGroups(groups);
+    model.onSaveTemplate(BASE_TEMPLATE_BUILDER);
 
     //Its been called once since only save the CorrelationTemplate once after building it
-    verify(correlationComponentsRegistry, only()).save(prepareExpectedTemplate(rules));
+    verify(correlationComponentsRegistry, only()).save(prepareExpectedTemplate(groups));
   }
 
   private List<CorrelationRule> prepareRulesWithoutCorrelationExtractors() {
-    RegexCorrelationReplacement regexReplacement = new RegexCorrelationReplacement();
+    RegexCorrelationReplacement<?> regexReplacement = new RegexCorrelationReplacement<>();
     return Arrays.asList(new CorrelationRule(FIRST_RULE_REF_VAR_NAME, null, regexReplacement),
         new CorrelationRule(SECOND_RULE_REF_VAR_NAME, null, regexReplacement));
   }
 
-  private CorrelationTemplate prepareExpectedTemplate(List<CorrelationRule> rules) {
+  private TemplateVersion prepareExpectedTemplate(List<RulesGroup> groups) {
     return BASE_TEMPLATE_BUILDER
-        .withRules(rules)
+        .withGroups(groups)
         .build();
   }
 
   @Test
   public void shouldBuildCorrelationRulesWhenOnSaveTemplateWithRulesWithoutCorrelationReplacement()
       throws IOException, ConfigurationException {
-    List<CorrelationRule> rules = prepareRulesWithoutCorrelationReplacements();
-    correlationProxyControl.setCorrelationRules(rules);
-    correlationProxyControl.onSaveTemplate(BASE_TEMPLATE_BUILDER);
+    List<RulesGroup> groups = prepareGroupOfRulesWithoutCorrelationReplacements();
+    model = builder.build();
+    model.setCorrelationGroups(groups);
+    model.onSaveTemplate(BASE_TEMPLATE_BUILDER);
 
     //Its been called once since only save the CorrelationTemplate once after building it
-    verify(correlationComponentsRegistry, only()).save(prepareExpectedTemplate(rules));
+    verify(correlationComponentsRegistry, only()).save(prepareExpectedTemplate(groups));
   }
 
-  private List<CorrelationRule> prepareRulesWithoutCorrelationReplacements() {
-    RegexCorrelationExtractor regexExtractor = new RegexCorrelationExtractor();
-    return Arrays.asList(new CorrelationRule(FIRST_RULE_REF_VAR_NAME, regexExtractor, null),
-        new CorrelationRule(SECOND_RULE_REF_VAR_NAME, regexExtractor, null));
+  private List<RulesGroup> prepareGroupOfRulesWithoutCorrelationReplacements() {
+    RegexCorrelationExtractor<?> regexExtractor = new RegexCorrelationExtractor<>();
+    List<CorrelationRule> rules = Arrays
+        .asList(new CorrelationRule(FIRST_RULE_REF_VAR_NAME, regexExtractor, null),
+            new CorrelationRule(SECOND_RULE_REF_VAR_NAME, regexExtractor, null));
+    RulesGroup.Builder builder = new RulesGroup.Builder();
+    builder.withRules(rules);
+    return Collections.singletonList(builder.build());
   }
 
   @Test
   public void shouldAppendLoadedTemplateWhenOnLoadTemplate() throws IOException {
-    setInitialValues();
     when(correlationComponentsRegistry.findByID(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION))
         .thenReturn(Optional.of(testTemplate));
 
@@ -143,31 +198,41 @@ public class CorrelationProxyControlTest {
 
     when(testTemplate.getComponents()).thenReturn(expectedComponents);
 
-    List<CorrelationRule> expectedCorrelationRules = prepareRulesWithoutCorrelationReplacements();
-    when(testTemplate.getRules()).thenReturn(expectedCorrelationRules);
+    List<RulesGroup> expectedCorrelationGroup = prepareGroupOfRulesWithoutCorrelationReplacements();
+    when(testTemplate.getGroups()).thenReturn(expectedCorrelationGroup);
 
-    correlationProxyControl.onLoadTemplate(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION);
+    model = builder.build();
+    setInitialValues(model);
+    model.onLoadTemplate(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION);
 
-    softly.assertThat(correlationProxyControl.getResponseFilter())
-        .isEqualTo("Filter 0, Filter 1, Filter 2");
-    softly.assertThat(correlationProxyControl.getCorrelationComponents())
-        .isEqualTo(expectedComponents);
-    softly.assertThat(correlationProxyControl.getRules()).isEqualTo(expectedCorrelationRules);
+    assertModelInfo(expectedComponents, expectedCorrelationGroup, model,
+        "Filter 0, Filter 1, Filter 2");
   }
 
-  private void setInitialValues() {
-    correlationProxyControl.setResponseFilter("Filter 0");
-    correlationProxyControl
-        .setCorrelationComponents(SiebelRowParamsCorrelationReplacement.class.getName());
+  private void assertModelInfo(String expectedComponents, List<RulesGroup> expectedGroups,
+      CorrelationProxyControl model,
+      String expectedFilters) {
+    softly.assertThat(model.getResponseFilter()).isEqualTo(expectedFilters);
+    softly.assertThat(model.getCorrelationComponents()).isEqualTo(expectedComponents);
+    softly.assertThat(model.getGroups()).isEqualTo(expectedGroups);
+  }
 
-    RegexCorrelationExtractor regexExtractor = new RegexCorrelationExtractor();
+  private void setInitialValues(CorrelationProxyControl model) {
+    model.setResponseFilter("Filter 0");
+    model.setCorrelationComponents(SiebelRowParamsCorrelationReplacement.class.getName());
+
+    RegexCorrelationExtractor<?> regexExtractor = new RegexCorrelationExtractor<>();
     regexExtractor.setParams(Collections.singletonList("=(1)"));
 
-    RegexCorrelationReplacement regexReplacement = new RegexCorrelationReplacement();
+    RegexCorrelationReplacement<?> regexReplacement = new RegexCorrelationReplacement<>();
     regexReplacement.setParams(Collections.singletonList("=(2)"));
 
-    correlationProxyControl.setCorrelationRules(Collections
-        .singletonList(new CorrelationRule("RefVar0", regexExtractor, regexReplacement)));
+    List<CorrelationRule> rules = Collections
+        .singletonList(new CorrelationRule("RefVar0", regexExtractor, regexReplacement));
+    RulesGroup.Builder builder = new RulesGroup.Builder();
+    builder.withId("Rules");
+    builder.withRules(rules);
+    model.setCorrelationGroups(Collections.singletonList(builder.build()));
   }
 
   private String buildArrayFromListOfStrings(String... strings) {
@@ -184,26 +249,50 @@ public class CorrelationProxyControlTest {
     when(testTemplate.getComponents()).thenReturn(
         buildArrayFromListOfStrings(RegexCorrelationExtractor.class.getName(),
             RegexCorrelationExtractor.class.getName(), RegexCorrelationExtractor.class.getName()));
-    when(testTemplate.getRules()).thenReturn(prepareRepeatedRulesWithoutCorrelationReplacements());
+    when(testTemplate.getGroups())
+        .thenReturn(prepareRepeatedGroupOfRulesWithoutCorrelationReplacements());
 
-    correlationProxyControl.onLoadTemplate(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION);
+    CorrelationProxyControl model = builder.build();
+    model.onLoadTemplate(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION);
 
     String expectedFilters = buildArrayFromListOfStrings("Filter 1", "Filter 2");
     String expectedComponents = buildArrayFromListOfStrings(
         RegexCorrelationExtractor.class.getName());
-    List<CorrelationRule> expectedCorrelationRules = prepareRulesWithoutCorrelationReplacements();
+    List<RulesGroup> expectedCorrelationRules =
+        prepareRepeatedGroupOfRulesWithoutCorrelationReplacements();
 
-    softly.assertThat(correlationProxyControl.getResponseFilter()).isEqualTo(expectedFilters);
-    softly.assertThat(correlationProxyControl.getCorrelationComponents())
-        .isEqualTo(expectedComponents);
-    softly.assertThat(correlationProxyControl.getRules()).isEqualTo(expectedCorrelationRules);
+    assertModelInfo(expectedComponents, expectedCorrelationRules, model, expectedFilters);
   }
 
-  private List<CorrelationRule> prepareRepeatedRulesWithoutCorrelationReplacements() {
-    RegexCorrelationExtractor regexExtractor = new RegexCorrelationExtractor();
-    CorrelationRule oneRule = new CorrelationRule(FIRST_RULE_REF_VAR_NAME, regexExtractor,
-        null);
-    return Arrays.asList(oneRule, oneRule, oneRule,
+  private List<RulesGroup> prepareRepeatedGroupOfRulesWithoutCorrelationReplacements() {
+    RegexCorrelationExtractor<?> regexExtractor = new RegexCorrelationExtractor<>();
+    CorrelationRule oneRule = new CorrelationRule(FIRST_RULE_REF_VAR_NAME, regexExtractor, null);
+    List<CorrelationRule> rules = Arrays.asList(oneRule, oneRule, oneRule,
         new CorrelationRule(SECOND_RULE_REF_VAR_NAME, regexExtractor, null));
+    return Collections.singletonList(new RulesGroup.Builder().withRules(rules).build());
+  }
+
+  @Test
+  public void shouldClearCustomCookiesWhenStartProxy() {
+    model = builder.build();
+    ComparableCookie comparableCookie = new ComparableCookie("header", "headerValue", "localhost");
+    model.addCookie(comparableCookie);
+    model.setPort(1234);
+    try {
+      model.startProxy();
+    } catch (IOException e) {
+      //Is expected to throw an exception since 'keytool' command isn't allowed in this environment
+    }
+    softly.assertThat(model.getLastCookies()).isEmpty();
+  }
+
+  @Test
+  public void shouldAddNewPendingProxyWhenStartedProxy() {
+    model = builder.withLocalConfiguration(localConfiguration).build();
+    Thread proxy = Thread.currentThread();
+    model.startedProxy(proxy);
+    LinkedHashMap<Object, PendingProxy> actualPending = model.getPendingProxies();
+    softly.assertThat(actualPending).isNotEmpty();
+    softly.assertThat(actualPending).isEqualTo(proxy);
   }
 }

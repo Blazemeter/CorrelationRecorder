@@ -6,9 +6,9 @@ import java.util.Objects;
 
 public class CorrelationTemplatesRepositoryConfiguration {
 
+  private final Map<String, String> installedTemplates = new HashMap<>();
   private String name;
   private String url;
-  private final Map<String, String> installedTemplates = new HashMap<>();
 
   //Added to satisfy the deserialization process
   public CorrelationTemplatesRepositoryConfiguration() {

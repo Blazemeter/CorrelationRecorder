@@ -26,6 +26,14 @@ public class CorrelationTemplatesRepositoriesConfiguration {
     remote = new RemoteCorrelationTemplatesRepositoriesRegistry(localConfiguration);
   }
 
+  public static InputStream getInputStream(String path) throws IOException {
+    return isURL(path) ? new URL(path).openStream() : new FileInputStream(path);
+  }
+
+  private static boolean isURL(String text) {
+    return text.toLowerCase().contains("http") || text.toLowerCase().contains("ftp");
+  }
+
   public void save(String name, String url) throws IOException {
     if (isURL(url)) {
       remote.save(name, url);
@@ -42,7 +50,7 @@ public class CorrelationTemplatesRepositoriesConfiguration {
     return local.getRepositories();
   }
 
-  public List<CorrelationTemplate> getCorrelationTemplatesByRepositoryName(String name) {
+  public List<TemplateVersion> getCorrelationTemplatesByRepositoryName(String name) {
     return local.getCorrelationTemplatesByRepositoryId(name);
   }
 
@@ -96,13 +104,5 @@ public class CorrelationTemplatesRepositoriesConfiguration {
       }
     }
     return isUpToDate;
-  }
-
-  public static InputStream getInputStream(String path) throws IOException {
-    return isURL(path) ? new URL(path).openStream() : new FileInputStream(path);
-  }
-
-  private static boolean isURL(String text) {
-    return text.toLowerCase().contains("http") || text.toLowerCase().contains("ftp");
   }
 }

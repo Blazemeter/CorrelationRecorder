@@ -15,7 +15,7 @@ public interface CorrelationTemplatesRepositoriesRegistryHandler {
 
   String getConfigurationRoute();
 
-  List<CorrelationTemplate> getCorrelationTemplatesByRepositoryName(String name);
+  List<TemplateVersion> getCorrelationTemplatesByRepositoryName(String name);
 
   void installTemplate(String repositoryName, String id, String version)
       throws ConfigurationException;

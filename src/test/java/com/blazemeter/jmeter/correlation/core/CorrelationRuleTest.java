@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core;
 import static org.junit.Assert.assertEquals;
 
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import org.junit.Before;
@@ -26,9 +27,9 @@ public class CorrelationRuleTest {
 
   @Before
   public void setup() {
-    correlationExtractor = new RegexCorrelationExtractor(EXPECTED_REGEX, EXPECTED_GROUP_NUMBER,
+    correlationExtractor = new RegexCorrelationExtractor<>(EXPECTED_REGEX, EXPECTED_GROUP_NUMBER,
         EXPECTED_MATCH_NUMBER, EXPECTED_TARGET, "false");
-    correlationReplacement = new RegexCorrelationReplacement(EXPECTED_REGEX);
+    correlationReplacement = new RegexCorrelationReplacement<>(EXPECTED_REGEX);
 
     correlationRule = new CorrelationRule(VARIABLE_NAME, correlationExtractor,
         correlationReplacement);
@@ -37,7 +38,7 @@ public class CorrelationRuleTest {
   @Test
   public void shouldReturnACorrelationRuleTestElement() {
     CorrelationRuleTestElement correlationRuleTestElementResult = correlationRule
-        .buildTestElement(new CorrelationComponentsRegistry());
+        .buildTestElement();
 
     CorrelationRuleTestElement expectedCorrelationRuleTestElement = buildExpectedCorrelationRule();
 
@@ -47,6 +48,6 @@ public class CorrelationRuleTest {
 
   private CorrelationRuleTestElement buildExpectedCorrelationRule() {
     return new CorrelationRuleTestElement(VARIABLE_NAME, correlationExtractor,
-        correlationReplacement, new CorrelationComponentsRegistry());
+        correlationReplacement, (p) -> p);
   }
 }

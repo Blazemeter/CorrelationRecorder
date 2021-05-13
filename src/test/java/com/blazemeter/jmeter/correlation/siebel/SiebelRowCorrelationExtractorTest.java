@@ -3,7 +3,7 @@ package com.blazemeter.jmeter.correlation.siebel;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.blazemeter.jmeter.correlation.TestUtils;
-import com.blazemeter.jmeter.correlation.core.ResultField;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

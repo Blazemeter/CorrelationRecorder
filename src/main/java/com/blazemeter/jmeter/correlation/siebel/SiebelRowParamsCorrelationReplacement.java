@@ -27,7 +27,7 @@ import org.apache.oro.text.regex.Perl5Compiler;
 public class SiebelRowParamsCorrelationReplacement extends
     RegexCorrelationReplacement<SiebelContext> {
 
-  private final String DEFAULT_ROW_VAR_PREFIX = "SWERowId";
+  private static final String DEFAULT_ROW_VAR_PREFIX = "SWERowId";
   @JsonIgnore
   private String rowVarPrefix;
 
@@ -68,11 +68,11 @@ public class SiebelRowParamsCorrelationReplacement extends
   /**
    * Handles the replacement of the row fields parameters
    *
-   * Receives an input and apply replacement for all known Siebel CRM row fields parameters (the
+   * <p>Receives an input and apply replacement for all known Siebel CRM row fields parameters (the
    * ones following the s_\d+\d+\d+_\d+ pattern)'. The rowId comes from the ones stored into the
    * {@link SiebelContext}.
    *
-   * Works together with the
+   * <p>Works together with the
    * {@link com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor}
    *
    * @param input the input against the condition will test and replacements will be applied

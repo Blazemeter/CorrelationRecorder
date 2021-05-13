@@ -5,7 +5,10 @@ import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.RulesGroup.Builder;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement;
 import java.io.IOException;
@@ -20,7 +23,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,13 +71,20 @@ public class CorrelationEngineTest {
 
   @Test
   public void shouldUpdateContextWhenSetCorrelationRules() {
-    engine.setCorrelationRules(
-        Arrays.asList(buildRuleWithEnable(true), buildRuleWithSiebelReplacement("variable2")),
-        registry);
+    engine.setCorrelationRules(createGroupWithRules(
+        Arrays.asList(buildRuleWithEnable(true), buildRuleWithSiebelReplacement(
+            "variable2"))), registry);
 
     assertThat(engine.getCorrelationRules().stream()
         .noneMatch(c -> c.getCorrelationReplacement().getSupportedContext() != null
             && c.getCorrelationReplacement().getContext() == null)).isTrue();
+  }
+
+  private List<RulesGroup> createGroupWithRules(List<CorrelationRule> rules) {
+    RulesGroup.Builder builder = new RulesGroup.Builder()
+        .withRules(rules)
+        .isEnabled(true);
+    return Collections.singletonList(builder.build());
   }
 
   private CorrelationRule buildRuleWithEnable(boolean enable) {
@@ -108,8 +117,8 @@ public class CorrelationEngineTest {
 
   @Test
   public void shouldResetContextWhenReset() throws IOException {
-    engine.setCorrelationRules(Collections
-            .singletonList(buildRuleWithSiebelReplacement("var")), registry);
+    engine.setCorrelationRules(createGroupWithRules(Collections
+        .singletonList(buildRuleWithSiebelReplacement("var"))), registry);
     engine.updateContexts(buildSampleResult());
     String updatedContext = getContextsToString();
     engine.reset();
@@ -125,23 +134,30 @@ public class CorrelationEngineTest {
 
   @Test
   public void shouldApplyExtractorWhenProcess() throws IOException {
-    engine.setCorrelationRules(Collections.singletonList(buildRuleWithEnable(true)), registry);
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(true)),
+        registry);
     List<TestElement> children = new ArrayList<>();
     engine.process(createSampler(), children, buildSampleResult(), "");
     assertThat(children).isNotEmpty();
   }
 
+  private List<CorrelationRule> buildSingletonRulesListWithEnable(boolean enable) {
+    return Collections.singletonList(buildRuleWithEnable(enable));
+  }
+
   @Test
   public void shouldNotApplyExtractorWhenProcessWithDisabledRule() throws IOException {
-    engine.setCorrelationRules(Collections.singletonList(buildRuleWithEnable(false)), registry);
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(false)),
+        registry);
     List<TestElement> children = new ArrayList<>();
     engine.process(createSampler(), children, buildSampleResult(), "");
     assertThat(children).isEmpty();
   }
 
   @Test
-  public void shouldApplyReplacementWhenProcess() throws IOException{
-    engine.setCorrelationRules(Collections.singletonList(buildRuleWithEnable(true)), registry);
+  public void shouldApplyReplacementWhenProcess() throws IOException {
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(true)),
+        registry);
     HTTPSampler sampler = createSampler();
     JMeterVariables vars = new JMeterVariables();
     vars.put("variable", "123");
@@ -149,10 +165,11 @@ public class CorrelationEngineTest {
     engine.process(sampler, new ArrayList<>(), buildSampleResult(), "");
     assertThat(sampler.getPath()).isEqualTo("Test_SWEACn=${variable}&Test_Path=1");
   }
-  
+
   @Test
   public void shouldNotApplyReplacementWhenProcessWithDisabledRule() {
-    engine.setCorrelationRules(Collections.singletonList(buildRuleWithEnable(false)), registry);
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(false)),
+        registry);
     HTTPSampler sampler = createSampler();
     JMeterVariables vars = new JMeterVariables();
     vars.put("variable", "123");
@@ -163,17 +180,32 @@ public class CorrelationEngineTest {
 
   @Test
   public void shouldApplyExtractorWhenProcessWithAllowedContentType() throws IOException {
-    engine.setCorrelationRules(Collections.singletonList(buildRuleWithEnable(true)), registry);
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(true)),
+        registry);
     List<TestElement> children = new ArrayList<>();
     engine.process(createSampler(), children, buildSampleResult(), "text/*");
     assertThat(children).isNotEmpty();
   }
-  
+
   @Test
   public void shouldNotApplyExtractorWhenProcessWithNotAllowedContentType() throws IOException {
-    engine.setCorrelationRules(Collections.singletonList(buildRuleWithEnable(true)), registry);
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(true)),
+        registry);
     List<TestElement> children = new ArrayList<>();
     engine.process(createSampler(), children, buildSampleResult(), "*/xml");
     assertThat(children).isEmpty();
+  }
+
+  @Test
+  public void shouldNotAddEnabledRulesWhenSetCorrelationRulesWithDisabledGroup() {
+    List<CorrelationRule> expectedRules = buildSingletonRulesListWithEnable(true);
+    RulesGroup.Builder base = new Builder()
+        .withRules(expectedRules);
+
+    engine.setCorrelationRules(Arrays.asList(base.isEnabled(false).build(),
+        base.isEnabled(false).build(),
+        base.isEnabled(true).build()), registry);
+
+    assertThat(expectedRules).isEqualTo(engine.getCorrelationRules());
   }
 }

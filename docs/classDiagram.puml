@@ -56,12 +56,12 @@ title __Correlations Recorder's Class Diagram__\n
             # include()
         }
 
-        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate {
+        class com.blazemeter.jmeter.correlation.core.templates.TemplateVersion {
             + addDependencies()
             + hashCode()
         }
 
-        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder {
+        class com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder {
             - changes : String
             - components : String
             - dependencies : List<CorrelationTemplateDependency>
@@ -431,7 +431,7 @@ title __Correlations Recorder's Class Diagram__\n
   com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement
 
   com.blazemeter.jmeter.correlation.core.templates.CorrelationRuleSerializationPropertyFilter -up-|> com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
-  com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate +-down- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder
+  com.blazemeter.jmeter.correlation.core.templates.TemplateVersion +-down- com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder
   com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesFrame o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler : repositoriesRegistryHandler
   com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesFrame o-- com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler : templatesRegistryHandler
   com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration o-- com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry : local

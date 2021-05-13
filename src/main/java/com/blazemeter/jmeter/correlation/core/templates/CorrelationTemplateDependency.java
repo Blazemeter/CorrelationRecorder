@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
+import com.helger.commons.annotation.VisibleForTesting;
 import java.util.Objects;
 
 public class CorrelationTemplateDependency {
@@ -12,6 +13,7 @@ public class CorrelationTemplateDependency {
 
   }
 
+  @VisibleForTesting
   public CorrelationTemplateDependency(String name, String version, String url) {
     this.name = name;
     this.version = version;

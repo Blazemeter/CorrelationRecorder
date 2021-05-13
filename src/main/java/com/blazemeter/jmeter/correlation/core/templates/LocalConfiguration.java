@@ -1,6 +1,5 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import com.blazemeter.jmeter.correlation.gui.StringUtils;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -124,6 +124,12 @@ public class LocalConfiguration {
     return mapper.readValue(source, valueType);
   }
 
+  public Map<String, CorrelationTemplateReference> readTemplatesReferences(File source)
+      throws IOException {
+    return mapper.readValue(source, new TypeReference<Map<String, CorrelationTemplateReference>>() {
+    });
+  }
+
   private boolean isSiebelInstalled() {
     return repositories.stream().anyMatch(
         r -> r.getName().equals(LOCAL_REPOSITORY_NAME) && r.getInstalledTemplates()
@@ -146,15 +152,14 @@ public class LocalConfiguration {
   private void saveLocalRepository() throws IOException {
     File localRepositoryFile = new File(
         configurationFolder + LOCAL_REPOSITORY_NAME + REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION);
-
     if (!localRepositoryFile.exists() && localRepositoryFile.createNewFile()) {
       LOG.info("Created the local repository file {}", localRepositoryFile);
-
-      writer.writeValue(localRepositoryFile, new HashMap<String, CorrelationTemplateReference>() {{
-        put(SIEBEL_TEMPLATE_NAME,
-            new CorrelationTemplateReference(DEFAULT_SIEBEL_TEMPLATE_VERSION));
-      }});
-
+      writer.writeValue(localRepositoryFile, new HashMap<String, CorrelationTemplateReference>() {
+        {
+          put(SIEBEL_TEMPLATE_NAME,
+              new CorrelationTemplateReference(DEFAULT_SIEBEL_TEMPLATE_VERSION));
+        }
+      });
       LOG.info("Saved local repository file");
     }
   }
@@ -253,14 +258,10 @@ public class LocalConfiguration {
     return configurationFolder;
   }
 
-  public <T> T readValue(File source, TypeReference typeReference) throws IOException {
-    return mapper.readValue(source, typeReference);
-  }
-
   public List<File> findConflictingDependencies(List<CorrelationTemplateDependency> dependencies) {
     List<File> conflictingDependencies = new ArrayList<>();
     for (CorrelationTemplateDependency dependency : dependencies) {
-      String possibleJarFileName = StringUtils.substringAfterLast(dependency.getUrl(), "/");
+      String possibleJarFileName = getUrlFileName(dependency.getUrl());
 
       String dependenciesFolderPath = rootFolder + "/lib/";
       File[] possibleDependencies = getJarFileByCondition(dependenciesFolderPath,
@@ -291,6 +292,11 @@ public class LocalConfiguration {
           });
     }
     return conflictingDependencies;
+  }
+
+  private String getUrlFileName(String url) {
+    int pos = url.lastIndexOf("/");
+    return pos < 0 ? "" : url.substring(pos + 1);
   }
 
   public File[] getJarFileByCondition(String folderPath, Predicate<String> condition) {

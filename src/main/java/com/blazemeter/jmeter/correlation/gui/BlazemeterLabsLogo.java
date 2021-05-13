@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.correlation.gui.common.ThemedIcon;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Graphics;

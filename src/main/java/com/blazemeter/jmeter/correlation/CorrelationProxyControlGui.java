@@ -1,14 +1,15 @@
 package com.blazemeter.jmeter.correlation;
 
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
+import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
 import com.blazemeter.jmeter.correlation.gui.BlazemeterLabsLogo;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
 import com.blazemeter.jmeter.correlation.gui.TestPlanTemplatesRepository;
 import com.google.common.annotations.VisibleForTesting;
@@ -50,7 +51,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
     add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
     installDefaultFiles();
   }
-  
+
   @VisibleForTesting
   public CorrelationProxyControlGui(CorrelationProxyControl model, RulesContainer container) {
     this.model = model;
@@ -78,7 +79,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   private void installCorrelationRecorderTemplateTestPlan() {
     TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
         getJMeterDirPath() + "/bin" + TEMPLATES_FOLDER_PATH);
-    
+
     templateRepository
         .addCorrelationRecorderTemplate(CORRELATION_RECORDER_TEST_PLAN, TEMPLATES_FOLDER_PATH,
             TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEMPLATE_DESC,
@@ -94,8 +95,8 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
       i.e: In Windows the path would be something like `/C:`,
       so we check if the char at position 3 is ':' and if so, we remove the initial '/'.
     */
-    char a_char = siebelPluginPath.charAt(2);
-    if (a_char == ':') {
+    char aChar = siebelPluginPath.charAt(2);
+    if (aChar == ':') {
       siebelPluginPath = siebelPluginPath.substring(1);
     }
     int index = siebelPluginPath.indexOf("/lib/ext/");
@@ -120,7 +121,8 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
     super.modifyTestElement(el);
     if (el instanceof CorrelationProxyControl) {
       model = (CorrelationProxyControl) el;
-      model.update(rulesContainer.getCorrelationComponents(), rulesContainer.getCorrelationRules(),
+      model.update(rulesContainer.getCorrelationComponents(),
+          rulesContainer.getRulesGroups(),
           rulesContainer.getResponseFilter());
     }
   }
@@ -143,6 +145,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
     if (el instanceof CorrelationProxyControl) {
       CorrelationProxyControl correlationProxyControl = (CorrelationProxyControl) el;
       model = correlationProxyControl;
+      CorrelationComponentsRegistry.getInstance().reset();
       rulesContainer.configure(correlationProxyControl);
     }
   }
@@ -162,7 +165,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   }
 
   @Override
-  public List<CorrelationTemplate> getInstalledCorrelationTemplates() {
+  public List<TemplateVersion> getInstalledCorrelationTemplates() {
     return model.getInstalledCorrelationTemplates();
   }
 
@@ -187,7 +190,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   }
 
   @Override
-  public List<CorrelationTemplate> getCorrelationTemplatesByRepositoryName(String name) {
+  public List<TemplateVersion> getCorrelationTemplatesByRepositoryName(String name) {
     return model.getCorrelationTemplatesByRepositoryName(name);
   }
 

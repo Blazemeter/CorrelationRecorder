@@ -9,12 +9,12 @@
     <property name="eachLine" value="true"/>
   </module>
 
+  <module name="SuppressWarningsFilter" />
   <module name="TreeWalker">
+    <module name="SuppressWarningsHolder" />
     <module name="SuppressionCommentFilter"/>
-
     <module name="AnnotationLocation"/>
     <module name="MissingOverride"/>
-
     <module name="EmptyBlock">
       <property name="tokens"
         value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>

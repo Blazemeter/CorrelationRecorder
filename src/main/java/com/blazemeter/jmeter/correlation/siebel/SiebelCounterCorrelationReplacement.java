@@ -5,7 +5,6 @@ import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;

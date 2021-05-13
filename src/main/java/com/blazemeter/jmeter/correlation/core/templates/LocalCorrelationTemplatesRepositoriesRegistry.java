@@ -7,7 +7,6 @@ import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationT
 import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.TEMPLATE_FILE_SUFFIX;
 import static org.apache.commons.io.FileUtils.copyFile;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -122,9 +121,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
 
   public Map<String, CorrelationTemplateReference> readTemplatesReferences(File source)
       throws IOException {
-    return configuration
-        .readValue(source, new TypeReference<Map<String, CorrelationTemplateReference>>() {
-        });
+    return configuration.readTemplatesReferences(source);
   }
 
   @Override
@@ -179,7 +176,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
     }
   }
 
-  public List<CorrelationTemplate> getCorrelationTemplatesByRepositoryId(String id) {
+  public List<TemplateVersion> getCorrelationTemplatesByRepositoryId(String id) {
     List<File> templates = Stream.of(Objects.requireNonNull((new File(
         configuration.getCorrelationsTemplateInstallationFolder() + (
             id.equals(LOCAL_REPOSITORY_NAME) ? "" : id)))
@@ -187,10 +184,10 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
         .filter(f -> f.getName().endsWith(TEMPLATE_FILE_SUFFIX))
         .collect(Collectors.toList());
 
-    List<CorrelationTemplate> relatedTemplates = new ArrayList<>();
+    List<TemplateVersion> relatedTemplates = new ArrayList<>();
     templates.forEach(t -> {
       try {
-        CorrelationTemplate template = configuration.readValue(t, CorrelationTemplate.class);
+        TemplateVersion template = configuration.readValue(t, TemplateVersion.class);
 
         template.setRepositoryId(id);
         template

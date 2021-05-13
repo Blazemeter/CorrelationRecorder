@@ -6,10 +6,10 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.oro.text.regex.MalformedPatternException;
 
 /**
- * @deprecated This class is no longer maintained. The v1.1 brought along the
- * incorporation of Function functionalities inside @see com.blazemeter.jmeter.correlation.core
- * .extractors.RegexCorrelationExtractor.
  * @since 1.1
+ * @deprecated This class is no longer maintained. The v1.1 brought along the incorporation of
+ * Function functionalities inside @see com.blazemeter.jmeter.correlation.core
+ * .extractors.RegexCorrelationExtractor.
  */
 
 @Deprecated

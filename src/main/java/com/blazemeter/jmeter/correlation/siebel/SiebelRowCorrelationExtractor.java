@@ -5,9 +5,8 @@ import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.ComboParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
-import com.blazemeter.jmeter.correlation.core.ResultField;
-import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import java.util.Arrays;
 import java.util.List;
@@ -130,12 +129,11 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
 
   public List<ParameterDefinition> getParamsDefinition() {
     return Arrays.asList(new TextParameterDefinition(EXTRACTOR_REGEX_NAME,
-            EXTRACTOR_REGEX_DESCRIPTION,
-            REGEX_DEFAULT_VALUE),
-        new TextParameterDefinition(GROUP_NUMBER_NAME, GROUP_NUMBER_DESCRIPTION, String.valueOf(1)),
+            EXTRACTOR_REGEX_DESCRIPTION, REGEX_DEFAULT_VALUE),
+        new TextParameterDefinition(GROUP_NUMBER_NAME, GROUP_NUMBER_DESCRIPTION,
+            String.valueOf(1), true),
         new ComboParameterDefinition(TARGET_FIELD_NAME, TARGET_FIELD_DESCRIPTION,
-            ResultField.BODY.name(),
-            ResultField.getNamesToCodesMapping()));
+            ResultField.BODY.name(), ResultField.getNamesToCodesMapping(), true));
   }
 
   @Override
@@ -178,5 +176,10 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
       return false;
     }
     return super.equals(o);
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
   }
 }

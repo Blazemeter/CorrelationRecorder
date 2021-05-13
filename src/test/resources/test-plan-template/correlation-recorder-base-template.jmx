@@ -41,7 +41,7 @@
     <boolProp name="ProxyControlGui.add_assertion">false</boolProp>
     <stringProp name="ProxyControlGui.sampler_type_name"></stringProp>
     <boolProp name="ProxyControlGui.sampler_redirect_automatically">false</boolProp>
-    <boolProp name="ProxyControlGui.sampler_follow_redirects">true</boolProp>
+    <boolProp name="ProxyControlGui.sampler_follow_redirects">false</boolProp>
     <boolProp name="ProxyControlGui.use_keepalive">true</boolProp>
     <boolProp name="ProxyControlGui.sampler_download_images">false</boolProp>
     <intProp name="ProxyControlGui.proxy_http_sampler_naming_mode">0</intProp>

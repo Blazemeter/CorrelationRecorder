@@ -153,13 +153,21 @@ Assuming you know how [Correlations works](#basic-concepts), lets jump into addi
 
 Go to *bzm - Correlation Recorder* > click the Rules Tab. 
 
-You will be presented with multiple options to add, save, move and delete your Correlation Rules. 
+You will be presented with multiple options to add, move and delete your Correlation Rules Groups, any rule that you want to add must be inside of a group
 
 ![Rules Container](docs/rules-container-table.png "Correlation Rules Container")
 
+### Adding Groups
+
+When clicking the *Add* button, a Correlation Group will be added at the bottom of your list of groups.
+
+Each group will contain the header with the buttons to enable/disable, editing group name, and add, remove and move the rules inside the group. Below the header, it is placed the table which will contain all the rules associated to that group 
+
+![Correlation Group](docs/adding-new-group.png "The groups will be inserted at the end")
+
 ### Adding Rules
 
-When clicking the *Add* button, a Correlation Rule will be added at the bottom of your list of rules. 
+When clicking the **+** button, a Correlation Rule will be added at the bottom of your list of rules. 
 
 Each rule will contain a field in each one of the columns: Reference Variable, Correlation Extractor, and Correlation Replacement
 
@@ -175,7 +183,15 @@ By default, when a Correlation Rule is added, it will have automatically selecte
 
 ![Selecting one Correlation Extractor](docs/selecting-other-correlation-extractor.gif "Selecting one Correlation Extractor")
 
-By selecting another Extractor, the previous values will be deleted. Filling all the fields, with the desired parameters, will allow the plugin to Extract the dynamic values from the responses.
+Each type of Extractor has its own set of parameters, some of them are visible when the extractor is selected, but the advanced ones are hidden by default, those are shown when the parameters section is expanded.
+
+![Expand_Advance_Section Extractor](docs/expand-advance-sextion-extractor.gif "Expanding advance section on Correlation Extractor")
+
+By default, only Regex extractor will be able to be selected, to select other of the extractors available or a custom extractor there is an option **More** in the combo box which will display all the available extractors, here the desired extractor should be selected and added to actives extractors. 
+
+![Add_Custom_Extractor](docs/add_custom_extractor.gif "Adding custom Correlation Extractor")
+
+If another Extractor is selected, the previous values will be deleted. Filling all the fields, with the desired parameters, will allow the plugin to Extract the dynamic values from the responses.
 
 More about how to configure each Correlation Extractor (this and the ones that comes with the Siebel Extension), please refer to our [List of Correlation Extractors](#list-of-correlation-extractors) section.
 
@@ -184,6 +200,14 @@ More about how to configure each Correlation Extractor (this and the ones that c
 Just like the Correlation Extractors, the Regex Correlation Replacement will be selected, by default, when adding a Correlation Rule. 
 
 ![Selecting Replacement Correlation](docs/selecting-other-correlation-replacement.gif "Selecting one Correlation Replacement")
+
+Also, Correlation Replacements have their own Advance section, like Correlation Extractors
+
+![Expand_Advance_Section Replacement](docs/expand-advance-sextion-replacement.gif "Expanding advance section on Correlation Replacement")
+
+As in Correlation Extractor, here to add any Correlation Replacement the option  **more** should be used.
+
+![Add_Custom_Replacement](docs/add_custom_replacement.gif "Adding custom Correlation Replacement")
 
 And their behavior goes sames as its predecessor. Once one option its selected, the fields to configure it, will be displayed right next to it.
 
@@ -424,9 +448,9 @@ Before you run your recorder and test your rules against the app, its **IMPORTAN
 
 If you want to change the priorities, you can use the UP and DOWN buttons, after selecting any rule, to move it up and down, respectively.
 
-## Saving and Loading Rules  
+## Saving and Loading Groups  
 
-One other feature that the plugin allows, its the possibility of saving a set of rules, also known as **Correlation Templates**, without the need of saving the whole Test plan. You can load your previous saved templates or even other ones shared by third parties. To know more about sharing templates, please refer to our [Sharing Repositories](#sharing-repositories) section, for further details.
+One other feature that the plugin allows is saving a set of groups of rules, also known as **Correlation Templates**, without the need to save the whole Test plan. You can load your previously saved templates or even other ones shared by third parties. Please refer to our [Sharing Repositories](#sharing-repositories) section to know more about sharing templates for further details.
 
 ### Saving your Templates
 
@@ -618,13 +642,17 @@ And there you go! The latest version most be in your project and you are ready t
 Need more correlation functionalities? You can check [How Siebel CRM Extensions works](customizing/siebel_extension_explanations.md) to get the idea of how handle different scenarios, [making your own custom extensions](CUSTOM_EXTENSIONS.md) for a more in depth explanation on the process and [examples](/examples)'s folder, for a basic structure of a Custom Extension.
 
 ## Compatibility
-The plugin has been tested with JMeter 3.2, 3.3, 4.0 and 5.2 in Java 8 and 9.
+The plugin has been tested with JMeter 5.2.1, 5.3, 5.4 and 5.4.1 in Java 8 and 9.
 
-Code base is implemented in Java 1.8, so lower versions of JVM are not supported.
+The code base is implemented in Java 1.8, so lower versions of JVM are not supported.
 
 ## Contributing
 
 Got **something interesting** you'd like to **share**? Learn about [contributing](CONTRIBUTING.md).
+
+## Know Issues
+
+Since JMeter 5.3, new Darklaf themes might present some visual display issues; however, the configurations will behave as expected upon saving or starting to record.
 
 ## License
 

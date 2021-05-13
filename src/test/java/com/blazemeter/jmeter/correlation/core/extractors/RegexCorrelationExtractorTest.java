@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
-import com.blazemeter.jmeter.correlation.core.ResultField;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;

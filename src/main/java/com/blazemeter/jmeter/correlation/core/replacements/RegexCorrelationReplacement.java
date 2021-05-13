@@ -29,20 +29,20 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Correlation Replacements that applies the replacement using Regular expressions and the captured
- * values
+ * values.
  *
  * @param <T> correlation context that can be used to store and share values during replay
  */
 public class RegexCorrelationReplacement<T extends BaseCorrelationContext> extends
     CorrelationReplacement<T> {
 
-  protected static final String REPLACEMENT_REGEX_PROPERTY_NAME = PROPERTIES_PREFIX + "regex";
-  protected static final String REPLACEMENT_REGEX_PROPERTY_DESCRIPTION =
-      "Regular expression " + "replacement";
   public static final String REPLACEMENT_STRING_PROPERTY_NAME = PROPERTIES_PREFIX +
       "replacementString";
   public static final String REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME = PROPERTIES_PREFIX +
       "ignoreValue";
+  protected static final String REPLACEMENT_REGEX_PROPERTY_NAME = PROPERTIES_PREFIX + "regex";
+  protected static final String REPLACEMENT_REGEX_PROPERTY_DESCRIPTION =
+      "Regular expression " + "replacement";
   protected static final String FUNCTION_REF_PREFIX = "${"; //$NON-NLS-1$
   /**
    * Functions are wrapped in ${ and }.
@@ -60,7 +60,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   /**
    * Default constructor added in order to satisfy the JSON conversion.
    *
-   * Implementing a Custom Correlation Replacement requires to mimic this behavior
+   * <p>Implementing a Custom Correlation Replacement requires to mimic this behavior
    */
   public RegexCorrelationReplacement() {
   }
@@ -98,9 +98,9 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
         new TextParameterDefinition(REPLACEMENT_REGEX_PROPERTY_NAME,
             REPLACEMENT_REGEX_PROPERTY_DESCRIPTION, REGEX_DEFAULT_VALUE),
         new TextParameterDefinition(REPLACEMENT_STRING_PROPERTY_NAME, "Replacement string",
-            REPLACEMENT_STRING_DEFAULT_VALUE),
+            REPLACEMENT_STRING_DEFAULT_VALUE, true),
         new CheckBoxParameterDefinition(REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME, "Ignore Value",
-            IGNORE_VALUE_DEFAULT));
+            IGNORE_VALUE_DEFAULT, true));
   }
 
   @Override
@@ -143,8 +143,8 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
    * does match, it has to be equals to the one stored in the JMeterVariables with the
    * <code>variableName</code> to be replaced in the string.
    *
-   * Matched values will be replaced with the variableName surrounded by <code>${}</code>. eg: for
-   * <pre>variableName=VAR_1</pre> the replacement would be <pre>${VAR_1}</pre>
+   * <p>Matched values will be replaced with the variableName surrounded by <code>${}</code>. eg:
+   * for <pre>variableName=VAR_1</pre> the replacement would be <pre>${VAR_1}</pre>
    *
    * @param input property's string to check and replace
    * @param vars stored variables shared between request during the recording
@@ -163,10 +163,10 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   /**
    * Handles the method used to evaluate all the matched values by the Regular Expression.
    *
-   * Establish the condition that, if a value is matched with the Regular expression, it should also
-   * be equals to the value stored in the JMeterVariables with the variable name. Not all the values
-   * matched with the regex needs to be correlated. Overwrite it when the condition wants to be
-   * changed.
+   * <p>Establish the condition that, if a value is matched with the Regular expression, it should 
+   * also be equals to the value stored in the JMeterVariables with the variable name. Not all 
+   * the values matched with the regex needs to be correlated. Overwrite it when the condition 
+   * wants to be changed.
    *
    * @param input property's string to check and replace
    * @param regex regular expression used to do the evaluation
@@ -279,11 +279,11 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   }
 
   /**
-   * handles the replacements of a value using a Regular Expression in am input, using the condition
+   * Handles the replacements of a value using a Regular Expression in am input, using the condition
    * and the expression to use as the replacement.
    *
-   * Receives a matching condition that evaluates the String input. If the condition is met, every
-   * appearance of the matched value will be replaced by <code>${expression}</code>.
+   * <p>Receives a matching condition that evaluates the String input. If the condition is met, 
+   * every appearance of the matched value will be replaced by <code>${expression}</code>.
    *
    * @param input property's string to check and replace
    * @param regex regular expression used to do the evaluation

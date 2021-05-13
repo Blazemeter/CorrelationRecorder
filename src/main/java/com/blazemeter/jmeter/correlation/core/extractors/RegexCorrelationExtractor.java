@@ -7,7 +7,6 @@ import com.blazemeter.jmeter.correlation.core.ParameterDefinition.CheckBoxParame
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.ComboParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
-import com.blazemeter.jmeter.correlation.core.ResultField;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,16 +25,17 @@ import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.JMeterVariables;
 
 /**
- * Correlation Extractor that obtains values from the responses using Regular expressions
+ * Correlation Extractor that obtains values from the responses using Regular expressions.
  *
  * @param <T> correlation context that can be used to store values during replay
  */
 public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     CorrelationExtractor<T> {
 
+  public static final String MATCH_NUMBER_NAME = EXTRACTOR_PREFIX + "matchNr";
+  public static final String MULTIVALUED_NAME = EXTRACTOR_PREFIX + "multiValued";
   protected static final String GROUP_NUMBER_NAME = EXTRACTOR_PREFIX + "groupNr";
   protected static final String GROUP_NUMBER_DESCRIPTION = "Group number";
-  public static final String MATCH_NUMBER_NAME = EXTRACTOR_PREFIX + "matchNr";
   protected static final String MATCH_NUMBER_DESCRIPTION = "Match number";
   protected static final String EXTRACTOR_REGEX_NAME = EXTRACTOR_PREFIX + "regex";
   protected static final String EXTRACTOR_REGEX_DESCRIPTION = "Regular expression extractor";
@@ -43,7 +43,6 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   protected static final int DEFAULT_MATCH_GROUP = 1;
   protected static final ResultField DEFAULT_TARGET_VALUE = ResultField.BODY;
   protected static final String DEFAULT_MATCH_NUMBER_NAME = "match number";
-  public static final String MULTIVALUED_NAME = EXTRACTOR_PREFIX + "multiValued";
   protected static final String MULTIVALUED_DESCRIPTION = "Multivalued";
   protected static final boolean DEFAULT_MULTIVALUED = false;
   private static final Function<String, Pattern> VARIABLE_PATTERN_PROVIDER =
@@ -51,18 +50,18 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   private static final String REGEX_EXTRACTOR_GUI_CLASS = RegexExtractorGui.class.getName();
   private static final int DEFAULT_MATCH_NUMBER = 1;
   private static final String DEFAULT_REGEX_EXTRACTOR_SUFFIX = "_NOT_FOUND";
-  private transient JMeterVariables currentVars;
-  private transient List<TestElement> currentSamplersChild;
   protected boolean multiValued;
   protected String regex;
   protected int matchNr;
   protected int groupNr;
+  private transient JMeterVariables currentVars;
+  private transient List<TestElement> currentSamplersChild;
 
   /**
    * Default constructor added in order to satisfy the JSON conversion.
    *
-   * All the default values are set in this constructor. Like the <code>regex = param="(.+?)"</code>
-   * to be an example for the Regular Expression.
+   * <p>All the default values are set in this constructor. Like the <code>regex = param="(.+?)
+   * "</code> to be an example for the Regular Expression.
    */
   public RegexCorrelationExtractor() {
     matchNr = DEFAULT_MATCH_NUMBER;
@@ -155,13 +154,13 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
             EXTRACTOR_REGEX_DESCRIPTION,
             REGEX_DEFAULT_VALUE),
         new TextParameterDefinition(MATCH_NUMBER_NAME, MATCH_NUMBER_DESCRIPTION,
-            String.valueOf(DEFAULT_MATCH_NUMBER)),
+            String.valueOf(DEFAULT_MATCH_NUMBER), true),
         new TextParameterDefinition(GROUP_NUMBER_NAME, GROUP_NUMBER_DESCRIPTION,
-            String.valueOf(DEFAULT_MATCH_GROUP)),
+            String.valueOf(DEFAULT_MATCH_GROUP), true),
         new ComboParameterDefinition(TARGET_FIELD_NAME, TARGET_FIELD_DESCRIPTION,
-            ResultField.BODY.name(),
-            ResultField.getNamesToCodesMapping()),
-        new CheckBoxParameterDefinition(MULTIVALUED_NAME, MULTIVALUED_DESCRIPTION, DEFAULT_MULTIVALUED));
+            ResultField.BODY.name(), ResultField.getNamesToCodesMapping(), true),
+        new CheckBoxParameterDefinition(MULTIVALUED_NAME, MULTIVALUED_DESCRIPTION,
+            DEFAULT_MULTIVALUED, true));
   }
 
   @Override
@@ -182,7 +181,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   /**
    * Used to process the response after a request is made to extract values from it.
    *
-   * In case the regular expression is matched, a {@link RegexExtractor} Post Processor will be
+   * <p>In case the regular expression is matched, a {@link RegexExtractor} Post Processor will be
    * added to the children list for JMeter to extract the value and store it in the
    * <code>variableName</code>. During the recording, the matched value will be stored in the
    * JMeterVariables to be considered for future Correlation Extractors/Replacements

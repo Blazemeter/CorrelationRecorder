@@ -1,14 +1,16 @@
 package com.blazemeter.jmeter.correlation.gui;
 
-import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
+import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.helger.commons.annotation.VisibleForTesting;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.jmeter.testelement.AbstractTestElement;
+import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.BooleanProperty;
+import org.apache.jmeter.testelement.property.JMeterProperty;
+import org.apache.jmeter.testelement.property.NullProperty;
 import org.apache.jmeter.testelement.property.StringProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,52 +35,48 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
   private static final String EXTRACTOR_CLASS = "CorrelationRule.CorrelationExtractorClass";
   private static final String REPLACEMENT_CLASS = "CorrelationRule.CorrelationReplacementClass";
   //For backward compatibility
-  public static Map<String, String> conversion;
+  private static final Map<String, String> CONVERSION = new HashMap<>();
 
   static {
-    conversion = new HashMap<>();
-    conversion.put("CorrelationRule.CorrelationExtractor.target", "CorrelationRule.targetField");
-    conversion.put("CorrelationRule.CorrelationExtractor.matchNr", "CorrelationRule.matchNumber");
-    conversion.put("CorrelationRule.CorrelationExtractor.groupNr", "CorrelationRule.groupNumber");
-    conversion.put("CorrelationRule.CorrelationExtractor.regex", "CorrelationRule.extractorRegex");
-    conversion
+    CONVERSION.put("CorrelationRule.CorrelationExtractor.target", "CorrelationRule.targetField");
+    CONVERSION.put("CorrelationRule.CorrelationExtractor.matchNr", "CorrelationRule.matchNumber");
+    CONVERSION.put("CorrelationRule.CorrelationExtractor.groupNr", "CorrelationRule.groupNumber");
+    CONVERSION.put("CorrelationRule.CorrelationExtractor.regex", "CorrelationRule.extractorRegex");
+    CONVERSION
         .put("CorrelationRule.CorrelationReplacement.regex", "CorrelationRule.replacementRegex");
-    conversion.put(EXTRACTOR_CLASS, "CorrelationRule.extractorClass");
-    conversion.put(REPLACEMENT_CLASS, "CorrelationRule.replacementClass");
+    CONVERSION.put(EXTRACTOR_CLASS, "CorrelationRule.extractorClass");
+    CONVERSION.put(REPLACEMENT_CLASS, "CorrelationRule.replacementClass");
   }
 
-  private final CorrelationComponentsRegistry registry;
-  private final CorrelationRulePartTestElement<?> extractorDefinitions;
-  private final CorrelationRulePartTestElement<?> replacementDefinitions;
+  private transient CorrelationRulePartTestElement<?> extractorDefinitions;
+  private transient CorrelationRulePartTestElement<?> replacementDefinitions;
   private boolean oldTestPlan;
-  private final Function<String, String> propertyProvider = property -> oldTestPlan ?
-      conversion.get(property) : property;
+  private transient Function<String, String> propertyProvider;
 
   public CorrelationRuleTestElement() {
-    this(new CorrelationComponentsRegistry());
+    initCorrelationRuleTestElement();
   }
-
-  public CorrelationRuleTestElement(
-      CorrelationComponentsRegistry registry) {
-    this.registry = registry; 
-    extractorDefinitions = null;
-    replacementDefinitions = null;
-  }
-  
 
   @VisibleForTesting
   public CorrelationRuleTestElement(String referenceName,
       CorrelationRulePartTestElement<?> extractor,
       CorrelationRulePartTestElement<?> replacement,
-      CorrelationComponentsRegistry registry) {
+      Function<String, String> propertyProvider) {
 
     setReferenceName(referenceName);
     this.extractorDefinitions = extractor;
     this.replacementDefinitions = replacement;
-    this.registry = registry;
+    this.propertyProvider = propertyProvider;
     setProperty(REFERENCE_NAME, referenceName);
     setPropertiesForCorrelationPart(extractor);
     setPropertiesForCorrelationPart(replacement);
+  }
+
+  private void initCorrelationRuleTestElement() {
+    extractorDefinitions = null;
+    replacementDefinitions = null;
+    propertyProvider = property -> oldTestPlan
+        ? CONVERSION.get(property) : property;
   }
 
   private void setPropertiesForCorrelationPart(CorrelationRulePartTestElement<?> part) {
@@ -104,19 +105,28 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
   }
 
   public boolean isRuleEnabled() {
-    return getPropertyAsBoolean(IS_ENABLE, true);
+    JMeterProperty testElementProperty = getProperty(TestElement.ENABLED);
+    if (!(testElementProperty instanceof NullProperty)) {
+      return getPropertyAsBoolean(TestElement.ENABLED);
+    } else {
+      JMeterProperty correlationRecorderProperty = getProperty(IS_ENABLE);
+      if (!(correlationRecorderProperty instanceof NullProperty)) {
+        return getPropertyAsBoolean(IS_ENABLE);
+      } else {
+        return true;
+      }
+    }
   }
 
   public void setRuleEnable(boolean enable) {
-    setProperty(new BooleanProperty(IS_ENABLE, enable));
+    setProperty(new BooleanProperty(TestElement.ENABLED, enable));
   }
-
 
   public Class<? extends CorrelationExtractor<?>> getExtractorClass() {
     String extractorClass = getPropertyAsString(EXTRACTOR_CLASS);
 
     if (extractorClass == null || extractorClass.isEmpty()) {
-      extractorClass = getPropertyAsString(conversion.get(EXTRACTOR_CLASS));
+      extractorClass = getPropertyAsString(CONVERSION.get(EXTRACTOR_CLASS));
       if (extractorClass.isEmpty()) {
         return null;
       }
@@ -141,7 +151,7 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
     String replacementClass = getPropertyAsString(REPLACEMENT_CLASS);
     //Implemented for backward compatibility with Siebel CRM Recorder
     if (replacementClass == null || replacementClass.isEmpty()) {
-      replacementClass = getPropertyAsString(conversion.get(REPLACEMENT_CLASS))
+      replacementClass = getPropertyAsString(CONVERSION.get(REPLACEMENT_CLASS))
           .replace("Replacement", "CorrelationReplacement");
       if (replacementClass.isEmpty()) {
         return null;
@@ -169,7 +179,8 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
       return null;
     }
 
-    CorrelationExtractor<?> correlationExtractor = registry.getCorrelationExtractor(extractorClass);
+    CorrelationExtractor<?> correlationExtractor =
+        CorrelationComponentsRegistry.getInstance().getCorrelationExtractor(extractorClass);
 
     correlationExtractor.setParams((correlationExtractor.getParamsDefinition()).stream()
         .map(this::getStoredValueFromParam)
@@ -191,7 +202,7 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
       return null;
     }
 
-    CorrelationReplacement<?> correlationReplacement = registry
+    CorrelationReplacement<?> correlationReplacement = CorrelationComponentsRegistry.getInstance()
         .getCorrelationReplacement(replacement);
 
     correlationReplacement.setParams(correlationReplacement.getParamsDefinition().stream()
@@ -208,13 +219,13 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
     }
 
     String canonicalName = extractorClass.getCanonicalName();
-    return canonicalName.isEmpty() ? CorrelationComponentsRegistry.NONE_EXTRACTOR :
-        getCorrelationRulePart(canonicalName);
+    return canonicalName.isEmpty() ? CorrelationComponentsRegistry.NONE_EXTRACTOR
+        : getCorrelationRulePart(canonicalName);
   }
 
   private CorrelationRulePartTestElement<?> getCorrelationRulePart(String correlationClassName) {
-    CorrelationRulePartTestElement<?> correlationInstance = registry
-        .getCorrelationRulePartTestElement(correlationClassName);
+    CorrelationRulePartTestElement<?> correlationInstance = CorrelationComponentsRegistry
+        .getInstance().buildRulePartFromClassName(correlationClassName);
 
     correlationInstance
         .setParams(correlationInstance.getParamsDefinition().stream()
@@ -230,8 +241,8 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
     }
 
     String canonicalName = replacementClass.getCanonicalName();
-    return canonicalName.isEmpty() ? CorrelationComponentsRegistry.NONE_REPLACEMENT :
-        getCorrelationRulePart(canonicalName);
+    return canonicalName.isEmpty() ? CorrelationComponentsRegistry.NONE_REPLACEMENT
+        : getCorrelationRulePart(canonicalName);
   }
 
   @Override
@@ -271,6 +282,12 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
         propertyProvider);
   }
 
+  private void readObject(ObjectInputStream inputStream)
+      throws IOException, ClassNotFoundException {
+    inputStream.defaultReadObject();
+    initCorrelationRuleTestElement();
+  }
+
   public CorrelationRuleTestElement ensureBackwardCompatibility() {
     Class<? extends CorrelationReplacement<?>> clazz = getReplacementClass();
     if (clazz != null && clazz.equals(FunctionCorrelationReplacement.class)) {
@@ -289,7 +306,7 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
                 + "be None, if this is considered an error, please contact support.",
             this.getExtractorClass(), e);
       }
-      return correlationRule.buildTestElement(registry);
+      return correlationRule.buildTestElement();
     }
     return this;
   }

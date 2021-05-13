@@ -6,7 +6,7 @@
   <groupId>jmeter.plugins.correlation.recorder</groupId>
   <artifactId>jmeter-bzm-correlation-recorder</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.1</version>
+  <version>1.2</version>
   <name>Correlation Recorder as JMeter plugin</name>
 
   <properties>
@@ -65,7 +65,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.9.10.7</version>
+      <version>2.12.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -163,7 +163,32 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <configuration>
+              <configLocation>checkstyle.xml</configLocation>
+              <failsOnError>true</failsOnError>
+              <consoleOutput>true</consoleOutput>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <!-- Avoid excluding nested tests -->
+            <exclude/>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <goals>

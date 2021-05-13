@@ -2,9 +2,8 @@ package com.blazemeter.jmeter.correlation.core.extractors;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
-import com.blazemeter.jmeter.correlation.core.ResultField;
+import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationRuleSerializationPropertyFilter;
-import com.blazemeter.jmeter.correlation.core.templates.DescriptionContent;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -18,19 +17,18 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 @JsonTypeInfo(use = Id.CLASS, property = "type")
 @JsonFilter(CorrelationRuleSerializationPropertyFilter.FILTER_ID)
 /**
  * Serves as a base for all the Correlation Extractors.
  *
- * Contains all the methods from loading, saving and processing responses from the server.
+ * <p>Contains all the methods from loading, saving and processing responses from the server.
  *
- * For a more detailed explanation on Correlation Extractors, their usages and methods, please 
+ * <p>For a more detailed explanation on Correlation Extractors, their usages and methods, please 
  * read the 
  * <a href="https://github.com/Blazemeter/CorrelationRecorder/blob/master/README.md">readme</a>.
  *
- * Along side {@link com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement}
+ * <p>Along side {@link com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement}
  * and the Reference Variable, it is a part of the
  * {@link com.blazemeter.jmeter.correlation.core.CorrelationRule}
  */
@@ -50,7 +48,7 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
   /**
    * Default constructor added in order to satisfy the JSON conversion.
    *
-   * Implementing a Custom Correlation Extractor requires to always define a default constructor
+   * <p>Implementing a Custom Correlation Extractor requires to always define a default constructor
    */
   public CorrelationExtractor() {
   }
@@ -66,11 +64,11 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
         parsedValue = Integer.parseInt(parsingValue);
       } catch (NumberFormatException e) {
         LOG.warn("Wrong format for {}={}, using default value '{}' instead.", name, parsingValue,
-            e);
+            defaultValue, e);
       }
     } else {
-      LOG.warn("Wrong format {} for '{}', using default value '{}' instead.",
-          parsingValue == null ? null : "empty", name, defaultValue);
+      LOG.warn("Wrong format {} for '{}', using default value '{}' instead.", name, defaultValue,
+          parsingValue == null ? null : "empty");
     }
 
     return parsedValue;
@@ -85,8 +83,8 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
    * Handles the saving of values of the Correlation Extractor into {@link
    * CorrelationRuleTestElement} for later storage in Test Plans and CorrelationTemplates.
    *
-   * This method has to be overwritten when implementing custom Correlation Extractors, otherwise,
-   * only the target field will be saved
+   * <p>This method has to be overwritten when implementing custom Correlation Extractors, 
+   * otherwise, only the target field will be saved
    *
    * @param testElem CorrelationRuleTestElement where the fields will be stored
    */
@@ -99,10 +97,9 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
   /**
    * Handles the loading of values from Test Plans and CorrelationTemplates.
    *
-   * Gets the values using the property names used to store it on the
-   * <code>updateTestElem(CorrelationRuleTestElement testElem)</code> method. This method has to be
-   * overwritten when implementing custom Correlation Extractors, otherwise, only target field will
-   * be loaded
+   * <p>Gets the values using the property names used to store it on the <code>updateTestElem
+   * (CorrelationRuleTestElement testElem)</code> method. This method has to be overwritten when 
+   * implementing custom Correlation Extractors, otherwise, only target field will be loaded
    *
    * @param testElem CorrelationRuleTestElement from which the values are obtained
    */
@@ -113,9 +110,9 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
   /**
    * Process every response obtained from the server, after a request is made.
    *
-   * The logic for extracting the desired values will be contained here. This method has to be
-   * implemented when creating custom Correlation Extractors. This method is expected to add
-   * children to the sampler to the Test Plan, in order to get the desire information from the
+   * <p>The logic for extracting the desired values will be contained here. This method has to be
+   * implemented when creating custom Correlation Extractors. This method is expected to add 
+   * children to the sampler to the Test Plan, in order to get the desire information from the 
    * SampleResult, during the replay as well.
    *
    * @param sampler recorded sampler containing the information of the request

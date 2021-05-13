@@ -11,7 +11,7 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.oro.text.regex.MalformedPatternException;
 
 /**
- * Handles the replacement of Row Ids on Siebel CRM Correlations
+ * Handles the replacement of Row Ids on Siebel CRM Correlations.
  */
 public class SiebelRowIdCorrelationReplacement extends RegexCorrelationReplacement<SiebelContext> {
 
@@ -38,14 +38,13 @@ public class SiebelRowIdCorrelationReplacement extends RegexCorrelationReplaceme
   /**
    * Handles the replacement of the row ids.
    *
-   * Receives an input and applies the replacement based in the values stored in the {@link
+   * <p>Receives an input and applies the replacement based in the values stored in the {@link
    * SiebelContext}, followed by "_rowId". Works together with the {@link
    * com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor}.
    *
-   * The method is overwritten because is necessary to alter the way inputs are made but not how the
-   * Regular Expression is handled by the father class
-   * {@link com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement}
-   * .
+   * <p>The method is overwritten because is necessary to alter the way inputs are made but not 
+   * how the Regular Expression is handled by the father class
+   * {@link com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement}.
    *
    * @param input the input against the condition will test and replacements will be applied
    * @param regex the regular expression used to eval the input

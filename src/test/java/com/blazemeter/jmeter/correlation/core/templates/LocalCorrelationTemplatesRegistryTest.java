@@ -3,24 +3,26 @@ package com.blazemeter.jmeter.correlation.core.templates;
 import static org.junit.Assert.assertEquals;
 
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
+import com.blazemeter.jmeter.correlation.CorrelationProxyControlBuilder;
+import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.TestUtils;
-import com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
-import com.blazemeter.jmeter.correlation.core.ResultField;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
+import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplate.Builder;
-import com.blazemeter.jmeter.correlation.gui.CorrelationRulesTestElement;
+import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -46,19 +48,24 @@ public class LocalCorrelationTemplatesRegistryTest {
   @Mock
   private CorrelationEngine correlationEngine;
   private CorrelationProxyControl proxyControl;
-  @Mock
-  private CorrelationComponentsRegistry registry;
+
+  @BeforeClass
+  public static void setupClass() {
+    JMeterTestUtils.setupJmeterEnv();
+  }
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    LocalConfiguration localConfiguration = new LocalConfiguration(folder.getRoot().getPath());
-    LocalCorrelationTemplatesRegistry repository = new LocalCorrelationTemplatesRegistry(
-        localConfiguration);
-    proxyControl = new CorrelationProxyControl(localConfiguration.getRootFolder());
-    proxyControl.setCorrelationEngine(correlationEngine);
-    proxyControl.setCorrelationRules(buildCorrelationRules());
-    proxyControl.setCorrelationTemplatesRegistry(repository);
+    LocalConfiguration configuration = new LocalConfiguration(folder.getRoot().getPath());
+    CorrelationProxyControlBuilder builder = new CorrelationProxyControlBuilder();
+    builder.withCorrelationEngine(correlationEngine)
+        .withCorrelationTemplatesRegistry(new LocalCorrelationTemplatesRegistry(configuration))
+        .withLocalConfiguration(configuration);
+
+    proxyControl = builder.build();
+
+    proxyControl.setCorrelationGroups(Collections.singletonList(buildCorrelationGroup("id")));
   }
 
   @Test
@@ -100,19 +107,20 @@ public class LocalCorrelationTemplatesRegistryTest {
         .withId(TEMPLATE_ID);
   }
 
-  private List<CorrelationRule> buildCorrelationRules() {
+  private RulesGroup buildCorrelationGroup(String title) {
     List<CorrelationRule> rules = new ArrayList<>();
     rules.add(
         new CorrelationRule("TestRuleOne",
-            new RegexCorrelationExtractor("SWEACn=([a-z])", "1", "2",
+            new RegexCorrelationExtractor<>("SWEACn=([a-z])", "1", "2",
                 ResultField.RESPONSE_HEADERS.name(), ""),
-            new RegexCorrelationReplacement("SWEACn=([A-Z])")));
+            new RegexCorrelationReplacement<>("SWEACn=([A-Z])")));
     rules.add(
         new CorrelationRule("TestRuleTwo",
-            new RegexCorrelationExtractor("SWEACn=(ˆ[\\.\\.])", "5", "6",
+            new RegexCorrelationExtractor<>("SWEACn=(ˆ[\\.\\.])", "5", "6",
                 DEFAULT_TARGET.name(), ""),
-            new RegexCorrelationReplacement("SWEACn=([(\\d)])")));
-    return rules;
+            new RegexCorrelationReplacement<>("SWEACn=([(\\d)])")));
+
+    return new RulesGroup.Builder().withId(title).withRules(rules).build();
   }
 
   @Test
@@ -131,16 +139,14 @@ public class LocalCorrelationTemplatesRegistryTest {
   public void shouldDeserializeRulesFromJsonWhenOnLoadTemplate()
       throws IOException, ConfigurationException {
     proxyControl.onSaveTemplate(getBuilderCorrelationTemplate());
-    CorrelationRulesTestElement testElement = buildCorrelationRulesTestElement();
+    List<RulesGroup> expectedGroups = buildCorrelationRulesTestElement();
     proxyControl.onLoadTemplate(TEMPLATE_REPOSITORY_OWNER_ID, TEMPLATE_ID,
         DEFAULT_TEMPLATE_VERSION);
-    assertEquals(testElement.getRules(), proxyControl.getCorrelationRulesTestElement().getRules());
+    assertEquals(expectedGroups, proxyControl.getGroups());
   }
 
-  private CorrelationRulesTestElement buildCorrelationRulesTestElement() {
-    return new CorrelationRulesTestElement(buildCorrelationRules().stream()
-        .map(correlationRule -> correlationRule.buildTestElement(new CorrelationComponentsRegistry()))
-        .collect(Collectors.toList()));
+  private List<RulesGroup> buildCorrelationRulesTestElement() {
+    return Arrays.asList(buildCorrelationGroup("id"), buildCorrelationGroup("id (1)"));
   }
 
   @Test

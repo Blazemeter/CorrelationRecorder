@@ -114,8 +114,7 @@ public class SiebelContext extends BaseCorrelationContext {
 
   @Override
   public String toString() {
-    return "SiebelContext{" +
-        "bcis=" + (bcis.isEmpty() ? "{}"
+    return "SiebelContext{" + "bcis=" + (bcis.isEmpty() ? "{}"
         : bcis.keySet().stream()
             .map(key -> key + "=" + bcis.get(key))
             .collect(Collectors.joining(", ", "{", "}"))) +
@@ -124,8 +123,8 @@ public class SiebelContext extends BaseCorrelationContext {
             .map(key -> key + "=" + paramRowFields.get(key))
             .collect(Collectors.joining(", ", "{", "}"))) +
         ", prefixId=" + prefixId +
-        ", rowVars=" + (rowVars.isEmpty() ? "{}" :
-        rowVars.keySet().stream()
+        ", rowVars=" + (rowVars.isEmpty() ? "{}"
+        : rowVars.keySet().stream()
             .map(key -> key + "=" + rowVars.get(key))
             .collect(Collectors.joining(",", "{", "}"))) +
         ", counter=" + counter +
@@ -157,8 +156,7 @@ public class SiebelContext extends BaseCorrelationContext {
 
   public static class Field {
 
-    private final static int TELEPHONE_TYPE = 155;
-
+    private final int telephoneType = 155;
     private final int id;
     private final int type;
     private int position;
@@ -173,7 +171,7 @@ public class SiebelContext extends BaseCorrelationContext {
     }
 
     public String getIgnoredCharsRegex() {
-      if (type == TELEPHONE_TYPE) {
+      if (type == telephoneType) {
         return "[\\()\\- ]";
       } else {
         return "";

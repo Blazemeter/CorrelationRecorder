@@ -6,10 +6,10 @@ import java.util.Optional;
 
 public interface CorrelationTemplatesRegistry {
 
-  void save(CorrelationTemplate correlationTemplate) throws IOException;
+  void save(TemplateVersion templateVersion) throws IOException;
 
-  Optional<CorrelationTemplate> findByID(String repositoryOwner, String id,
+  Optional<TemplateVersion> findByID(String repositoryOwner, String id,
       String templateVersion) throws IOException;
 
-  List<CorrelationTemplate> getInstalledTemplates();
+  List<TemplateVersion> getInstalledTemplates();
 }

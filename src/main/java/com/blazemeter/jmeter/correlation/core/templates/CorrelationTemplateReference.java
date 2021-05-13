@@ -6,8 +6,8 @@ import java.util.Objects;
 
 public class CorrelationTemplateReference {
 
-  private transient String name;
   private final List<String> versions = new ArrayList<>();
+  private transient String name;
 
   //Constructor added to avoid issues with the serialization
   public CorrelationTemplateReference() {
@@ -54,6 +54,5 @@ public class CorrelationTemplateReference {
   public int hashCode() {
     return Objects.hash(name, versions);
   }
-
 
 }

@@ -62,8 +62,8 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
     configuration.addRepository(name, url);
 
     String baseURL = getBaseURL(url);
-    for (Map.Entry<String, CorrelationTemplateReference> templateReference :
-        readTemplatesReferences(new File(repositoryFilePath)).entrySet()) {
+    for (Map.Entry<String, CorrelationTemplateReference> templateReference 
+        : readTemplatesReferences(new File(repositoryFilePath)).entrySet()) {
       for (String templateVersion : templateReference.getValue().getVersions()) {
         String templateWithVersionName = templateReference.getKey() + "-" + templateVersion;
 
@@ -90,9 +90,11 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
   }
 
   private String encodeSpecialCharacters(String urlPart) throws UnsupportedEncodingException {
-    return URLEncoder.encode(urlPart, StandardCharsets.UTF_8.toString())
-        //Implemented for backward compatibility with templates with IDs and versions with spaces and '+'
-        .replaceAll("[+ ]", "%20");
+    /*
+     * Implemented for backward compatibility with templates with IDs and versions with spaces
+     * and '+'
+     */
+    return URLEncoder.encode(urlPart, StandardCharsets.UTF_8.toString()).replaceAll("[+ ]", "%20");
   }
 
   private String getBaseURL(String fullURL) {

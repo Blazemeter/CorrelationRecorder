@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.core;
 
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +8,6 @@ import java.util.Optional;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.util.JMeterUtils;
@@ -20,20 +20,24 @@ public class CorrelationEngine {
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationEngine.class);
   private final List<CorrelationContext> initializedContexts = new ArrayList<>();
   private JMeterVariables vars = new JMeterVariables();
-  private List<CorrelationRule> rules;
+  private final List<CorrelationRule> rules;
 
   public CorrelationEngine() {
     rules = new ArrayList<>();
     JMeterContextService.getContext().setVariables(vars);
   }
 
-  public void setCorrelationRules(List<CorrelationRule> rules,
+  public void setCorrelationRules(List<RulesGroup> groups,
       CorrelationComponentsRegistry registry) {
-    rules.forEach(r -> {
-      updateCorrelationContext(r.getCorrelationExtractor(), registry);
-      updateCorrelationContext(r.getCorrelationReplacement(), registry);
-    });
-    this.rules = rules;
+    rules.clear();
+    groups.stream()
+        .filter(RulesGroup::isEnable)
+        .forEach(g -> g.getRules()
+            .forEach(r -> {
+              updateCorrelationContext(r.getCorrelationExtractor(), registry);
+              updateCorrelationContext(r.getCorrelationReplacement(), registry);
+              rules.add(r);
+            }));
   }
 
   private void updateCorrelationContext(CorrelationRulePartTestElement rulePartTestElement,
@@ -73,7 +77,7 @@ public class CorrelationEngine {
         .forEach(r -> r.getCorrelationReplacement().process(sampler, children, result, vars));
 
     initializedContexts.forEach(c -> c.update(result));
-      
+
     if (isContentTypeAllowed(result, responseFilter)) {
       rules.stream()
           .filter(r -> r.isEnabled() && r.getCorrelationExtractor() != null)

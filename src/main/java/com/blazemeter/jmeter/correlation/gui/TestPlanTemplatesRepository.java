@@ -71,7 +71,7 @@ public class TestPlanTemplatesRepository {
         List<String> replacedLines = new ArrayList<>();
         for (String line : Files.readAllLines(path)) {
           if (line.contains("</templates>")) {
-            line = getFileFromResources(descTemplateName) + System.lineSeparator() + line;
+            replacedLines.add(getFileFromResources(descTemplateName) + System.lineSeparator());
           }
           replacedLines.add(line);
         }
@@ -137,10 +137,10 @@ public class TestPlanTemplatesRepository {
         for (String line : Files.readAllLines(path)) {
           if (line.contains("testname=\"Correlation Recorder\"")) {
             String containingFolder = "/templates/components/";
-            line = String.format(
+            replacedLines.add(String.format(
                 getFileFromResources(containingFolder + "JSR223AssertionTemplate.xml"), name,
                 getFileFromResources(containingFolder + "ExtractingVariableAssertion.xml"))
-                + System.lineSeparator() + line;
+                + System.lineSeparator());
           }
           replacedLines.add(line);
         }
