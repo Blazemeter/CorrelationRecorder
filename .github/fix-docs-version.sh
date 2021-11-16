@@ -9,7 +9,7 @@ VERSION=$1
 update_file_versions() {
   local VERSION="$1"
   local FILE="$2"
-  sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" README.md
+  sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" ${FILE}
 }
 
 update_file_versions ${VERSION} README.md

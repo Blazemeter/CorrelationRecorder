@@ -67,7 +67,7 @@ After installing the JMeter Plugins Manager, the Correlation Recorder plugin wil
 
 ### Using it as a Maven dependency
 
-To use it as a Maven dependency include in `pom.xml`:
+If you use Maven, just include the following dependency in `pom.xml`:
 
 ``` xml 
   <dependency>
