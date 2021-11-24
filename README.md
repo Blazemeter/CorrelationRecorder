@@ -65,6 +65,21 @@ After installing the JMeter Plugins Manager, the Correlation Recorder plugin wil
 - In the search field write Correlation Recorder, and then select the *bzm - Correlation Recorder* plugin’s checkbox
 - Click the button Apply Changes and Restart JMeter
 
+### Using it as a Maven dependency
+
+If you use Maven, just include the following dependency in `pom.xml`:
+
+``` xml 
+  <dependency>
+      <groupId>jmeter.plugins.correlation.recorder</groupId>
+      <artifactId>jmeter-bzm-correlation-recorder</artifactId>
+      <packaging>jar</packaging>
+      <version>1.2</version>
+  </dependency>
+```
+
+>Check latest version in [releases](https://github.com/Blazemeter/CorrelationRecorder/releases).
+
 ## Usage
 
 In this section, we will cover the following topics
