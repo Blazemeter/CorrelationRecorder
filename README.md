@@ -71,7 +71,7 @@ If you use Maven, just include the following dependency in `pom.xml`:
 
 ``` xml 
   <dependency>
-      <groupId>jmeter.plugins.correlation.recorder</groupId>
+      <groupId>com.blazemeter</groupId>
       <artifactId>jmeter-bzm-correlation-recorder</artifactId>
       <packaging>jar</packaging>
       <version>1.2</version>
