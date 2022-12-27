@@ -135,6 +135,8 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
         case JOptionPane.NO_OPTION:
           dispose();
           break;
+        case JOptionPane.CANCEL_OPTION:
+          break;
         default:
           //Shouldn't reach this point since the Window only has Yes/No options
           throw new UnsupportedOperationException(

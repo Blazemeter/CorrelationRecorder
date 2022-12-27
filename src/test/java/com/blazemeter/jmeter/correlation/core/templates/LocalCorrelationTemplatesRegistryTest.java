@@ -42,6 +42,9 @@ public class LocalCorrelationTemplatesRegistryTest {
   private static final String DEFAULT_TEMPLATE_VERSION = "1.0";
   private static final String TEMPLATE_WITH_DEPENDENCIES_VERSION = "2.0";
   private static final String TEMPLATE_REPOSITORY_OWNER_ID = "local";
+  private static final String TEMPLATE_AUTHOR = "BlazeMeter";
+  private static final String TEMPLATE_URL = "https://github"
+      + ".com/Blazemeter/CorrelationsRecorderTemplates/tree/master/central";
 
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
@@ -103,6 +106,8 @@ public class LocalCorrelationTemplatesRegistryTest {
         .withDescription("This is a description")
         .withRepositoryId(TEMPLATE_REPOSITORY_OWNER_ID)
         .withVersion(DEFAULT_TEMPLATE_VERSION)
+        .withAuthor(TEMPLATE_AUTHOR)
+        .withUrl(TEMPLATE_URL)
         .withChanges("")
         .withId(TEMPLATE_ID);
   }

@@ -6,9 +6,12 @@ import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.PatternMatcherInput;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RegexMatcher {
 
+  private static final Logger LOG = LoggerFactory.getLogger(RegexMatcher.class);
   private final String regex;
   private final int group;
 
@@ -27,7 +30,23 @@ public class RegexMatcher {
       while (matchCount < matchNumber && matcher.contains(matcherInput, pattern)) {
         matchCount++;
       }
-      return matchCount == matchNumber ? matcher.getMatch().group(group) : null;
+      if (matchNumber > matchCount && matchCount != 0) {
+        LOG.warn("Match number {} is bigger than actual matches {}, return value is null",
+                matchNumber, matchCount);
+        return null;
+      }
+
+      if (matchCount != matchNumber) {
+        return null;
+      }
+
+      if (group < 0) {
+        LOG.warn("Group number {} is invalid. It has to be a positive number. Using 1 instead.",
+                group);
+        return matcher.getMatch().group(1);
+      }
+
+      return matcher.getMatch().group(group);
     } finally {
       JMeterUtils.clearMatcherMemory(JMeterUtils.getMatcher(), pattern);
     }

@@ -4,6 +4,7 @@ import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguratio
 import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.CENTRAL_REPOSITORY_URL;
 import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.TEMPLATE_FILE_SUFFIX;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -58,25 +59,33 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
         configuration.getCorrelationsTemplateInstallationFolder() + repositoryFolderName;
     String repositoryFilePath = installationFolderPath + name + REPOSITORY_FILE_SUFFIX;
 
-    saveFileFromURL(url, repositoryFilePath);
-    configuration.addRepository(name, url);
+    try {
+      saveFileFromURL(url, repositoryFilePath);
+      configuration.addRepository(name, url);
 
-    String baseURL = getBaseURL(url);
-    for (Map.Entry<String, CorrelationTemplateReference> templateReference 
-        : readTemplatesReferences(new File(repositoryFilePath)).entrySet()) {
-      for (String templateVersion : templateReference.getValue().getVersions()) {
-        String templateWithVersionName = templateReference.getKey() + "-" + templateVersion;
+      String baseURL = getBaseURL(url);
 
-        String templateFileName = templateWithVersionName + TEMPLATE_FILE_SUFFIX;
-        saveFileFromURL(baseURL + encodeSpecialCharacters(templateFileName),
-            installationFolderPath + templateFileName);
+      for (Map.Entry<String, CorrelationTemplateReference> templateReference
+          : readTemplatesReferences(new File(repositoryFilePath)).entrySet()) {
+        for (String templateVersion : templateReference.getValue().getVersions()) {
+          String templateWithVersionName = templateReference.getKey() + "-" + templateVersion;
 
-        String snapshotFileName = templateWithVersionName + SNAPSHOT_FILE_SUFFIX;
-        if (canDownload(baseURL + snapshotFileName)) {
-          saveFileFromURL(baseURL + encodeSpecialCharacters(snapshotFileName),
-              installationFolderPath + snapshotFileName);
+          String templateFileName = templateWithVersionName + TEMPLATE_FILE_SUFFIX;
+          saveFileFromURL(baseURL + encodeSpecialCharacters(templateFileName),
+              installationFolderPath + templateFileName);
+
+          String snapshotFileName = templateWithVersionName + SNAPSHOT_FILE_SUFFIX;
+          if (canDownload(baseURL + snapshotFileName)) {
+            saveFileFromURL(baseURL + encodeSpecialCharacters(snapshotFileName),
+                installationFolderPath + snapshotFileName);
+          }
         }
       }
+    } catch (JsonParseException e) {
+      configuration.removeRepository(name);
+      throw new IOException(
+          "Content does not conform to JSON syntax. Please enter a URL that points to a "
+              + "valid JSON.", e);
     }
   }
 

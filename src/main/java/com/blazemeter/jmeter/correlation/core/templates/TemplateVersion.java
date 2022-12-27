@@ -16,6 +16,8 @@ public class TemplateVersion {
   private String id;
   private String description;
   private String version;
+  private String author;
+  private String url;
   private String components;
   private String responseFilters;
   //To allows Backward Compatibility
@@ -44,6 +46,8 @@ public class TemplateVersion {
     version = builder.version;
     changes = builder.changes;
     dependencies = builder.dependencies;
+    author = builder.author;
+    url = builder.url;
   }
 
   public String getId() {
@@ -52,6 +56,14 @@ public class TemplateVersion {
 
   public String getDescription() {
     return description;
+  }
+
+  public String getAuthor() {
+    return author;
+  }
+
+  public String getUrl() {
+    return url;
   }
 
   //Left for backward compatibility with version 1.1
@@ -134,6 +146,8 @@ public class TemplateVersion {
         "id='" + id + '\'' +
         ", description='" + description + '\'' +
         ", version='" + version + '\'' +
+        ", author='" + author + '\'' +
+        ", url='" + url + '\'' +
         ", components='" + components + '\'' +
         ", responseFilters='" + responseFilters + '\'' +
         ", groups=" + groups.toString() +
@@ -183,6 +197,8 @@ public class TemplateVersion {
     private String version;
     private String changes;
     private List<CorrelationTemplateDependency> dependencies;
+    private String author;
+    private String url;
 
     public Builder() {
     }
@@ -241,11 +257,23 @@ public class TemplateVersion {
       return this;
     }
 
+    public Builder withAuthor(String author) {
+      this.author = author;
+      return this;
+    }
+
+    public Builder withUrl(String url) {
+      this.url = url;
+      return this;
+    }
+
     @Override
     public String toString() {
       return "Builder{" +
           "description='" + description + '\'' +
           ", id='" + id + '\'' +
+          ", author='" + author + '\'' +
+          ", url='" + url + '\'' +
           ", rules=" + groups.toString() +
           ", snapShot=" + snapShot +
           ", responseFilters='" + responseFilters + '\'' +
@@ -274,14 +302,16 @@ public class TemplateVersion {
           Objects.equals(version, builder.version) &&
           Objects.equals(repositoryId, builder.repositoryId) &&
           Objects.equals(changes, builder.changes) &&
-          Objects.equals(dependencies, builder.dependencies);
+          Objects.equals(dependencies, builder.dependencies) &&
+          Objects.equals(author, builder.author) &&
+          Objects.equals(url, builder.url);
     }
 
     @Override
     public int hashCode() {
       return Objects
           .hash(description, id, groups, snapShot, responseFilters, components, repositoryId,
-              changes, version, dependencies);
+              changes, version, dependencies, author, url);
     }
   }
 }

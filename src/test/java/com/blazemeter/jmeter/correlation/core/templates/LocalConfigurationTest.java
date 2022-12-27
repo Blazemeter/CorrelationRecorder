@@ -4,6 +4,7 @@ import static com.blazemeter.jmeter.correlation.TestUtils.getFileContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.head;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertArrayEquals;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.assertj.core.api.JUnitSoftAssertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -79,6 +82,18 @@ public class LocalConfigurationTest {
     dependenciesFolder = folder.getRoot().getAbsolutePath() + "/lib/";
   }
 
+  @After
+  public void tearDown() {
+    if (wireMockServer.isRunning()) {
+      wireMockServer.stop();
+    }
+  }
+
+  public void configureWireMockServer() {
+    wireMockServer.start();
+    configureFor("localhost", wireMockServer.port());
+  }
+
   @Test
   public void shouldReturnRepositoryNameWhenAdded() {
     assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID, localRepository.getName(),
@@ -127,7 +142,7 @@ public class LocalConfigurationTest {
     List<CorrelationTemplatesRepositoryConfiguration> actual = configuration
         .getRepositoriesWithInstalledTemplates();
 
-    //We are taking the second since the first its the default Siebel
+    //We are taking the second since the first it's the default Siebel
     assertTrue(expected.size() == actual.size() && actual.get(1).equals(expected.get(1)));
   }
 
@@ -155,7 +170,6 @@ public class LocalConfigurationTest {
         configuration
             .isInstalled(firstRepository.getName(), firstTemplateID, firstTemplateVersion));
   }
-
 
   @Test
   public void shouldReturnListWithRepositoriesWhenGetRepositoriesNames() {
@@ -195,17 +209,23 @@ public class LocalConfigurationTest {
   private void prepareMockServer() throws IOException {
     wireMockServer.start();
     configureFor("localhost", wireMockServer.port());
-    prepareURL("/" + DUMMY_FILE_VERSION_ONE, HttpURLConnection.HTTP_OK,
-        getFileContent("/" + DUMMY_FILE_VERSION_ONE, getClass()));
+    mockingResponse("/" + DUMMY_FILE_VERSION_ONE, HttpURLConnection.HTTP_OK,
+        getFileContent("/" + DUMMY_FILE_VERSION_ONE, getClass()), "get");
   }
 
-  public void prepareURL(String URL, int status, String body) {
-    wireMockServer.stubFor(get(urlEqualTo(URL)).willReturn(aResponse()
+  public void mockingResponse(String URL, int status, String body, String method) {
+    MappingBuilder routeMapping;
+    if (method.equals("head")) {
+      routeMapping = head(urlEqualTo(URL));
+    } else {
+      routeMapping = get(urlEqualTo(URL));
+    }
+
+    wireMockServer.stubFor(routeMapping.willReturn(aResponse()
         .withStatus(status)
-        .withHeader("Cache-Control", "no-cache")
-        .withHeader("Content-Type", "application/json")
         .withBody(body)
-    ));
+        .withHeader("Cache-Control", "no-cache")
+        .withHeader("Content-Type", "application/json")));
   }
 
   private void prepareDependenciesFolder() {
@@ -300,21 +320,45 @@ public class LocalConfigurationTest {
 
   @Test
   public void shouldReturnErrorWhenCheckRepositoryUrlWithUrlWithoutProtocol() {
-    String repositoryURL = "test.com";
+    String repositoryURL = "test.com/firstRepository.json";
     List<String> errors = configuration.checkRepositoryURL(REPOSITORY_ID, repositoryURL);
     assertEquals(Collections.singletonList(
         "- We couldn't parse " + REPOSITORY_ID + "'s url " + repositoryURL
-            + ".\n   Error: no protocol: test.com"), errors);
+            + ".\n   Error: no protocol: test.com/firstRepository.json"), errors);
   }
 
   @Test
   public void shouldReturnErrorWhenCheckRepositoryURlWithUrlWithNotFoundError() {
-    String repositoryURL = "http://www.test.com/firstRepository.json";
-    prepareURL(repositoryURL, HttpURLConnection.HTTP_NOT_FOUND, "");
+    configureWireMockServer();
+    String path = "/firstRepository.json";
+    String url = getBaseURL() + path;
+    mockingResponse(path, HttpURLConnection.HTTP_NOT_FOUND, "", "head");
 
+    List<String> errors = configuration.checkRepositoryURL(REPOSITORY_ID, url);
+    assertEquals(Collections.singletonList(
+        "- We couldn't reach " + REPOSITORY_ID + "'s url " + url
+            + ".\n   Error: 404: Not Found"), errors);
+  }
+
+  private String getBaseURL() {
+    return "http://localhost:" + wireMockServer.port();
+  }
+
+  @Test
+  public void shouldReturnErrorWhenCheckRepositoryURlWithNotExistentLocalUrl() {
+    String repositoryURL = "file://C:/test/firstRepository.json";
     List<String> errors = configuration.checkRepositoryURL(REPOSITORY_ID, repositoryURL);
     assertEquals(Collections.singletonList(
-        "- We couldn't reach " + REPOSITORY_ID + "'s url " + repositoryURL
-            + ".\n   Error: 301: Moved Permanently"), errors);
+        "- We couldn't reach " + REPOSITORY_ID + "'s Path " + repositoryURL + ".\n"
+            + "   Error: File doesn't exist"), errors);
+  }
+
+  @Test
+  public void shouldReturnErrorWhenCheckRepositoryURlWithNoJsonFile() {
+    String repositoryURL = "file://C:/test/";
+    List<String> errors = configuration.checkRepositoryURL(REPOSITORY_ID, repositoryURL);
+    assertEquals(Collections.singletonList(
+        "- There was and error on the repository " + REPOSITORY_ID + "'s URL " + repositoryURL + ".\n"
+            + "   Error: URL should lead to .json file"), errors);
   }
 }

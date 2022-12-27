@@ -2,12 +2,14 @@ package com.blazemeter.jmeter.correlation.gui.templates;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import java.awt.Component;
+import java.io.IOException;
 import java.util.Arrays;
 import javax.swing.JDialog;
 import javax.swing.JTable;
@@ -182,6 +184,13 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   }
 
   @Test
+  public void shouldShowErrorWhenSaveRepositoryWithMalformedJSON() throws IOException {
+    doThrow(new IOException()).when(repositoryHandler).saveRepository("repo", "https://google.com");
+    addRepository("repo", "https://google.com");
+    frame.optionPane().requireTitle(ERROR_DIALOG_TITLE);
+  }
+
+  @Test
   public void shouldRemoveAddedRepositoriesWhenErrorAndClickOk() {
     addDuplicateRepository();
     clickOk();
@@ -252,7 +261,7 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
 
   @Test
   public void shouldAddHelperIconWhenLoaded() {
-   assertThat(helperIcon.isEnabled());
+    assertThat(helperIcon.isEnabled());
   }
 
   @Test
@@ -260,4 +269,5 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
     helperIcon.click();
     assertThat(frame.dialog("helperDialog").isEnabled());
   }
+
 }

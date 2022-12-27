@@ -41,8 +41,8 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
 
   @Override
   public void save(String name, String url) throws IOException {
-    //The URL here acts as PATH
-    if (Files.exists(Paths.get(url))) {
+    String path = url.replace("file://", "");
+    if (Files.exists(Paths.get(path))) {
       String repositoryFolderName = name + "/";
 
       String installationFolderPath =
@@ -55,9 +55,9 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
       }
       String repositoryFilePath = installationFolderPath + name + REPOSITORY_FILE_SUFFIX;
 
-      copyFileFromPath(url, repositoryFilePath);
+      copyFileFromPath(path, repositoryFilePath);
 
-      String basePath = getBasePath(url);
+      String basePath = getBasePath(path);
       Map<String, CorrelationTemplateReference> templatesReferences = readTemplatesReferences(
           new File(installationFolderPath + name + REPOSITORY_FILE_SUFFIX));
 

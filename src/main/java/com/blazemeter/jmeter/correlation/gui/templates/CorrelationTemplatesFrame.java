@@ -297,7 +297,6 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   private void updateTemplateDisplay(TemplateVersion selectedTemplate) {
     templateID.setText(StringUtils.capitalize(selectedTemplate.getId()));
     templateID.repaint();
-
     templateInfoPane.validate();
     templateInfoPane.setText(getDescriptionHTML(selectedTemplate));
     templateInfoPane.setCaretPosition(0);
@@ -394,33 +393,60 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     return scroll;
   }
 
-  private String getDescriptionHTML(TemplateVersion template) {
-    String txt = "";
+  private void addFieldContent(StringBuilder content, String fieldText, String fieldHeader) {
+    if (fieldText != null && !fieldText.isEmpty()) {
+      content.append(makeHeader(fieldHeader))
+          .append(makeParagraph(fieldText));
+    }
+  }
 
-    txt +=
-        "<p> <b> Repository: </b> " + StringUtils.capitalize(template.getRepositoryId()) + ". </p>";
+  private String getDescriptionHTML(TemplateVersion template) {
+    StringBuilder content = new StringBuilder();
+
+    content.append(makeHeader("Repository"))
+        .append(makeParagraph(StringUtils.capitalize(template.getRepositoryId())));
 
     if (template.isInstalled()) {
-      txt += "<p> <b>This version is installed.</b> </p>";
+      content.append(makeHeader("This version is installed"));
     }
 
-    if (!template.getDescription().isEmpty()) {
-      txt += "<p> <b> Description: </b> </p> <p>" + template.getDescription() + "</p>";
-    }
+    addFieldContent(content, template.getDescription(),
+        "Description");
+
+    addFieldContent(content, template.getAuthor(), "Author");
+
+    addFieldContent(content, template.getUrl(), "Url/Email");
+
+    addFieldContent(content, template.getChanges(), "Changes");
 
     if (template.getDependencies() != null && !template.getDependencies().isEmpty()) {
-      txt += "<p> <b> Dependencies: </b> </p>";
-      txt += "<pre> [" + template.getDependencies().stream()
-          .map(d -> d.getName() + ">=" + d.getVersion()).collect(Collectors.joining(","))
-          + "]</pre>";
+      content.append(makeHeader("Dependencies"))
+          .append("<pre> [")
+          .append(template.getDependencies().stream()
+              .map(d -> d.getName() + ">=" + d.getVersion()).collect(Collectors.joining(",")))
+          .append("]</pre>");
     }
 
     if (template.getSnapshot() != null) {
-      txt += "<p> <b> Screenshot: </b> </p>";
-      txt += "<p> <img src='file:" + template.getSnapshotPath() + "'/></p>";
+      content.append(makeHeader("Screenshot"))
+          .append("<p> <img src='file:")
+          .append(template.getSnapshotPath())
+          .append("'/></p>");
     }
 
-    return txt;
+    return content.toString();
+  }
+
+  private String makeHeader(String text) {
+    return makeParagraph(makeBold(text));
+  }
+
+  private String makeParagraph(String text) {
+    return "<p>" + text + "</p>";
+  }
+
+  private String makeBold(String text) {
+    return "<b>" + text + "</b>";
   }
 
   private JPanel prepareTemplateInfoPanel() {

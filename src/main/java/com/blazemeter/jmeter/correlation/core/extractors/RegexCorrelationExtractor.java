@@ -23,6 +23,8 @@ import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.JMeterVariables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Correlation Extractor that obtains values from the responses using Regular expressions.
@@ -47,6 +49,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   protected static final boolean DEFAULT_MULTIVALUED = false;
   private static final Function<String, Pattern> VARIABLE_PATTERN_PROVIDER =
       (variableName) -> Pattern.compile(variableName + "_(\\d|matchNr)");
+  private static final Logger LOG = LoggerFactory.getLogger(RegexCorrelationExtractor.class);
   private static final String REGEX_EXTRACTOR_GUI_CLASS = RegexExtractorGui.class.getName();
   private static final int DEFAULT_MATCH_NUMBER = 1;
   private static final String DEFAULT_REGEX_EXTRACTOR_SUFFIX = "_NOT_FOUND";
@@ -196,6 +199,10 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
       JMeterVariables vars) {
     if (regex.isEmpty()) {
+      return;
+    }
+    if (matchNr == 0) {
+      LOG.warn("Extracting random appearances is not supported. Returning null instead.");
       return;
     }
     this.currentVars = vars;
