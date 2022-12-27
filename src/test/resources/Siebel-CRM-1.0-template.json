@@ -1,47 +1,44 @@
 {
-  "id": "Siebel-CRM",
-  "description": "This is a description",
-  "version": "1.0",
-  "components": "",
-  "responseFilters": "",
-  "groups": [
-    {
-      "id": "id",
-      "rules": [
-        {
-          "referenceName": "TestRuleOne",
-          "correlationExtractor": {
-            "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
-            "target": "RESPONSE_HEADERS",
-            "regex": "SWEACn=([a-z])",
-            "groupNr": 2
-          },
-          "correlationReplacement": {
-            "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
-            "regex": "SWEACn=([A-Z])"
-          },
-          "enabled": true
-        },
-        {
-          "referenceName": "TestRuleTwo",
-          "correlationExtractor": {
-            "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
-            "regex": "SWEACn=(ˆ[\\.\\.])",
-            "matchNr": 5,
-            "groupNr": 6
-          },
-          "correlationReplacement": {
-            "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
-            "regex": "SWEACn=([(\\d)])"
-          },
-          "enabled": true
-        }
-      ],
-      "enable": true
-    }
-  ],
-  "dependencies": null,
-  "repositoryId": "local",
-  "changes": "",
-  "installed": false
+"id":"Siebel-CRM",
+"description":"Thisisadescription",
+"version":"1.0",
+"author":"BlazeMeter",
+"url":"https://github.com/Blazemeter/CorrelationsRecorderTemplates/tree/master/central",
+"components":"",
+"responseFilters":"",
+"groups":[{
+"id":"id",
+"rules":[{
+"referenceName":"TestRuleOne",
+"correlationExtractor":{
+"type":"com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+"target":"RESPONSE_HEADERS",
+"regex":"SWEACn=([a-z])",
+"groupNr":2
+},
+"correlationReplacement":{
+"type":"com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+"regex":"SWEACn=([A-Z])"
+},
+"enabled":true
+},{
+"referenceName":"TestRuleTwo",
+"correlationExtractor":{
+"type":"com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+"regex":"SWEACn=(ˆ[\\.\\.])",
+"matchNr":5,
+"groupNr":6
+},
+"correlationReplacement":{
+"type":"com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+"regex":"SWEACn=([(\\d)])"
+},
+"enabled":true
+}],
+"enable":true
+}],
+"dependencies":null,
+"repositoryId":"local",
+"changes":"",
+"installed":false
 }

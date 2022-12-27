@@ -7,6 +7,7 @@ import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
 import com.blazemeter.jmeter.correlation.gui.common.CollapsiblePanel;
+import com.blazemeter.jmeter.correlation.gui.common.PlaceHolderTextField;
 import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.common.SwingUtils.ButtonBuilder;
 import com.helger.commons.annotation.VisibleForTesting;
@@ -58,7 +59,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationTemplateFrame.class);
 
   private static final int FIELD_WIDTH = 350;
-  private static final int LABEL_WIDTH = 55;
+  private static final int LABEL_WIDTH = 70;
   private static final int FIELD_HEIGHT = 30;
   private static final Dimension FIELD_MINIMUM_DIMENSION = new Dimension(FIELD_WIDTH,
       FIELD_HEIGHT * 3);
@@ -72,13 +73,18 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
 
   private JButton saveButton;
 
-  private JTextField templateIdField;
-  private JTextField templateVersionField;
+  private PlaceHolderTextField templateIdField;
+  private PlaceHolderTextField templateVersionField;
+  private PlaceHolderTextField templateAuthorField;
+  private PlaceHolderTextField templateUrlField;
+
   private JTextArea templateDescriptionField;
   private JTextArea templateChangesField;
 
   private JLabel idValidation;
   private JLabel versionValidation;
+  private JLabel authorValidation;
+  private JLabel urlValidation;
   private JLabel descriptionValidation;
   private JLabel changesValidation;
 
@@ -107,8 +113,14 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     saveButton.setEnabled(false);
     saveButton.setToolTipText("Fill the field before saving");
 
-    templateIdField = makeTextField("correlationTemplateIdField");
-    templateVersionField = makeTextField("correlationTemplateVersionField");
+    templateIdField = makePlaceHolderTextField("correlationTemplateIdField",
+        "Unique identifier");
+    templateVersionField = makePlaceHolderTextField("correlationTemplateVersionField",
+        "1.0, 2.0-Beta, etc.");
+    templateAuthorField = makePlaceHolderTextField("correlationTemplateAuthorField",
+        "Owner, user, GitHub user, etc.");
+    templateUrlField = makePlaceHolderTextField("correlationTemplateUrlField",
+        "Url repository/example@email.com");
 
     templateDescriptionField = new JTextArea(3, 10);
     templateDescriptionField.setName("correlationTemplateDescriptionTextArea");
@@ -120,12 +132,16 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
 
     addFieldsValidations(templatesRegistry);
 
-    JLabel idLabel = makeLabel("ID:");
-    JLabel descriptionLabel = makeLabel("Description:");
-    JLabel changesLabel = makeLabel("Changes: ");
-    JLabel versionLabel = makeLabel("Version: ");
+    JLabel idLabel = makeLabel("ID *:");
+    JLabel descriptionLabel = makeLabel("Description *:");
+    JLabel authorLabel = makeLabel("Author *:");
+    JLabel urlLabel = makeLabel("URL/Email:");
+    JLabel changesLabel = makeLabel("Changes *: ");
+    JLabel versionLabel = makeLabel("Version *: ");
     JLabel descriptionInfo = makeLabel("This field allows HTML tags.");
     descriptionInfo.setFont(descriptionInfo.getFont().deriveFont(Font.ITALIC));
+    JLabel asteriskInfo = makeLabel("All fields marked with * are required");
+    asteriskInfo.setFont(asteriskInfo.getFont().deriveFont(Font.ITALIC));
 
     JScrollPane descriptionScrollPane = new JScrollPane(templateDescriptionField);
     descriptionScrollPane.setBorder(DEFAULT_BORDER);
@@ -145,6 +161,9 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     layout.setHorizontalGroup(layout.createParallelGroup()
         .addGroup(layout.createSequentialGroup()
+            .addGroup(layout.createParallelGroup()
+                .addComponent(asteriskInfo)))
+        .addGroup(layout.createSequentialGroup()
             .addComponent(idLabel)
             .addGroup(layout.createParallelGroup()
                 .addComponent(templateIdField)
@@ -154,6 +173,16 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
             .addGroup(layout.createParallelGroup()
                 .addComponent(templateVersionField)
                 .addComponent(versionValidation)))
+        .addGroup(layout.createSequentialGroup()
+            .addComponent(authorLabel)
+            .addGroup(layout.createParallelGroup()
+                .addComponent(templateAuthorField)
+                .addComponent(authorValidation)))
+        .addGroup(layout.createSequentialGroup()
+            .addComponent(urlLabel)
+            .addGroup(layout.createParallelGroup()
+                .addComponent(templateUrlField)
+                .addComponent(urlValidation)))
         .addGroup(layout.createSequentialGroup()
             .addGroup(layout.createParallelGroup()
                 .addComponent(descriptionLabel)
@@ -174,6 +203,8 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     //JTextField have max height to keep JMeter's consistency forms
     layout.setVerticalGroup(layout.createSequentialGroup()
         .addGroup(layout.createParallelGroup()
+            .addComponent(asteriskInfo))
+        .addGroup(layout.createParallelGroup()
             .addComponent(idLabel)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(templateIdField, FIELD_HEIGHT, FIELD_HEIGHT, FIELD_HEIGHT)
@@ -183,6 +214,16 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
             .addGroup(layout.createSequentialGroup()
                 .addComponent(templateVersionField, FIELD_HEIGHT, FIELD_HEIGHT, FIELD_HEIGHT)
                 .addComponent(versionValidation)))
+        .addGroup(layout.createParallelGroup()
+            .addComponent(authorLabel)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(templateAuthorField, FIELD_HEIGHT, FIELD_HEIGHT, FIELD_HEIGHT)
+                .addComponent(authorValidation)))
+        .addGroup(layout.createParallelGroup()
+            .addComponent(urlLabel)
+            .addGroup(layout.createSequentialGroup()
+                 .addComponent(templateUrlField, FIELD_HEIGHT, FIELD_HEIGHT, FIELD_HEIGHT)
+                 .addComponent(urlValidation)))
         .addGroup(layout.createParallelGroup()
             .addGroup(layout.createSequentialGroup()
                 .addComponent(descriptionLabel)
@@ -202,8 +243,11 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     add(mainPanel);
   }
 
-  private JTextField makeTextField(String name) {
-    return SwingUtils.createComponent(name, new JTextField(), FIELD_MINIMUM_DIMENSION);
+  private PlaceHolderTextField makePlaceHolderTextField(String name, String placeHolderText) {
+    PlaceHolderTextField field = SwingUtils.createComponent(name, new PlaceHolderTextField(),
+        FIELD_MINIMUM_DIMENSION);
+    field.setPlaceHolder(placeHolderText);
+    return field;
   }
 
   private void addFieldsValidations(
@@ -223,12 +267,15 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
 
     idValidation = makeValidationLabel("idValidation");
     versionValidation = makeValidationLabel("versionValidation");
+    authorValidation = makeValidationLabel("authorValidation");
+    urlValidation = makeValidationLabel("urlValidation");
     descriptionValidation = makeValidationLabel("descriptionValidation");
     changesValidation = makeValidationLabel("changesValidation");
 
     addFieldValidations("Id", templateIdField, idValidation, isEmpty, hasInvalidCharacters);
     addFieldValidations("Version", templateVersionField, versionValidation, isEmpty,
         hasInvalidCharacters, isRepeatedVersion);
+    addFieldValidations("Author", templateAuthorField, authorValidation, isEmpty);
     addFieldValidations("Description", templateDescriptionField, descriptionValidation, isEmpty);
     addFieldValidations("Changes", templateChangesField, changesValidation, isEmpty);
   }
@@ -270,7 +317,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   private void validateForm() {
     boolean formIsInvalid =
         idValidation.isVisible() || versionValidation.isVisible() || descriptionValidation
-            .isVisible() || changesValidation.isVisible();
+            .isVisible() || changesValidation.isVisible() || authorValidation.isVisible();
     saveButton.setEnabled(!formIsInvalid);
     saveButton
         .setToolTipText(formIsInvalid ? "Please correct the issues in red before proceed" : "");
@@ -393,6 +440,14 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     return templateVersionField.getText();
   }
 
+  private String getAuthor() {
+    return templateAuthorField.getText();
+  }
+
+  private String getUrl() {
+    return templateUrlField.getText();
+  }
+
   private void close() {
     this.dispose();
   }
@@ -472,6 +527,8 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
       Builder savingTemplateBuilder = new Builder()
           .withId(getTemplateID())
           .withVersion(getVersion())
+          .withAuthor(getAuthor())
+          .withUrl(getUrl())
           .withDescription(templateDescriptionField.getText())
           .withSnapshot(templateSnapshot)
           .withRepositoryId(LocalConfiguration.LOCAL_REPOSITORY_NAME)
@@ -496,8 +553,11 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   public void clear() {
     clearField(templateIdField);
     clearField(templateVersionField);
+    clearField(templateAuthorField);
+    clearField(templateUrlField);
     clearField(templateDescriptionField);
     clearField(templateChangesField);
+    saveButton.setEnabled(false);
     clearTable();
     clearStyles();
   }
@@ -515,6 +575,8 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   private void clearStyles() {
     updateComponentValidationStyle(templateIdField, idValidation, false);
     updateComponentValidationStyle(templateVersionField, versionValidation, false);
+    updateComponentValidationStyle(templateAuthorField, authorValidation, false);
+    updateComponentValidationStyle(templateUrlField, urlValidation, false);
     updateComponentValidationStyle(templateDescriptionField, descriptionValidation, false);
     updateComponentValidationStyle(templateChangesField, changesValidation, false);
   }
@@ -611,6 +673,8 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     if (loadedTemplates.size() == 1) {
       TemplateVersion loadedTemplate = loadedTemplates.iterator().next();
       templateIdField.setText(loadedTemplate.getId());
+      templateAuthorField.setText(loadedTemplate.getAuthor());
+      templateUrlField.setText(loadedTemplate.getUrl());
       templateVersionField.setText(loadedTemplate.getVersion());
       templateDescriptionField.setText(loadedTemplate.getDescription());
     }

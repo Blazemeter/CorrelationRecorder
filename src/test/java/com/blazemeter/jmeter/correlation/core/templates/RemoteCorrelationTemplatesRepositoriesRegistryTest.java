@@ -117,4 +117,9 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
 
     assertGeneratedFiles(expectedFiles, actualFiles);
   }
+
+  @Test(expected = IOException.class)
+  public void shouldThrowIOExceptionWhenMalformedJSON() throws IOException {
+    remote.save("repo", "https://www.google.com");
+  }
 }

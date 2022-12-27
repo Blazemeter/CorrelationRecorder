@@ -67,7 +67,7 @@ import org.slf4j.LoggerFactory;
 
 public class CorrelationProxyControl extends ProxyControl implements
     CorrelationTemplatesRegistryHandler, CorrelationTemplatesRepositoriesRegistryHandler {
-
+  private static final int MINIMUM_VERSION_ORDER_FIX = 54;
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationProxyControl.class);
   //To allows Backward Compatibility
   private static final String CORRELATION_RULES = "CorrelationProxyControl.rules";
@@ -148,7 +148,10 @@ public class CorrelationProxyControl extends ProxyControl implements
     * took long. We implemented custom methods that fixed this issue
     * for the versions previous to 5.4.
     */
-    return JMeterUtils.getJMeterVersion().substring(0, 3).contains("5.4");
+    int version = Integer.parseInt(
+        JMeterUtils.getJMeterVersion().substring(0, 3).replace(".", ""));
+
+    return version >= MINIMUM_VERSION_ORDER_FIX;
   }
   
   @Override

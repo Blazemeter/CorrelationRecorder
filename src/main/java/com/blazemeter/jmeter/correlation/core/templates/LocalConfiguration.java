@@ -12,6 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -361,27 +364,56 @@ public class LocalConfiguration {
 
   public List<String> checkRepositoryURL(String repositoryId, String repositoryURL) {
     List<String> errors = new ArrayList<>();
+    if (!repositoryURL.endsWith(".json")) {
+      String error = "URL should lead to .json file";
+      LOG.warn("There was an error on the repository {}'s URL={}. Error: {}",
+          repositoryId, repositoryURL, error);
+      errors.add(
+          "- There was and error on the repository " + repositoryId + "'s URL " + repositoryURL +
+              ".\n   Error: "
+              + error);
+      return errors;
+    }
     try {
       URL parsedURL = new URL(repositoryURL.replace(" ", "/%20"));
-      HttpURLConnection huc = (HttpURLConnection) parsedURL.openConnection();
-      //Just sending the headers to validate the URL exists
-      huc.setRequestMethod("HEAD");
-      int responseCode = huc.getResponseCode();
-      if (HttpURLConnection.HTTP_OK != responseCode) {
-        String error = huc.getResponseCode() + (huc.getResponseMessage().isEmpty() ? ""
-            : ": " + huc.getResponseMessage());
-        LOG.warn("There was an error trying to reach the repository {}'s URL={}. Error: {}",
+      URLConnection uc = parsedURL.openConnection();
+      if (uc instanceof HttpURLConnection) {
+        HttpURLConnection huc = (HttpURLConnection) parsedURL.openConnection();
+        //Just sending the headers to validate the URL exists
+        huc.setRequestMethod("HEAD");
+        int responseCode = huc.getResponseCode();
+        if (HttpURLConnection.HTTP_OK != responseCode) {
+          String error = huc.getResponseCode() + (huc.getResponseMessage().isEmpty() ? ""
+              : ": " + huc.getResponseMessage());
+          LOG.warn("There was an error trying to reach the repository {}'s URL={}. Error: {}",
+              repositoryId, repositoryURL, error);
+          errors.add(
+              "- We couldn't reach " + repositoryId + "'s url " + repositoryURL + ".\n   Error: "
+                  + error);
+        }
+      } else if (!Files.exists(Paths.get(repositoryURL.replace("file://", "")))) {
+        String error = "File doesn't exist";
+        LOG.warn("There was an error trying to reach the repository {}'s Path={}. Error: {}",
             repositoryId, repositoryURL, error);
         errors.add(
-            "- We couldn't reach " + repositoryId + "'s url " + repositoryURL + ".\n   Error: "
+            "- We couldn't reach " + repositoryId + "'s Path " + repositoryURL + ".\n   Error: "
                 + error);
       }
     } catch (IOException e) {
-      LOG.warn("There was and error parsing the repository {}'s URL={}.", repositoryId,
-          repositoryURL, e);
-      errors.add(
-          "- We couldn't parse " + repositoryId + "'s url " + repositoryURL + ".\n   Error: " + e
-              .getMessage());
+      if (Files.exists(Paths.get(repositoryURL))) {
+        LOG.warn("There was and error parsing the repository {}'s Path={}.", repositoryId,
+            repositoryURL, e);
+        errors.add(
+            "- We couldn't parse " + repositoryId + "'s Path " + repositoryURL + ".\n"
+                + "   Path should start with protocol 'file://'\n"
+                + "   Error: " + e.getMessage());
+      } else {
+        LOG.warn("There was and error parsing the repository {}'s URL={}.", repositoryId,
+            repositoryURL, e);
+        errors.add(
+            "- We couldn't parse " + repositoryId + "'s url " + repositoryURL + ".\n"
+                + "   Error: " + e.getMessage());
+      }
     }
     return errors;
   }

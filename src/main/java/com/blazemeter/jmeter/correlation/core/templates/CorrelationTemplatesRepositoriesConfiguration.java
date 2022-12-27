@@ -27,7 +27,8 @@ public class CorrelationTemplatesRepositoriesConfiguration {
   }
 
   public static InputStream getInputStream(String path) throws IOException {
-    return isURL(path) ? new URL(path).openStream() : new FileInputStream(path);
+    return isURL(path) ? new URL(path).openStream() : new FileInputStream(path.replace("file://",
+        ""));
   }
 
   private static boolean isURL(String text) {

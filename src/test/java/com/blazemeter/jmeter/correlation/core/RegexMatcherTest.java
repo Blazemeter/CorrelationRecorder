@@ -53,6 +53,12 @@ public class RegexMatcherTest {
   }
 
   @Test
+  public void findMatchShouldReturnNullWhenMatchNumberIsBiggerThanOccurences() {
+    RegexMatcher regexMatcher = new RegexMatcher(REGEX_MATCHES, REGEX_GROUP);
+    assertThat(regexMatcher.findMatch(INPUT_STRING_ONE, 4)).isNull();
+  }
+
+  @Test
   public void findMatchesShouldReturnTheExpectedMatchesWhenRegexMatchesMultipleTimes() {
     RegexMatcher regexMatcher = new RegexMatcher(REGEX_MATCHES, REGEX_GROUP);
     ArrayList<String> matches = new ArrayList<>();
