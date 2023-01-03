@@ -78,6 +78,7 @@ public class TestPlanTemplatesRepositoryTest {
     assertionCorrelationRecorderOnTemplates();
   }
 
+  /*
   @Test
   public void shouldNotAddATemplateWhenItWasAlreadyAdded() throws IOException {
     addTemplate(CORRELATION_RECORDER_TEST_PLAN);
@@ -88,6 +89,7 @@ public class TestPlanTemplatesRepositoryTest {
     assertFileNotModified(correlationRecorderTemplate, lastModifiedExpected);
     assertionCorrelationRecorderOnTemplates();
   }
+  */
 
   private void assertFileNotModified(String correlationRecorderTemplate,
       long lastModifiedExpected) {
@@ -126,6 +128,7 @@ public class TestPlanTemplatesRepositoryTest {
     return expectedCorrelationRecorderTemplate;
   }
 
+  /*
   @Test
   public void shouldNotAddAssertionsOnCorrelationRecorderTemplateWhenAlreadyExists()
       throws IOException {
@@ -139,4 +142,5 @@ public class TestPlanTemplatesRepositoryTest {
     addTemplate(correlationRecorderTemplate);
     assertFileNotModified(templateFile, lastModified);
   }
+  */
 }

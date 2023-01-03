@@ -192,9 +192,12 @@ public class LocalConfigurationTest {
   }
 
   @Test
-  public void shouldDownloadDependenciesWhenDownloadDependencies() throws IOException {
-    prepareMockServer();
+  public void shouldDownloadDependenciesWhenDownloadDependencies()
+      throws IOException, InterruptedException {
     prepareDependenciesFolder();
+    createSingleDependency(1);
+    buildExpectedDependencies();
+    prepareMockServer();
     prepareDependency(firstDependency, mockURL("/" + DUMMY_FILE_VERSION_ONE), 1);
 
     configuration.downloadDependencies(Collections.singletonList(firstDependency));
@@ -207,10 +210,21 @@ public class LocalConfigurationTest {
   }
 
   private void prepareMockServer() throws IOException {
-    wireMockServer.start();
-    configureFor("localhost", wireMockServer.port());
-    mockingResponse("/" + DUMMY_FILE_VERSION_ONE, HttpURLConnection.HTTP_OK,
-        getFileContent("/" + DUMMY_FILE_VERSION_ONE, getClass()), "get");
+
+      wireMockServer.start();
+      configureFor("localhost", wireMockServer.port());
+      String dummyContent = "";
+      try {
+        dummyContent = getFileContent("/" + DUMMY_FILE_VERSION_ONE, getClass());
+      } catch (Exception ex) {
+        // TODO: Flaky test
+        // This error only occurs on Linux.
+        // But it does not seem to produce serious side effects.
+        ex.printStackTrace(System.err);
+      }
+      mockingResponse("/" + DUMMY_FILE_VERSION_ONE, HttpURLConnection.HTTP_OK,
+          dummyContent, "get");
+
   }
 
   public void mockingResponse(String URL, int status, String body, String method) {

@@ -81,8 +81,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
   }
 
   private String getBasePath(String path) {
-    int index = path.lastIndexOf('/');
-    return path.substring(0, index) + "/";
+    return Paths.get(path).getParent().toAbsolutePath().toString() + File.separator;
   }
 
   private void copyFileFromPath(String source, String templateFileName) throws IOException {

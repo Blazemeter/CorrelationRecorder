@@ -25,6 +25,7 @@ import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRulesTestElement;
 import com.blazemeter.jmeter.correlation.gui.RulesGroupTestElement;
 import com.google.common.annotations.VisibleForTesting;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -98,9 +99,16 @@ public class CorrelationProxyControl extends ProxyControl implements
   private transient CorrelationEngine correlationEngine;
   private transient CorrelationTemplatesRegistry correlationTemplatesRegistry;
   private JMeterTreeNode target = null;
+  private Method putSamplesIntoModel;
 
   @SuppressWarnings("checkstyle:RedundantModifier")
   public CorrelationProxyControl() {
+    //This method do not exist in JMeter <5.4
+    if (jMeterVersionGreaterThan53()) {
+      putSamplesIntoModel = getProxyControlMethod("putSamplesIntoModel",
+          ActionEvent.class);
+      ReflectionUtils.checkMethods(ProxyControl.class, FIND_FIRST_NODE_OF_TYPE);
+    }
     correlationEngine = new CorrelationEngine();
     componentsRegistry = CorrelationComponentsRegistry.getInstance();
     localConfiguration = new LocalConfiguration(getTemplateDirectoryPath());
@@ -142,28 +150,23 @@ public class CorrelationProxyControl extends ProxyControl implements
         .collect(Collectors.toList());
   }
 
-  private static boolean requireJMeterRequestsOrderFix() {
+  private static boolean jMeterVersionGreaterThan53() {
     /*
-    * From JMeter's 5.4, a fix was make to handle requests that 
-    * took long. We implemented custom methods that fixed this issue
-    * for the versions previous to 5.4.
-    */
+     * From JMeter's 5.4, a fix was make to handle requests that
+     * took long. We implemented custom methods that fixed this issue
+     * for the versions previous to 5.4.
+     */
     int version = Integer.parseInt(
         JMeterUtils.getJMeterVersion().substring(0, 3).replace(".", ""));
 
     return version >= MINIMUM_VERSION_ORDER_FIX;
   }
-  
+
   @Override
   public synchronized void startProxy() throws IOException {
     lastComparableCookies.clear();
     correlationEngine.reset();
     pendingProxies.clear();
-    
-    if (requireJMeterRequestsOrderFix()) {
-      super.startProxy();
-      return;      
-    }
 
     try {
       initKeyStore();
@@ -253,19 +256,10 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public synchronized void deliverSampler(HTTPSamplerBase sampler, TestElement[] testElements,
-      SampleResult result) {
+                                          SampleResult result) {
 
-    if (!requireJMeterRequestsOrderFix()) {
-      pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
-      return;
-    }
+    pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
 
-    if (sampler != null) {
-      List<TestElement> children = new ArrayList<>(Arrays.asList(testElements));
-      correlationEngine.process(sampler, children, result, this.getContentTypeInclude());
-      testElements = children.toArray(new TestElement[0]);
-    }
-    super.deliverSampler(sampler, testElements, result);
   }
 
   public synchronized void startedProxy(Thread proxy) {
@@ -315,6 +309,20 @@ public class CorrelationProxyControl extends ProxyControl implements
       proxy.setTestElements(children.toArray(new TestElement[0]));
     }
     super.deliverSampler(proxy.getSampler(), proxy.getTestElements(), proxy.getResult());
+
+    try {
+      /*
+       * This forces the sampler to be added to the TestPlan.
+       * Fix for issues in the recording on JMeter +5.3
+       */
+      if (putSamplesIntoModel != null) {
+        ActionEvent e = new ActionEvent(this, 0, "putSamplesIntoModel");
+        putSamplesIntoModel.invoke(this, e);
+      }
+    } catch (IllegalAccessException | InvocationTargetException ex) {
+      LOG.error("Could not invoke putSamplesIntoModel", ex);
+    }
+
   }
 
   private boolean filter(HTTPSamplerBase sampler, SampleResult result) {
@@ -402,10 +410,7 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public JMeterTreeNode findTargetControllerNode() {
-    if (requireJMeterRequestsOrderFix()) {
-      return super.findTargetControllerNode();
-    }
-    
+
     JMeterTreeNode myTarget = target;
     if (myTarget != null) {
       return myTarget;
@@ -521,7 +526,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private void append(String loadedComponents, List<RulesGroup> loadedGroups,
-      String loadedFilters) {
+                      String loadedFilters) {
 
     String actualComponents = getCorrelationComponents();
     setCorrelationComponents(loadedComponents.isEmpty() ? actualComponents
@@ -573,7 +578,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private List<CorrelationRule> appendCorrelationRules(List<CorrelationRule> actualRules,
-      List<CorrelationRule> loadedRules) {
+                                                       List<CorrelationRule> loadedRules) {
     if (loadedRules.isEmpty()) {
       return actualRules;
     }
@@ -676,7 +681,7 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public boolean refreshRepositories(String localConfigurationRoute,
-      Consumer<Integer> setProgressConsumer) {
+                                     Consumer<Integer> setProgressConsumer) {
     return templateRepositoryConfig
         .refreshRepositories(localConfigurationRoute, setProgressConsumer);
   }
@@ -706,7 +711,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private void updateExtractorFromTestElement(CorrelationRuleTestElement e,
-      CorrelationRule correlationRule, String referenceName) {
+                                              CorrelationRule correlationRule,
+                                              String referenceName) {
     try {
       //Only when no Extractor was selected, this method returns null
       correlationRule.setCorrelationExtractor(e.getCorrelationExtractor());
@@ -717,7 +723,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private void updateReplacementFromTestElement(CorrelationRuleTestElement e,
-      CorrelationRule correlationRule, String referenceName) {
+                                                CorrelationRule correlationRule,
+                                                String referenceName) {
     try {
       //Only when no Replacement was selected, this method returns null
       correlationRule.setCorrelationReplacement(e.getCorrelationReplacement());
@@ -747,6 +754,11 @@ public class CorrelationProxyControl extends ProxyControl implements
     templateRepositoryConfig =
         new CorrelationTemplatesRepositoriesConfiguration(localConfiguration);
     setName(RECORDER_NAME);
+  }
+
+  @Override
+  public synchronized void stopProxy() {
+    super.stopProxy();
   }
 
 }

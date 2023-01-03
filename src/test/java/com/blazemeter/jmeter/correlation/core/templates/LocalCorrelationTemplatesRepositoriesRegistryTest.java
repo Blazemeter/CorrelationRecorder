@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,8 +60,10 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   public void setup() throws IOException {
     LocalConfiguration localConfiguration = new LocalConfiguration(folder.getRoot().getPath());
     local = new LocalCorrelationTemplatesRepositoriesRegistry(localConfiguration);
-    local.save(EXTERNAL_REPOSITORY_NAME,
-        getClass().getResource("/").getPath() + BASE_REPOSITORY_NAME);
+    String localRepository = Paths.get(new File(getClass().getResource("/").getFile()).toPath().
+        toAbsolutePath().toString(), BASE_REPOSITORY_NAME).toAbsolutePath().toString();
+
+    local.save(EXTERNAL_REPOSITORY_NAME, localRepository);
     prepareExpectedLocalRepository();
   }
 
