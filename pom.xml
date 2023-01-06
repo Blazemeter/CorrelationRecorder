@@ -6,7 +6,7 @@
   <groupId>com.blazemeter</groupId>
   <artifactId>jmeter-bzm-correlation-recorder</artifactId>
   <packaging>jar</packaging>
-  <version>1.2</version>
+  <version>1.2.2</version>
   <name>Correlation Recorder as JMeter plugin</name>
 
   <properties>
