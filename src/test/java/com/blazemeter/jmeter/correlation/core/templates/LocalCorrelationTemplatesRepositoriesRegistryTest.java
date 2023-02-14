@@ -46,7 +46,8 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
 
   private static final String WORDPRESS_TEMPLATE_VERSION_ONE_NAME =
       WORDPRESS_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
-  private static final String CORRELATION_TEMPLATES_REPOSITORY_NAME = "CorrelationTemplatesRepository";
+  private static final String CORRELATION_TEMPLATES_REPOSITORY_NAME =
+      "CorrelationTemplatesRepository";
 
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();

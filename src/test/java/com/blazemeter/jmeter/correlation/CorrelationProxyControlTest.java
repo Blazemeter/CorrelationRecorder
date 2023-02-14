@@ -278,7 +278,7 @@ public class CorrelationProxyControlTest {
     model = builder.build();
     ComparableCookie comparableCookie = new ComparableCookie("header", "headerValue", "localhost");
     model.addCookie(comparableCookie);
-    model.setPort(1234);
+    model.setPort(8898);
     try {
       model.startProxy();
     } catch (IOException e) {

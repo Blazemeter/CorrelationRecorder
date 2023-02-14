@@ -12,6 +12,7 @@ import com.blazemeter.jmeter.correlation.TestUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +37,8 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
   @Before
   public void setup() {
     remote = new RemoteCorrelationTemplatesRepositoriesRegistry(
-        new LocalConfiguration(folder.getRoot().getPath() + "/"));
+        new LocalConfiguration(
+            Paths.get(folder.getRoot().getPath(), File.separator).toAbsolutePath().toString()));
     wireMockServer.start();
     configureFor("localhost", wireMockServer.port());
   }
@@ -49,7 +51,7 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
   }
 
   @Test
-  public void shouldSaveTemplatesAndRepositoryFromURL() throws IOException {
+  public void shouldSaveTemplatesAndRepositoryFromURL() throws IOException, InterruptedException {
     prepareURL("/test-repository.json");
     prepareURL("/first-1.0-template.json");
     skipURL("/first-1.0-snapshot.png");
@@ -96,8 +98,9 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
 
   private List<String> getGeneratedFilesNames() {
     return Arrays.stream(Objects.requireNonNull(
-        new File(
-            folder.getRoot().getAbsolutePath() + "/" + TEMPLATES_FOLDER + "/" + REPOSITORY_NAME)
+        new File(Paths.get(
+            folder.getRoot().getAbsolutePath(), TEMPLATES_FOLDER, REPOSITORY_NAME).toAbsolutePath()
+            .toString())
             .list()))
         .filter(f -> f.toLowerCase().endsWith("repository.json") ||
             f.toLowerCase().endsWith("template.json"))

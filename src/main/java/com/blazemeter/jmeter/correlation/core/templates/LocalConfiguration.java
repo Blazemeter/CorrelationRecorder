@@ -68,7 +68,7 @@ public class LocalConfiguration {
       createCentralRemoteRepository();
       createLocalRepository();
     } catch (IOException e) {
-      LOG.info("There was a problem trying to create the local repository file. ", e);
+      LOG.error("There was a problem trying to create the local repository file. ", e);
     }
 
     if (!isSiebelInstalled()) {
@@ -87,7 +87,9 @@ public class LocalConfiguration {
       LOG.debug("Created the root folder {}", rootFolder);
     }
 
-    configurationFolder = rootFolder + CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER;
+    configurationFolder = Paths.get(
+        rootFolder, CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER
+    ).toAbsolutePath().toString() + File.separator;
     directory = new File(configurationFolder);
     if (!directory.exists() && directory.mkdir()) {
       LOG.debug("Created the configuration folder {}", configurationFolder);
@@ -109,8 +111,10 @@ public class LocalConfiguration {
 
   private void loadLocalConfigurationFile() {
     File localConfigurationFile = new File(
-        configurationFolder
-            + LOCAL_CONFIGURATION_FILE_NAME + JSON_FILE_EXTENSION);
+        Paths.get(
+            configurationFolder, LOCAL_CONFIGURATION_FILE_NAME + JSON_FILE_EXTENSION)
+            .toAbsolutePath().toString()
+    );
     if (localConfigurationFile.exists()) {
       try {
         repositories = readValue(localConfigurationFile, LocalConfiguration.class).repositories;
@@ -146,16 +150,23 @@ public class LocalConfiguration {
   }
 
   private void createLocalRepository() throws IOException {
-    addRepository(LOCAL_REPOSITORY_NAME,
-        configurationFolder + LOCAL_REPOSITORY_NAME
-            + REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION);
+    String repositoryPath = Paths.get(
+        configurationFolder,
+        LOCAL_REPOSITORY_NAME + REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION
+    ).toAbsolutePath().toString();
+    addRepository(LOCAL_REPOSITORY_NAME, repositoryPath);
     saveLocalRepository();
   }
 
   private void saveLocalRepository() throws IOException {
     File localRepositoryFile = new File(
-        configurationFolder + LOCAL_REPOSITORY_NAME + REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION);
-    if (!localRepositoryFile.exists() && localRepositoryFile.createNewFile()) {
+        Paths.get(
+            configurationFolder,
+            LOCAL_REPOSITORY_NAME + REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION
+        ).toAbsolutePath().toString()
+    );
+    if (!localRepositoryFile.exists() &&
+        localRepositoryFile.createNewFile()) {
       LOG.info("Created the local repository file {}", localRepositoryFile);
       writer.writeValue(localRepositoryFile, new HashMap<String, CorrelationTemplateReference>() {
         {
@@ -180,9 +191,9 @@ public class LocalConfiguration {
 
   public void saveLocalConfiguration() {
     String localConfigurationPath =
-        configurationFolder
-            + LOCAL_CONFIGURATION_FILE_NAME
-            + JSON_FILE_EXTENSION;
+        Paths.get(
+            configurationFolder, LOCAL_CONFIGURATION_FILE_NAME + JSON_FILE_EXTENSION
+        ).toAbsolutePath().toString();
 
     File localConfigurationFile = new File(localConfigurationPath);
 
@@ -208,7 +219,7 @@ public class LocalConfiguration {
   }
 
   public void manageTemplate(String action, String repositoryName, String templateId,
-      String templateVersion) throws ConfigurationException {
+                             String templateVersion) throws ConfigurationException {
     Optional<CorrelationTemplatesRepositoryConfiguration> repository = findRepositoryById(
         repositoryName);
 

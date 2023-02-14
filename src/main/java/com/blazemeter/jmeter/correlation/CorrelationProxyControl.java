@@ -391,7 +391,7 @@ public class CorrelationProxyControl extends ProxyControl implements
                 + "new URL(sampler.protocol + '://' + sampler.domain)\n"
                 + "sampler.getCookieManager().add(new Cookie('%s', '%s', url.host, '', "
                 + "sampler.isSecure(url), 0))",
-            comparableCookie.getName(), comparableCookie.getName()));
+            comparableCookie.getName(), comparableCookie.getValue()));
   }
 
   private void addResponseHeaders(SampleResult result) {
@@ -402,6 +402,7 @@ public class CorrelationProxyControl extends ProxyControl implements
           int cookieStartPos = h.indexOf(":") + 1;
           int cookieNameEndPos = h.indexOf("=", cookieStartPos);
           int cookieValueEndPos = h.indexOf(";", cookieNameEndPos + 1);
+          cookieValueEndPos = cookieValueEndPos == -1 ? h.length() : cookieValueEndPos;
           return new ComparableCookie(h.substring(cookieStartPos, cookieNameEndPos).trim(),
               h.substring(cookieNameEndPos + 1, cookieValueEndPos), url.getHost());
         })
