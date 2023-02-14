@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -33,9 +34,9 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
 
   private void setupCentralRemoteRepository() {
     File repositoryFile = new File(
-        configuration.getCorrelationsTemplateInstallationFolder() +
-            CENTRAL_REPOSITORY_ID + "/" + CENTRAL_REPOSITORY_ID
-            + REPOSITORY_FILE_SUFFIX);
+        Paths.get(configuration.getCorrelationsTemplateInstallationFolder() +
+            CENTRAL_REPOSITORY_ID, CENTRAL_REPOSITORY_ID
+            + REPOSITORY_FILE_SUFFIX).toAbsolutePath().toString());
     if (!repositoryFile.exists()) {
       try {
         save(CENTRAL_REPOSITORY_ID, CENTRAL_REPOSITORY_URL);
@@ -47,17 +48,22 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
 
   @Override
   public void save(String name, String url) throws IOException {
-    String repositoryFolderName = name + "/";
+    String repositoryFolderName = name;
 
-    File repositoryFolder = new File(
-        configuration.getCorrelationsTemplateInstallationFolder() + repositoryFolderName);
+    File repositoryFolder = new File(Paths.get(
+        configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderName)
+        .toAbsolutePath().toString());
     if (!repositoryFolder.exists() && repositoryFolder.mkdir()) {
       LOG.info("Folder created for the repository {}", name);
     }
 
-    String installationFolderPath =
-        configuration.getCorrelationsTemplateInstallationFolder() + repositoryFolderName;
-    String repositoryFilePath = installationFolderPath + name + REPOSITORY_FILE_SUFFIX;
+    String installationFolderPath = Paths.get(
+        configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderName)
+        .toAbsolutePath().toString();
+
+    String repositoryFilePath =
+        Paths.get(installationFolderPath, name + REPOSITORY_FILE_SUFFIX).toAbsolutePath()
+            .toString();
 
     try {
       saveFileFromURL(url, repositoryFilePath);
@@ -72,12 +78,12 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
 
           String templateFileName = templateWithVersionName + TEMPLATE_FILE_SUFFIX;
           saveFileFromURL(baseURL + encodeSpecialCharacters(templateFileName),
-              installationFolderPath + templateFileName);
+              Paths.get(installationFolderPath, templateFileName).toAbsolutePath().toString());
 
           String snapshotFileName = templateWithVersionName + SNAPSHOT_FILE_SUFFIX;
           if (canDownload(baseURL + snapshotFileName)) {
             saveFileFromURL(baseURL + encodeSpecialCharacters(snapshotFileName),
-                installationFolderPath + snapshotFileName);
+                Paths.get(installationFolderPath, snapshotFileName).toAbsolutePath().toString());
           }
         }
       }

@@ -17,6 +17,7 @@ import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,8 +98,10 @@ public class LocalCorrelationTemplatesRegistryTest {
 
   private File getGeneratedJSON(String fileNamePath) {
     return new File(
-        folder.getRoot().getAbsolutePath() + "/" + TEMPLATES_FOLDER + "/"
-            + fileNamePath);
+        Paths.get(
+            folder.getRoot().getAbsolutePath() , TEMPLATES_FOLDER ,
+            fileNamePath).toAbsolutePath().toString()
+    );
   }
 
   private Builder getBuilderCorrelationTemplate() {
@@ -132,8 +135,10 @@ public class LocalCorrelationTemplatesRegistryTest {
   public void shouldNotGenerateJSONFileWithDefaultValuesWhenOnSave()
       throws IOException, ConfigurationException {
     proxyControl.onSaveTemplate(getBuilderCorrelationTemplate());
+
+    String jsonPath = getGeneratedJSON(CORRELATION_RULE_SERIALIZATION_PATH).getPath();
     String json = TestUtils
-        .readFile(getGeneratedJSON(CORRELATION_RULE_SERIALIZATION_PATH).getPath(),
+        .readFile(jsonPath,
             Charset.defaultCharset());
     String replacementNode = json
         .substring(json.indexOf("replacement"), json.indexOf("}", json.indexOf("replacement")));

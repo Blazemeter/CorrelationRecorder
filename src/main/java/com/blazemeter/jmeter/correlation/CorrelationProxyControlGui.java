@@ -18,6 +18,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -78,7 +79,9 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
 
   private void installCorrelationRecorderTemplateTestPlan() {
     TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
-        getJMeterDirPath() + "/bin" + TEMPLATES_FOLDER_PATH);
+        Paths.get(
+            getJMeterDirPath(), "bin", TEMPLATES_FOLDER_PATH
+        ).toAbsolutePath().toString() + File.separator);
 
     templateRepository
         .addCorrelationRecorderTemplate(CORRELATION_RECORDER_TEST_PLAN, TEMPLATES_FOLDER_PATH,
@@ -105,7 +108,10 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
 
   private void installSiebelCorrelationTemplate() {
     TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
-        getJMeterDirPath() + LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
+        Paths.get(
+        getJMeterDirPath(), LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER)
+            .toAbsolutePath().toString() + File.separator
+    );
     templateRepository.addCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
         LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
     LOG.info("Siebel Correlation's Template installed");
@@ -265,7 +271,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
 
   @Override
   public boolean refreshRepositories(String localConfigurationRoute,
-      Consumer<Integer> setProgressConsumer) {
+                                     Consumer<Integer> setProgressConsumer) {
     return model.refreshRepositories(localConfigurationRoute, setProgressConsumer);
   }
 

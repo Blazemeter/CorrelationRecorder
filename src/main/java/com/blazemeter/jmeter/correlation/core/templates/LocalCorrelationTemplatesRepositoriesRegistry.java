@@ -43,10 +43,12 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
   public void save(String name, String url) throws IOException {
     String path = url.replace("file://", "");
     if (Files.exists(Paths.get(path))) {
-      String repositoryFolderName = name + "/";
+      String repositoryFolderName = name + File.separator;
 
       String installationFolderPath =
-          configuration.getCorrelationsTemplateInstallationFolder() + repositoryFolderName;
+          Paths.get(
+              configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderName
+          ).toAbsolutePath().toString() + File.separator;
 
       File repositoryFolder = new File(installationFolderPath);
       if (!repositoryFolder.exists() && repositoryFolder.mkdir()) {
@@ -81,8 +83,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
   }
 
   private String getBasePath(String path) {
-    int index = path.lastIndexOf('/');
-    return path.substring(0, index) + "/";
+    return Paths.get(path).getParent().toAbsolutePath().toString() + File.separator;
   }
 
   private void copyFileFromPath(String source, String templateFileName) throws IOException {
@@ -99,20 +100,23 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
     List<String> repositoriesList = configuration.getRepositoriesNames();
     repositoriesList.forEach(r -> {
       File repositoryFile = new File(
-          configuration.getCorrelationsTemplateInstallationFolder() + (
-              r.equals(LOCAL_REPOSITORY_NAME)
-                  ? ""
-                  : r + "/") + r
-              + REPOSITORY_FILE_SUFFIX);
+          Paths.get(
+              configuration.getCorrelationsTemplateInstallationFolder(),
+              (
+                  r.equals(LOCAL_REPOSITORY_NAME)
+                      ? ""
+                      : r + File.separator) + r
+                  + REPOSITORY_FILE_SUFFIX).toAbsolutePath().toString()
+      );
+      String repoName = repositoryFile.getName().replace(REPOSITORY_FILE_SUFFIX, "");
       try {
         CorrelationTemplatesRepository loadedRepository =
-            new CorrelationTemplatesRepository(
-                repositoryFile.getName().replace(REPOSITORY_FILE_SUFFIX, ""),
+            new CorrelationTemplatesRepository(repoName,
                 readTemplatesReferences(repositoryFile));
 
         correlationRepositoryList.add(loadedRepository);
       } catch (IOException e) {
-        LOG.warn("There was an issue trying to read the file {}.", repositoryFile.getName(), e);
+        LOG.error("There was an issue trying to read the file {}.", repositoryFile.getName(), e);
       }
     });
 
@@ -134,12 +138,13 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
       return null;
     }
 
-    String repositoryFolderPath = (id.equals(LOCAL_REPOSITORY_NAME) ? "" : id) + "/";
+    String repositoryFolderPath = (id.equals(LOCAL_REPOSITORY_NAME) ? "" : id) + File.separator;
 
     try {
       File source = new File(
-          configuration.getCorrelationsTemplateInstallationFolder() + repositoryFolderPath + id
-              + REPOSITORY_FILE_SUFFIX);
+          Paths.get(
+              configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderPath,
+              id + REPOSITORY_FILE_SUFFIX).toAbsolutePath().toString());
       Map<String, CorrelationTemplateReference> templatesReferences = readTemplatesReferences(
           source);
 
@@ -170,7 +175,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
       FileUtils.deleteDirectory(repositoryFolder);
     } else {
       LOG.warn(
-          "The repository {} doesn't seems to have a folder, {} was found instead. Only removed " 
+          "The repository {} doesn't seems to have a folder, {} was found instead. Only removed "
               + "from the configuration.",
           name, repositoryFolder.getName());
     }
@@ -217,15 +222,17 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
   }
 
   private void manageTemplate(String action, String repositoryName, String templateId,
-      String templateVersion) throws ConfigurationException {
+                              String templateVersion) throws ConfigurationException {
 
     String repositoryFolderPath =
-        repositoryName.equals(LOCAL_REPOSITORY_NAME) ? "" : repositoryName + "/";
+        repositoryName.equals(LOCAL_REPOSITORY_NAME) ? "" : repositoryName + File.separator;
 
     File template = new File(
-        configuration.getCorrelationsTemplateInstallationFolder() + repositoryFolderPath
-            + templateId
-            + "-" + templateVersion + TEMPLATE_FILE_SUFFIX);
+        Paths.get(
+            configuration.getCorrelationsTemplateInstallationFolder(),
+            repositoryFolderPath,
+            templateId + "-" + templateVersion + TEMPLATE_FILE_SUFFIX).toAbsolutePath().toString()
+    );
 
     if (!template.exists()) {
       LOG.error("The template {} doesn't exists", template.getName());

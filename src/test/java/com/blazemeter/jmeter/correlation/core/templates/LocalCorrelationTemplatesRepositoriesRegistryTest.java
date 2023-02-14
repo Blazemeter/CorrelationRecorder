@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +46,8 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
 
   private static final String WORDPRESS_TEMPLATE_VERSION_ONE_NAME =
       WORDPRESS_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
-  private static final String CORRELATION_TEMPLATES_REPOSITORY_NAME = "CorrelationTemplatesRepository";
+  private static final String CORRELATION_TEMPLATES_REPOSITORY_NAME =
+      "CorrelationTemplatesRepository";
 
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
@@ -59,8 +61,10 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   public void setup() throws IOException {
     LocalConfiguration localConfiguration = new LocalConfiguration(folder.getRoot().getPath());
     local = new LocalCorrelationTemplatesRepositoriesRegistry(localConfiguration);
-    local.save(EXTERNAL_REPOSITORY_NAME,
-        getClass().getResource("/").getPath() + BASE_REPOSITORY_NAME);
+    String localRepository = Paths.get(new File(getClass().getResource("/").getFile()).toPath().
+        toAbsolutePath().toString(), BASE_REPOSITORY_NAME).toAbsolutePath().toString();
+
+    local.save(EXTERNAL_REPOSITORY_NAME, localRepository);
     prepareExpectedLocalRepository();
   }
 

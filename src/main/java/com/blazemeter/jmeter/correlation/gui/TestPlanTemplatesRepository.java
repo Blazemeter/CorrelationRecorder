@@ -35,7 +35,7 @@ public class TestPlanTemplatesRepository {
   }
 
   public void addCorrelationRecorderTemplate(String templateFileName, String templatesFolderPath,
-      String descriptionFileName, String templateName) {
+                                             String descriptionFileName, String templateName) {
     copyTemplateFile(templateFileName, templatesFolderPath);
     addTemplateDescription(descriptionFileName, templateName);
     addFailExtractorAssertion(templateFileName);
@@ -43,7 +43,7 @@ public class TestPlanTemplatesRepository {
 
   private void copyTemplateFile(String fileName, String sourcePath) {
     try {
-      File dest = new File(rootFolder + fileName);
+      File dest = new File(Paths.get(rootFolder, fileName).toAbsolutePath().toString());
       String fileFromResources = getFileFromResources(sourcePath + fileName);
       if (!dest.exists() || !DigestUtils
           .md5Hex(new FileInputStream(dest.getPath()))
@@ -53,7 +53,7 @@ public class TestPlanTemplatesRepository {
         }
       }
     } catch (IOException e) {
-      LOG.warn("Problem creating Correlation Recording template {}", fileName, e);
+      LOG.error("Problem creating Correlation Recording template {}", fileName, e);
     }
   }
 
@@ -64,7 +64,7 @@ public class TestPlanTemplatesRepository {
 
   private void addTemplateDescription(String descTemplateName, String templateName) {
     try {
-      String filePath = rootFolder + "templates.xml";
+      String filePath = Paths.get(rootFolder, "templates.xml").toAbsolutePath().toString();
       removeOldTemplate(filePath);
       if (!checkIfStringExists(filePath, "<name>" + templateName + "</name>")) {
         Path path = Paths.get(filePath);
@@ -95,7 +95,7 @@ public class TestPlanTemplatesRepository {
       LOG.error("Error trying to read the file {}", filePath);
       return;
     }
-    
+
     Matcher matcher = Pattern.compile(
         "(<template isTestPlan=\"true\">[\\n ]*<name>Correlation Recorder</name>.*</template>)",
         Pattern.DOTALL).matcher(content);

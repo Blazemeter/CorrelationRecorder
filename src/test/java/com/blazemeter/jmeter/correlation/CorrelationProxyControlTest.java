@@ -93,7 +93,8 @@ public class CorrelationProxyControlTest {
   }
 
   @Before
-  public void setup() {
+  public void setup() throws IOException {
+
     builder = new CorrelationProxyControlBuilder()
         .withCorrelationTemplatesRegistry(correlationComponentsRegistry)
         .withCorrelationTemplatesRepositoriesConfiguration(configuration)
@@ -210,8 +211,8 @@ public class CorrelationProxyControlTest {
   }
 
   private void assertModelInfo(String expectedComponents, List<RulesGroup> expectedGroups,
-      CorrelationProxyControl model,
-      String expectedFilters) {
+                               CorrelationProxyControl model,
+                               String expectedFilters) {
     softly.assertThat(model.getResponseFilter()).isEqualTo(expectedFilters);
     softly.assertThat(model.getCorrelationComponents()).isEqualTo(expectedComponents);
     softly.assertThat(model.getGroups()).isEqualTo(expectedGroups);
@@ -277,7 +278,7 @@ public class CorrelationProxyControlTest {
     model = builder.build();
     ComparableCookie comparableCookie = new ComparableCookie("header", "headerValue", "localhost");
     model.addCookie(comparableCookie);
-    model.setPort(1234);
+    model.setPort(8898);
     try {
       model.startProxy();
     } catch (IOException e) {

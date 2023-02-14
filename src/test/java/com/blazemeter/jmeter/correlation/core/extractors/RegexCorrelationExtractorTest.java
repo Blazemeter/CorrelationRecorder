@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.jmeter.assertions.AssertionResult;
 import org.apache.jmeter.assertions.JSR223Assertion;
@@ -41,7 +42,7 @@ public class RegexCorrelationExtractorTest {
   private static final String RESPONSE_BODY_REGEX = "Test_SWEACn=(.*?)&";
   private static final List<String> PARAMS = Arrays
       .asList(RESPONSE_BODY_REGEX, "1", "1", ResultField.BODY.name()
-      , "false");
+          , "false");
   private static final String URL_RESPONSE_REGEX = "jmeter\\.(.*?)\\.org";
   private static final String TEST_URL = "https://jmeter.apache.org/";
   private static final String SUCCESS_RESPONSE_MESSAGE = HttpStatus
@@ -113,7 +114,7 @@ public class RegexCorrelationExtractorTest {
   }
 
   private List<TestElement> addChildRegex(String responseRegex, ResultField fieldToCheck,
-      boolean isMultipleMatch)
+                                          boolean isMultipleMatch)
       throws MalformedURLException {
     RegexCorrelationExtractor<?> regexExtractor = new RegexCorrelationExtractor<>(responseRegex, -1,
         fieldToCheck);
@@ -254,8 +255,9 @@ public class RegexCorrelationExtractorTest {
     List<TestElement> children = new ArrayList<>();
 
     JSR223Assertion assertion = buildExtractionAssertion();
-    assertion.setScript(getFileContent("/templates/components/ExtractingVariableAssertion.xml",
-        regexExtractor.getClass()));
+    assertion.setScript(StringEscapeUtils
+        .unescapeXml(getFileContent("/templates/components/ExtractingVariableAssertion.xml",
+            regexExtractor.getClass())));
     children.add(assertion);
 
     JMeterVariables vars = new JMeterVariables();
@@ -286,8 +288,9 @@ public class RegexCorrelationExtractorTest {
     List<TestElement> children = new ArrayList<>();
 
     JSR223Assertion assertion = buildExtractionAssertion();
-    assertion.setScript(getFileContent("/templates/components/ExtractingVariableAssertion.xml",
-        regexExtractor.getClass()));
+    assertion.setScript(StringEscapeUtils
+        .unescapeXml(getFileContent("/templates/components/ExtractingVariableAssertion.xml",
+            regexExtractor.getClass())));
     children.add(assertion);
 
     JMeterVariables vars = new JMeterVariables();
@@ -357,7 +360,7 @@ public class RegexCorrelationExtractorTest {
   }
 
   private void addChildRegex(String responseRegex, SampleResult sampleResult,
-      List<TestElement> children, JMeterVariables vars) {
+                             List<TestElement> children, JMeterVariables vars) {
     RegexCorrelationExtractor<BaseCorrelationContext> regexExtractor =
         new RegexCorrelationExtractor<>(RESPONSE_BODY_REGEX, "-1", "1", ResultField.BODY.name(),
             "true");

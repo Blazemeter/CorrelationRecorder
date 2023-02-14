@@ -38,7 +38,8 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
         .writeValue(new File(localConfiguration.getCorrelationsTemplateInstallationFolder()
             + (
             template.getRepositoryId().equals(LOCAL_REPOSITORY_NAME) ? "" : template
-                .getRepositoryId() + "/") + template.getId() + "-" + template.getVersion()
+                .getRepositoryId() + File.separator) + template.getId() + "-"
+            + template.getVersion()
             + TEMPLATE_FILE_SUFFIX), template);
   }
 
@@ -56,7 +57,7 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
     return new File(localConfiguration.getCorrelationsTemplateInstallationFolder()
         + (
         templateVersion.getRepositoryId().equals(LOCAL_REPOSITORY_NAME) ? ""
-            : templateVersion.getRepositoryId() + "/"),
+            : templateVersion.getRepositoryId() + File.separator),
         templateVersion.getSnapshotName());
   }
 
@@ -67,7 +68,8 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
     TemplateVersion correlationTemplate = localConfiguration.readValue(
         new File(localConfiguration.getCorrelationsTemplateInstallationFolder()
             + (
-            repositoryOwner.equals(LOCAL_REPOSITORY_NAME) ? "" : repositoryOwner + "/") + id
+            repositoryOwner.equals(LOCAL_REPOSITORY_NAME) ? "" : repositoryOwner + File.separator)
+            + id
             + "-" + templateVersion + TEMPLATE_FILE_SUFFIX),
         TemplateVersion.class);
     correlationTemplate.setSnapshot(getSnapshot(correlationTemplate));
@@ -101,7 +103,8 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
           String installedTemplateName =
               localConfiguration.getCorrelationsTemplateInstallationFolder()
                   + (
-                  r.getName().equals(LOCAL_REPOSITORY_NAME) ? "" : r.getName() + "/") + template
+                  r.getName().equals(LOCAL_REPOSITORY_NAME) ? "" : r.getName() + File.separator)
+                  + template
                   + "-"
                   + version + TEMPLATE_FILE_SUFFIX;
 

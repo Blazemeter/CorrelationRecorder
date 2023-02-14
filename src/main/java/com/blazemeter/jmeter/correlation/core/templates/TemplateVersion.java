@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.core.templates;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.awt.image.BufferedImage;
@@ -28,6 +29,7 @@ public class TemplateVersion {
   private String repositoryId = "";
   private String changes;
   private transient String snapshotPath;
+  @JsonIgnore
   private transient BufferedImage snapshot;
   private transient boolean isInstalled;
 
@@ -68,9 +70,9 @@ public class TemplateVersion {
 
   //Left for backward compatibility with version 1.1
   public List<CorrelationRule> getRules() {
-    return rules;    
+    return rules;
   }
-  
+
   public List<RulesGroup> getGroups() {
     return groups;
   }
@@ -155,7 +157,6 @@ public class TemplateVersion {
         ", repositoryId='" + repositoryId + '\'' +
         ", changes='" + changes + '\'' +
         ", snapshotPath='" + snapshotPath + '\'' +
-        ", snapshot=" + snapshot +
         ", isInstalled=" + isInstalled +
         '}';
   }
@@ -275,7 +276,6 @@ public class TemplateVersion {
           ", author='" + author + '\'' +
           ", url='" + url + '\'' +
           ", rules=" + groups.toString() +
-          ", snapShot=" + snapShot +
           ", responseFilters='" + responseFilters + '\'' +
           ", components='" + components + '\'' +
           ", version='" + version + '\'' +
