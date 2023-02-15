@@ -8,6 +8,24 @@
   <packaging>jar</packaging>
   <version>1.2.3</version>
   <name>Correlation Recorder as JMeter plugin</name>
+  <description>Correlation Recorder Plugin for JMeter</description>
+  <url>https://github.com/Blazemeter/CorrelationRecorder</url>
+
+  <licenses>
+      <license>
+          <name>The Apache License, Version 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      </license>
+  </licenses>
+
+  <developers>
+      <developer>
+          <name>Blazemeter</name>
+          <email>ops@blazemeter.com</email>
+          <organization>Blazemeter</organization>
+          <organizationUrl>https://blazemeter.com/</organizationUrl>
+      </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -17,10 +35,9 @@
   </properties>
 
   <scm>
-    <connection>scm:git:git@gitlab.abstracta.us:BZ-plugins/jmeter-siebel-plugin.git</connection>
-    <developerConnection>scm:git:git@gitlab.abstracta.us:BZ-plugins/jmeter-siebel-plugin.git
-    </developerConnection>
-    <url>http://gitlab.abstracta.us/BZ-plugins/jmeter-siebel-plugin</url>
+      <connection>scm:git:git://github.com/Blazemeter/CorrelationRecorder.git</connection>
+      <developerConnection>scm:git:ssh://github.com:Blazemeter/CorrelationRecorder.git</developerConnection>
+      <url>https://github.com/Blazemeter/CorrelationRecorder/tree/master</url>
   </scm>
 
   <distributionManagement>
