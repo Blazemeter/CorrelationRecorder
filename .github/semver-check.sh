@@ -15,4 +15,4 @@ if [[ "$PREV_VERSION" == "$PREV_PATCH" ]]; then
    PREV_PATCH="0"
 fi
 
-[[ "$VERSION" == "$PREV_MAJOR.$PREV_MINOR.$((PREV_PATCH + 1))" || "$VERSION" == "$PREV_MAJOR.$((PREV_MINOR + 1))" || "$VERSION" == "$((PREV_MAJOR + 1)).0" ]]
+[[ "$VERSION" == "$PREV_MAJOR.$PREV_MINOR.$((PREV_PATCH + 1))"?(.0) || "$VERSION" == "$PREV_MAJOR.$((PREV_MINOR + 1))"?(.0) || "$VERSION" == "$((PREV_MAJOR + 1)).0"?(.0) ]]
