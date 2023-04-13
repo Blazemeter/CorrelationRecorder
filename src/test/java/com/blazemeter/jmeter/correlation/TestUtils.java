@@ -1,7 +1,9 @@
 package com.blazemeter.jmeter.correlation;
 
 import com.google.common.io.Resources;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -42,6 +44,12 @@ public class TestUtils {
 
   public static String getFileContent(String filePath, Class<?> testClass) throws IOException {
     return Resources.toString(testClass.getResource(filePath), Charset.defaultCharset());
+  }
+
+  // Helper method to find a file
+  public static File findTestFile(String file) {
+    URL resource = Resources.getResource(file);
+    return new File(resource.getFile());
   }
 
 }

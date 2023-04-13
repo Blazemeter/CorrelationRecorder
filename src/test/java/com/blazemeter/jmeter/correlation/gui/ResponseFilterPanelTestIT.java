@@ -2,8 +2,8 @@ package com.blazemeter.jmeter.correlation.gui;
 
 import static org.assertj.swing.fixture.Containers.showInFrame;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JPanel;

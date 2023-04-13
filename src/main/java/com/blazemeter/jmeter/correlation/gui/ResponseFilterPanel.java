@@ -1,6 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui;
 
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
+import com.blazemeter.jmeter.commons.SwingUtils;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.HashSet;

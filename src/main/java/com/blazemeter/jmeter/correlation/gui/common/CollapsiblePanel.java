@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui.common;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
 import java.awt.Color;
 import java.awt.Cursor;

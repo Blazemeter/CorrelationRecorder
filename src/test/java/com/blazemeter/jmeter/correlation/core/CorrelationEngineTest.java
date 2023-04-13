@@ -2,12 +2,11 @@ package com.blazemeter.jmeter.correlation.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.TestUtils;
+import com.blazemeter.jmeter.correlation.core.RulesGroup.Builder;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.RulesGroup.Builder;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement;
@@ -64,6 +63,7 @@ public class CorrelationEngineTest {
   @Before
   public void prepare() {
     engine = new CorrelationEngine();
+    engine.setEnabled(true);
     when(registry.getContext(SiebelContext.class)).thenReturn(new SiebelContext());
     when(registry.getContext(BaseCorrelationContext.class))
         .thenReturn(new BaseCorrelationContext());
@@ -167,14 +167,27 @@ public class CorrelationEngineTest {
   }
 
   @Test
-  public void shouldNotApplyReplacementWhenProcessWithDisabledRule() {
+  public void shouldNotApplyReplacementWhenProcessNotEnabled() throws IOException {
+    engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(true)),
+        registry);
+    HTTPSampler sampler = createSampler();
+    JMeterVariables vars = new JMeterVariables();
+    vars.put("variable", "123");
+    engine.setEnabled(false);
+    engine.setVars(vars);
+    engine.process(sampler, new ArrayList<>(), buildSampleResult(), "");
+    assertThat(sampler.getPath()).isEqualTo("Test_SWEACn=123&Test_Path=1");
+  }
+
+  @Test
+  public void shouldNotApplyReplacementWhenProcessWithDisabledRule() throws IOException {
     engine.setCorrelationRules(createGroupWithRules(buildSingletonRulesListWithEnable(false)),
         registry);
     HTTPSampler sampler = createSampler();
     JMeterVariables vars = new JMeterVariables();
     vars.put("variable", "123");
     engine.setVars(vars);
-    engine.process(sampler, new ArrayList<>(), null, "");
+    engine.process(sampler, new ArrayList<>(), buildSampleResult(), "");
     assertThat(sampler.getPath()).isEqualTo("Test_SWEACn=123&Test_Path=1");
   }
 

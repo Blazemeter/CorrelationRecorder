@@ -11,6 +11,8 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import org.apache.jmeter.protocol.http.proxy.Proxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
 This class allow us to deliver recorded samplers in same order as received requests.
@@ -37,7 +39,7 @@ in deliverSampler method since deliverSampler method is not called for every req
 up leaving unfinished proxies blocking any further progress in subsequent proxies.
  */
 public class CorrelationProxy extends Proxy {
-
+  private static final Logger LOG = LoggerFactory.getLogger(CorrelationProxy.class);
   private static final Field TARGET_FIELD = ReflectionUtils.getField(Proxy.class, "target");
   private static final Field CLIENT_SOCKET_FIELD = ReflectionUtils
       .getField(Proxy.class, "clientSocket");
@@ -50,7 +52,14 @@ public class CorrelationProxy extends Proxy {
   public void run() {
     CorrelationProxyControl proxyControl = getField(TARGET_FIELD, CorrelationProxyControl.class);
     wrapClientSocketWithProxyControlNotifierSocket(proxyControl);
-    super.run();
+    try {
+      super.run();
+    } catch (org.jsoup.UncheckedIOException e) {
+      LOG.warn("Error while processing a request: {}", e.getMessage());
+    } catch (Exception exception) {
+      LOG.warn("There was an unexpected error while processing the last request: {}",
+          exception.getMessage());
+    }
     proxyControl.endedProxy(this);
   }
 

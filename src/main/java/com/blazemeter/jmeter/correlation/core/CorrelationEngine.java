@@ -21,6 +21,7 @@ public class CorrelationEngine {
   private final List<CorrelationContext> initializedContexts = new ArrayList<>();
   private JMeterVariables vars = new JMeterVariables();
   private final List<CorrelationRule> rules;
+  private boolean isEnabled = false;
 
   public CorrelationEngine() {
     rules = new ArrayList<>();
@@ -28,7 +29,7 @@ public class CorrelationEngine {
   }
 
   public void setCorrelationRules(List<RulesGroup> groups,
-      CorrelationComponentsRegistry registry) {
+                                  CorrelationComponentsRegistry registry) {
     rules.clear();
     groups.stream()
         .filter(RulesGroup::isEnable)
@@ -41,7 +42,7 @@ public class CorrelationEngine {
   }
 
   private void updateCorrelationContext(CorrelationRulePartTestElement rulePartTestElement,
-      CorrelationComponentsRegistry registry) {
+                                        CorrelationComponentsRegistry registry) {
     if (rulePartTestElement != null && rulePartTestElement.getSupportedContext() != null) {
       rulePartTestElement
           .setContext(getSupportedContext(rulePartTestElement.getSupportedContext(), registry));
@@ -70,7 +71,17 @@ public class CorrelationEngine {
   }
 
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      String responseFilter) {
+                      String responseFilter) {
+
+    if (!result.isSuccessful()) {
+      sampler.setComment("ORIGINALLY FAILED");
+    }
+
+    if (!this.isEnabled) {
+      LOG.debug("Legacy Correlation Engine is disabled. Skipping correlation analysis.");
+      return;
+    }
+
     JMeterContextService.getContext().setVariables(vars);
     rules.stream()
         .filter(r -> r.isEnabled() && r.getCorrelationReplacement() != null)
@@ -83,6 +94,14 @@ public class CorrelationEngine {
           .filter(r -> r.isEnabled() && r.getCorrelationExtractor() != null)
           .forEach(r -> r.getCorrelationExtractor().process(sampler, children, result, vars));
     }
+  }
+
+  public void setEnabled(boolean enable) {
+    this.isEnabled = enable;
+  }
+
+  public boolean isEnabled() {
+    return isEnabled;
   }
 
   private boolean isContentTypeAllowed(SampleResult result, String filterRegex) {

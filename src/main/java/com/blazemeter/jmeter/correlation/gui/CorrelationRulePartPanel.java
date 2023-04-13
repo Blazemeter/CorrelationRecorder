@@ -1,9 +1,9 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.gui.common.HelperDialog;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIcon;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIconLabel;
 import com.google.common.annotations.VisibleForTesting;

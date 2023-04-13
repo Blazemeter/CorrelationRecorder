@@ -5,6 +5,7 @@ import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.CheckBoxParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
+import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
@@ -56,6 +57,8 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   protected String replacementString = REPLACEMENT_STRING_DEFAULT_VALUE;
   private Function<String, String> expressionEvaluator =
       (expression) -> new CompoundVariable(expression).execute();
+  private Object currentSampler;
+  private String currentVariableName = "";
 
   /**
    * Default constructor added in order to satisfy the JSON conversion.
@@ -135,6 +138,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     if (regex.isEmpty()) {
       return;
     }
+    currentSampler = sampler;
     super.process(sampler, children, result, vars);
   }
 
@@ -151,7 +155,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
    * @return the resultant input after been processed
    */
   @Override
-  protected String replaceString(String input, JMeterVariables vars) {
+  public String replaceString(String input, JMeterVariables vars) {
     try {
       return replaceWithRegex(input, regex, variableName, vars);
     } catch (MalformedPatternException e) {
@@ -184,6 +188,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     char[] inputBuffer = patternMatcherInput.getBuffer();
     StringBuilder result = new StringBuilder();
     Function<String, String> expressionProvider = replaceExpressionProvider();
+    String literalMatched = "";
     while (matcher.contains(patternMatcherInput, pattern)) {
       MatchResult match = matcher.getMatch();
       boolean hasMatch = false;
@@ -194,13 +199,14 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
          SingleValuedExtractor */
         String varName = varNr == 0 ? variableName : variableName + "#" + varNr;
         String varMatchesCount = vars.get(varName + "_matchNr");
-        String literalMatched = match.group(1);
+        literalMatched = match.group(1);
         String replaceExpression = null;
         if (varMatchesCount == null) {
           if (vars.get(varName) != null && vars.get(varName).equals(literalMatched)
               && replacementString.isEmpty()) {
             replaceExpression = expressionProvider.apply(varName);
             hasMatch = true;
+            currentVariableName = varName;
           } else if (ignoreValue && !replacementString.isEmpty()) {
             replaceExpression = replacementString;
             /* This case does not care if the value is 'matching'. Because ignore value is 
@@ -211,6 +217,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
             replaceExpression = expressionProvider
                 .apply(buildReplacementStringForMultivalued(varName));
             hasMatch = true;
+            currentVariableName = varName;
           }
           if (replaceExpression != null) {
             result = replaceMatch(result, patternMatcherInput, match,
@@ -224,10 +231,12 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
             if (vars.get(varNameMatch).equals(literalMatched) && replacementString.isEmpty()) {
               replaceExpression = varNameMatch;
               hasMatch = true;
+              currentVariableName = varNameMatch;
             } else if (!ignoreValue && !replacementString.isEmpty()) {
               if (computeStringReplacement(varNameMatch).equals(literalMatched)) {
                 replaceExpression = buildReplacementStringForMultivalued(varNameMatch);
                 hasMatch = true;
+                currentVariableName = varNameMatch;
               }
             }
             if (replaceExpression != null) {
@@ -246,7 +255,17 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
       beginOffset = patternMatcherInput.getMatchEndOffset();
     }
     result.append(inputBuffer, beginOffset, input.length() - beginOffset);
-    return result.toString();
+    String replacedInput = result.toString();
+    if (replacedInput.equals(input)) {
+      return input;
+    }
+
+    analysis(literalMatched);
+    if (!AnalysisReporter.canCorrelate()) {
+      return input;
+    }
+
+    return replacedInput;
   }
 
   private Function<String, String> replaceExpressionProvider() {
@@ -323,10 +342,18 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     ignoreValue = testElem.getPropertyAsBoolean(REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME);
   }
 
+  private void analysis(String literalMatched) {
+    AnalysisReporter.report(this, literalMatched, currentSampler, currentVariableName);
+  }
+
   @Override
   public String toString() {
-    return "RegexCorrelationReplacement{" +
-        "paramValues='" + getParams() + '}';
+    return "RegexCorrelationReplacement{"
+        + ", regex='" + regex + "'"
+        + ", replacementString='" + replacementString + "'"
+        + ", ignoreValue=" + ignoreValue
+        + '}';
+
   }
 
   @Override

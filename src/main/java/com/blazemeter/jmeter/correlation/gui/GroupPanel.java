@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
@@ -10,8 +11,6 @@ import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationRepla
 import com.blazemeter.jmeter.correlation.gui.common.CollapsiblePanel;
 import com.blazemeter.jmeter.correlation.gui.common.NonStringValuedTableGui;
 import com.blazemeter.jmeter.correlation.gui.common.RulePartType;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils.ButtonBuilder;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -125,7 +124,7 @@ public class GroupPanel extends JPanel implements ActionListener {
   }
 
   private List<JButton> makeRulesButtons() {
-    ButtonBuilder base = new SwingUtils.ButtonBuilder()
+    SwingUtils.ButtonBuilder base = new SwingUtils.ButtonBuilder()
         .withActionListener(this);
     JButton add = base.withName("add").withAction(ADD).withIcon("add.png").build();
     upButton = base.withName("up").withAction(UP).withIcon("up-arrow.png").build();

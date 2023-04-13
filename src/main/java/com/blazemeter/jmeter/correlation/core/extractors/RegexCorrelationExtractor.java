@@ -7,6 +7,7 @@ import com.blazemeter.jmeter.correlation.core.ParameterDefinition.CheckBoxParame
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.ComboParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition.TextParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.RegexMatcher;
+import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -213,20 +214,26 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     if (matchNr >= 0) {
       String match = regexMatcher.findMatch(target.getField(result), matchNr);
       if (match != null && !match.equals(vars.get(varName))) {
+        analyze(match, sampler, varName);
         addVarAndChildPostProcessor(match, varName,
             createPostProcessor(varName, matchNr));
       }
     } else {
       ArrayList<String> matches = regexMatcher.findMatches(target.getField(result));
       if (matches.size() == 1) {
-        addVarAndChildPostProcessor(matches.get(0), varName,
+        String match = matches.get(0);
+        analyze(match, sampler, varName);
+        addVarAndChildPostProcessor(match, varName,
             createPostProcessor(varName, 1));
       } else if (matches.size() > 1) {
         if (!multiValued) {
           clearJMeterVariables(vars);
         }
-        addVarAndChildPostProcessor(String.valueOf(matches.size()),
+        String value = String.valueOf(matches.size());
+        analyze(value, sampler, varName);
+        addVarAndChildPostProcessor(value,
             varName + "_matchNr", createPostProcessor(varName, matchNr));
+
         int matchNr = 1;
         for (String match : matches) {
           vars.put(varName + "_" + matchNr, match);
@@ -248,7 +255,9 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
 
   private void addVarAndChildPostProcessor(String match, String variableName,
       RegexExtractor postProcessor) {
-    currentSamplersChild.add(postProcessor);
+    if (AnalysisReporter.canCorrelate()) {
+      currentSamplersChild.add(postProcessor);
+    }
     currentVars.put(variableName, match);
   }
 
@@ -265,7 +274,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
    * @see
    * <a href="https://jmeter.apache.org/api/org/apache/jmeter/extractor/RegexExtractor.html">RegexExtractor</a>
    */
-  protected RegexExtractor createPostProcessor(String varName, int matchNr) {
+  public RegexExtractor createPostProcessor(String varName, int matchNr) {
     RegexExtractor regexExtractor = new RegexExtractor();
     regexExtractor.setProperty(TestElement.GUI_CLASS, REGEX_EXTRACTOR_GUI_CLASS);
     regexExtractor.setName("RegExp - " + varName);
@@ -287,10 +296,28 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     multiValued = isMultiValued(testElem);
   }
 
+  /**
+   * Used to provide information about the extraction of values from the response.
+   * This method would be used, when we are performing an analysis, regardless
+   * of the mode of the recording (i.e. whether we are recording or doing
+   * static analysis).
+   */
+  public void analyze(String value, Object affectedElement, String varName) {
+    AnalysisReporter.report(this, value, affectedElement, varName, target.name());
+  }
+
+  /**
+   * Used to add the necessary elements to the sampler, to perform the
+   * extraction of values from the response.
+   */
+  public void correlate() {
+
+  }
+
   @Override
   public String toString() {
     return "RegexCorrelationExtractor{" +
-        "regex='" + regex + '\'' +
+        ", regex='" + regex + '\'' +
         ", matchNr=" + matchNr +
         ", groupNr=" + groupNr +
         ", multiValued=" + multiValued +
@@ -320,5 +347,9 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   @Override
   public Class<? extends CorrelationContext> getSupportedContext() {
     return BaseCorrelationContext.class;
+  }
+
+  public void setMultiValued(boolean multiValued) {
+    this.multiValued = multiValued;
   }
 }
