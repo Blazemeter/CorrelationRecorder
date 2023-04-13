@@ -6,7 +6,6 @@ import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
@@ -25,12 +24,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
+import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.samplers.SampleResult;
@@ -84,6 +85,8 @@ public class CorrelationProxyControlTest {
     HTTPSampler ret = new HTTPSampler();
     // we need to set domain to avoid filters to filter it out
     ret.setDomain("localhost");
+    ret.setHeaderManager(new HeaderManager());
+
     return ret;
   }
 
@@ -100,8 +103,8 @@ public class CorrelationProxyControlTest {
         .withCorrelationTemplatesRepositoriesConfiguration(configuration)
         .withLocalConfiguration(localConfiguration)
         .withTarget(target);
-    when(target.children()).thenReturn(Collections.emptyEnumeration());
     GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
+    Mockito.when(target.children()).thenReturn(Mockito.mock(Enumeration.class));
   }
 
   @After
@@ -113,7 +116,6 @@ public class CorrelationProxyControlTest {
 
   @Test
   public void shouldNotInvokeCorrelationEngineProcessWhenSamplerIsNull() {
-    GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
     CorrelationProxyControl build = builder.build();
     build.startedProxy(Thread.currentThread());
     build.deliverSampler(null, testElements, sampleResult);
@@ -122,7 +124,6 @@ public class CorrelationProxyControlTest {
 
   @Test
   public void shouldInvokeCorrelationEngineProcessWhenSamplerIsNotNull() {
-    GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
     CorrelationProxyControl proxyControl = builder.withCorrelationEngine(correlationEngine)
         .build();
     sampleResult = new HTTPSampleResult();

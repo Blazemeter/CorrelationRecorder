@@ -1,9 +1,15 @@
 package com.blazemeter.jmeter.correlation;
 
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
+import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
+import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
+import com.blazemeter.jmeter.correlation.core.automatic.ResultFileParser;
 import com.blazemeter.jmeter.correlation.core.proxy.ComparableCookie;
 import com.blazemeter.jmeter.correlation.core.proxy.CorrelationProxy;
 import com.blazemeter.jmeter.correlation.core.proxy.Jsr223PreProcessorFactory;
@@ -36,7 +42,6 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,9 +52,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.modifiers.JSR223PreProcessor;
+import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.RecordingController;
 import org.apache.jmeter.protocol.http.proxy.Daemon;
 import org.apache.jmeter.protocol.http.proxy.ProxyControl;
@@ -61,6 +69,7 @@ import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.NullProperty;
+import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.threads.AbstractThreadGroup;
 import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
@@ -68,6 +77,7 @@ import org.slf4j.LoggerFactory;
 
 public class CorrelationProxyControl extends ProxyControl implements
     CorrelationTemplatesRegistryHandler, CorrelationTemplatesRepositoriesRegistryHandler {
+
   private static final int MINIMUM_VERSION_ORDER_FIX = 54;
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationProxyControl.class);
   //To allows Backward Compatibility
@@ -76,6 +86,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   private static final String CORRELATION_COMPONENTS = "CorrelationProxyControl.components";
   private static final String RESPONSE_FILTER = "CorrelationProxyControl.responseFilter";
   private static final String TEMPLATE_PATH = "CorrelationProxyControl.templatePath";
+  private static final String CORRELATION_HISTORY_PATH =
+      "CorrelationProxyControl.correlationHistoryPath";
   private static final String RECORDER_NAME = "bzm - Correlation Recorder";
   // we use reflection to be able to call these non visible methods and not have to re implement
   // them.
@@ -99,7 +111,12 @@ public class CorrelationProxyControl extends ProxyControl implements
   private transient CorrelationEngine correlationEngine;
   private transient CorrelationTemplatesRegistry correlationTemplatesRegistry;
   private JMeterTreeNode target = null;
+  private List<SampleResult> samples = new ArrayList<>();
   private Method putSamplesIntoModel;
+  private CorrelationHistory history = new CorrelationHistory();
+  private boolean analysisMode = false;
+  private boolean shouldStore = false;
+  private Runnable onStopRecordingMethod;
 
   @SuppressWarnings("checkstyle:RedundantModifier")
   public CorrelationProxyControl() {
@@ -109,6 +126,7 @@ public class CorrelationProxyControl extends ProxyControl implements
           ActionEvent.class);
       ReflectionUtils.checkMethods(ProxyControl.class, FIND_FIRST_NODE_OF_TYPE);
     }
+
     correlationEngine = new CorrelationEngine();
     componentsRegistry = CorrelationComponentsRegistry.getInstance();
     localConfiguration = new LocalConfiguration(getTemplateDirectoryPath());
@@ -144,12 +162,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   private static String getTemplateDirectoryPath() {
     return JMeterUtils.getPropDefault(TEMPLATE_PATH, JMeterUtils.getJMeterHome());
   }
-
-  private static List<CorrelationRule> getRulesFromListOfGroups(List<RulesGroup> groups) {
-    return groups.stream().map(RulesGroup::getRules).flatMap(Collection::stream)
-        .collect(Collectors.toList());
-  }
-
+  
   private static boolean jMeterVersionGreaterThan53() {
     /*
      * From JMeter's 5.4, a fix was make to handle requests that
@@ -164,9 +177,21 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public synchronized void startProxy() throws IOException {
+    if (correlationEngine.isEnabled()
+        && !correlationEngine.getCorrelationRules().isEmpty()) {
+      int response = JOptionPane.showConfirmDialog(null,
+          "Correlation Rules analysis is enabled! " + System.lineSeparator()
+              + "We suggest using the Correlation Rules after Recording." + System.lineSeparator()
+              + "Do you want us to disable them for you before continuing with the Recording?",
+          "Correlation Engine", JOptionPane.YES_NO_OPTION);
+      correlationEngine.setEnabled(response != JOptionPane.YES_OPTION);
+    }
+
+    JMeterElementUtils.setupResultCollectors(this);
     lastComparableCookies.clear();
     correlationEngine.reset();
     pendingProxies.clear();
+    samples.clear();
 
     try {
       initKeyStore();
@@ -257,7 +282,6 @@ public class CorrelationProxyControl extends ProxyControl implements
   @Override
   public synchronized void deliverSampler(HTTPSamplerBase sampler, TestElement[] testElements,
                                           SampleResult result) {
-
     pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
 
   }
@@ -301,13 +325,28 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   private void deliverCompletedProxy(PendingProxy proxy) {
     if (proxy.getSampler() != null && filter(proxy.getSampler(), proxy.getResult())) {
+      this.samples.add(proxy.getResult());
       this.target = proxy.getTarget();
       List<TestElement> children = new ArrayList<>(Arrays.asList(proxy.getTestElements()));
-      addMissingCookiesChildren(proxy.getResult(), children);
       correlationEngine.process(proxy.getSampler(), children, proxy.getResult(),
           this.getContentTypeInclude());
       proxy.setTestElements(children.toArray(new TestElement[0]));
+
+      List<TestElementProperty> headers =
+          (ArrayList<TestElementProperty>) ((HeaderManager) proxy.getSampler().getHeaderManager())
+              .getHeaders().getObjectValue();
+
+      // WA, this allow to evade the Authorization Manager creation
+      for (TestElementProperty tep : headers) {
+        if (equalsIgnoreCase(tep.getName(), HTTPConstants.HEADER_AUTHORIZATION) &&
+            containsIgnoreCase(tep.getStringValue(), "OAuth")) {
+          // Rename the header
+          tep.setName("X-CR-" + HTTPConstants.HEADER_AUTHORIZATION);
+          break;
+        }
+      }
     }
+
     super.deliverSampler(proxy.getSampler(), proxy.getTestElements(), proxy.getResult());
 
     try {
@@ -402,7 +441,6 @@ public class CorrelationProxyControl extends ProxyControl implements
           int cookieStartPos = h.indexOf(":") + 1;
           int cookieNameEndPos = h.indexOf("=", cookieStartPos);
           int cookieValueEndPos = h.indexOf(";", cookieNameEndPos + 1);
-          cookieValueEndPos = cookieValueEndPos == -1 ? h.length() : cookieValueEndPos;
           return new ComparableCookie(h.substring(cookieStartPos, cookieNameEndPos).trim(),
               h.substring(cookieNameEndPos + 1, cookieValueEndPos), url.getHost());
         })
@@ -411,7 +449,6 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public JMeterTreeNode findTargetControllerNode() {
-
     JMeterTreeNode myTarget = target;
     if (myTarget != null) {
       return myTarget;
@@ -478,6 +515,14 @@ public class CorrelationProxyControl extends ProxyControl implements
     correlationEngine.setCorrelationRules(groups, componentsRegistry);
     //To allows Backward Compatibility, this remove the old JMeter property before save the jmx
     removeProperty(CORRELATION_RULES);
+  }
+
+  public void setCorrelationHistoryPath(String path) {
+    setProperty(CORRELATION_HISTORY_PATH, path);
+  }
+
+  public void getCorrelationHistoryPath() {
+    getPropertyAsString(CORRELATION_HISTORY_PATH);
   }
 
   public String getCorrelationComponents() {
@@ -598,10 +643,12 @@ public class CorrelationProxyControl extends ProxyControl implements
     return correlationTemplatesRegistry.getInstalledTemplates();
   }
 
-  public void update(String correlationComponents, List<RulesGroup> groups, String responseFilter) {
+  public void update(String correlationComponents, List<RulesGroup> groups, String responseFilter,
+                     String correlationHistoryPath) {
     setCorrelationComponents(correlationComponents);
     setCorrelationGroups(groups);
     setResponseFilter(responseFilter);
+    setCorrelationHistoryPath(correlationHistoryPath);
   }
 
   @Override
@@ -757,9 +804,76 @@ public class CorrelationProxyControl extends ProxyControl implements
     setName(RECORDER_NAME);
   }
 
+  public List<SampleResult> getSamples() {
+    return samples;
+  }
+
   @Override
   public synchronized void stopProxy() {
     super.stopProxy();
+
+    if (getSamples().isEmpty()) {
+      LOG.warn("No samples were recorded. Skipping correlation suggestions generation.");
+      return;
+    }
+
+    LOG.info("Samples recorded: {}", getSamples().size());
+
+    history.addOriginalRecordingStep(JMeterElementUtils.saveTestPlanSnapshot(),
+        ResultFileParser.saveToFile(getSamples()));
+
+    if (onStopRecordingMethod == null) {
+      LOG.warn("No onStopRecordingMethod was set. Skipping correlation suggestions generation.");
+    }
+
+    SwingUtilities.invokeLater(onStopRecordingMethod);
   }
 
+  private boolean shouldAutoSave() {
+    return getPropertyAsBoolean("correlation.automatic_save_samples", true);
+  }
+
+  @VisibleForTesting
+  public void setShouldAutoSave(boolean shouldAutoSave) {
+    setProperty("correlation.automatic_save_samples", shouldAutoSave);
+  }
+
+  public void setCorrelationHistory(CorrelationHistory history) {
+    this.history = history;
+  }
+
+  public CorrelationHistory getCorrelationHistory() {
+    if (history == null) {
+      history = new CorrelationHistory();
+    }
+    return history;
+  }
+
+  @VisibleForTesting
+  public void setShouldDisplayWizard(boolean shouldDisplayWizard) {
+    setProperty("correlation.display_wizard", shouldDisplayWizard);
+  }
+
+  public void setAnalysisMode(boolean analysisMode) {
+    this.analysisMode = analysisMode;
+  }
+
+  public void setShouldStore(boolean shouldStore) {
+    this.shouldStore = shouldStore;
+  }
+
+  public CorrelationComponentsRegistry getCorrelationComponentsRegistry() {
+    if (componentsRegistry == null) {
+      componentsRegistry = CorrelationComponentsRegistry.getInstance();
+    }
+    return componentsRegistry;
+  }
+
+  public void setOnStopRecordingMethod(Runnable onStopRecordingMethod) {
+    this.onStopRecordingMethod = onStopRecordingMethod;
+  }
+
+  public void enableCorrelation(Boolean enableCorrelation) {
+    this.correlationEngine.setEnabled(enableCorrelation);
+  }
 }

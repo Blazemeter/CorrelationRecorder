@@ -48,6 +48,7 @@ public class SwingTestRunner extends BlockJUnit4ClassRunner {
       public void evaluate() throws Throwable {
         try {
           method.invokeExplosively(test);
+          takeScreenshot();
         } catch (Throwable t) {
           takeScreenshot();
           throw t;

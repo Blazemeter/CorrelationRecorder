@@ -1,8 +1,8 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
+import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils.ButtonBuilder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -37,7 +37,7 @@ public class GroupsContainer extends JPanel implements ActionListener {
 
   private JPanel buildGroupButtonPanel() {
 
-    ButtonBuilder base = new SwingUtils.ButtonBuilder()
+    SwingUtils.ButtonBuilder base = new SwingUtils.ButtonBuilder()
         .withActionListener(this);
 
     upButton = base.withName("up").withAction(UP).build();
@@ -79,12 +79,25 @@ public class GroupsContainer extends JPanel implements ActionListener {
   }
 
   public void addGroup() {
-    addGroup(new GroupPanel(findNextAvailableTitle("Group-" + (getGroupPanels().size() + 1), 0),
-        true, this::doGroupsUIRefresh, modelUpdate));
+    GroupPanel groupPanel = new GroupPanel(
+        findNextAvailableTitle("Group-" + (getGroupPanels().size() + 1), 0),
+        true, this::doGroupsUIRefresh, modelUpdate);
+    addGroup(groupPanel);
   }
 
   public void addGroup(GroupPanel groupPanel) {
     table.addRow(groupPanel);
+  }
+
+  public void addExportedGroup(List<CorrelationRule> rules) {
+    RulesGroup group = new RulesGroup();
+    group.setRules(rules);
+    group.setEnable(true);
+
+    group.setId(findNextAvailableTitle("Exported-" + (getGroupPanels().size() + 1), 0));
+    addGroup(new GroupPanel(group, this::doGroupsUIRefresh, modelUpdate));
+    modelUpdate.run();
+    doGroupsUIRefresh();
   }
 
   private String findNextAvailableTitle(String title, int repeatedTimes) {

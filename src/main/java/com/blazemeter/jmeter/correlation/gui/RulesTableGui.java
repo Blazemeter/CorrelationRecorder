@@ -1,8 +1,8 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.common.NonStringValuedTableGui;
 import com.blazemeter.jmeter.correlation.gui.common.PlaceHolderTextField;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;

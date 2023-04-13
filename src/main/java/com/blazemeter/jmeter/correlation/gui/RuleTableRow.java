@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
@@ -8,7 +9,6 @@ import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacemen
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRulePartPanel.Builder;
 import com.blazemeter.jmeter.correlation.gui.common.PlaceHolderTextField;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import java.io.Serializable;

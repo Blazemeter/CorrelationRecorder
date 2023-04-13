@@ -1,11 +1,11 @@
 package com.blazemeter.jmeter.correlation.gui.templates;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.gui.common.HelperDialog;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIconLabel;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -61,10 +61,12 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
   private static final String DELETE_ACTION = "delete";
   private static final String SAVE_ACTION = "save";
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoryHandler;
-  private final JButton removeButton = SwingUtils
-      .buildJButton("repositoryRemoveButton", "Remove", DELETE_ACTION, this);
-  private final JButton saveButton = SwingUtils
-      .buildJButton("repositorySaveButton", "Save", SAVE_ACTION, this);
+  private final SwingUtils.ButtonBuilder builder = new SwingUtils.ButtonBuilder()
+      .withActionListener(this);
+  private final JButton removeButton = builder.withName("repositoryRemove")
+      .withAction(DELETE_ACTION).build();
+  private final JButton saveButton = builder.withName("repositorySave")
+      .withAction(SAVE_ACTION).build();
   private final RepositoryInputTableModel repositoryTableModel = new RepositoryInputTableModel();
   private final JTable repositoryTable = SwingUtils
       .createComponent("repositoriesTable", new JTable(repositoryTableModel));
@@ -186,7 +188,8 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
   }
 
   private JPanel makeButtonPanel() {
-    JButton addButton = SwingUtils.buildJButton("repositoryAddButton", "Add", ADD_ACTION, this);
+    JButton addButton = builder.withAction(ADD_ACTION).withName("repositoryAdd").build();
+    addButton.setText("Add");
     updateEnabledButtons();
     String descriptionFile = DescriptionContent.getFromClass(this.getClass());
     helper.setName("helperIcon");

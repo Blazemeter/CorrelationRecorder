@@ -221,7 +221,7 @@ public class CustomExtensionsDialogIT {
   }
 
   private void pressAddExtension() {
-    frame.button("addExtension").target().doClick();
+    frame.button("addExtensionButton").target().doClick();
   }
 
   @Test

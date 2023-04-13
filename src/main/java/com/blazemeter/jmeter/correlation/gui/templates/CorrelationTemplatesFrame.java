@@ -5,13 +5,13 @@ import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguratio
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import static javax.swing.GroupLayout.Alignment.TRAILING;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIcon;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;

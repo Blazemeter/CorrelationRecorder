@@ -1,6 +1,8 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
+import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
@@ -8,7 +10,6 @@ import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegi
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.blazemeter.jmeter.correlation.gui.templates.CorrelationTemplateFrame;
 import com.blazemeter.jmeter.correlation.gui.templates.CorrelationTemplatesFrame;
 import com.helger.commons.annotation.VisibleForTesting;
@@ -23,11 +24,13 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import org.apache.http.entity.ContentType;
 import org.apache.jmeter.util.JMeterUtils;
@@ -45,7 +48,9 @@ public class RulesContainer extends JPanel implements ActionListener {
   private static final String SAVE = "save";
   private static final String LOAD = "load";
   private static final String CLEAR = "clear";
+  private static final String CORRELATE = "correlate";
   private static final String TEMPLATE_ACTIONS_BUTTON_SUFFIX_TEXT = " Template";
+  private static final String OPEN_SUGGESTIONS = "openSuggestions";
 
   private final CorrelationTemplatesRegistryHandler templatesRegistryHandler;
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
@@ -56,6 +61,11 @@ public class RulesContainer extends JPanel implements ActionListener {
   private CorrelationTemplateFrame templateFrame;
   private CorrelationTemplatesFrame loadFrame;
   private boolean isSiebelTestPlan;
+  private JCheckBox enableCorrelation;
+  private Runnable onWizardDisplay;
+  private Runnable onSuggestionsDisplay;
+  private Consumer<List<CorrelationRule>> addRulesGroupConsumer;
+  private Consumer<Boolean> enableCorrelationConsumer;
 
   public RulesContainer(CorrelationTemplatesRegistryHandler correlationTemplatesRegistryHandler,
       Runnable modelUpdater) {
@@ -70,6 +80,11 @@ public class RulesContainer extends JPanel implements ActionListener {
     add(groupsContainer);
     responseFilterPanel = new ResponseFilterPanel();
     add(responseFilterPanel);
+    addRulesGroupConsumer = groupsContainer::addExportedGroup;
+  }
+
+  public Consumer<List<CorrelationRule>> obtainRulesExporter() {
+    return addRulesGroupConsumer;
   }
 
   @VisibleForTesting
@@ -92,6 +107,19 @@ public class RulesContainer extends JPanel implements ActionListener {
     JButton clearButton = makeButton("clear", CLEAR);
     clearButton.setText(JMeterUtils.getResString("clear"));
 
+    JButton modifyButton = makeButton("correlate", CORRELATE);
+    modifyButton.setText("Correlation's Wizard");
+
+    JButton suggestionButton = makeButton("correlate", OPEN_SUGGESTIONS);
+    suggestionButton.setText("Open Suggestion Panel");
+
+    enableCorrelation = new JCheckBox("Enable Correlation (Legacy)");
+    enableCorrelation.addActionListener(e -> {
+      if (enableCorrelationConsumer != null) {
+        enableCorrelationConsumer.accept(enableCorrelation.isSelected());
+      }
+    });
+
     JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
     buttonPanel.setMinimumSize(new Dimension(100, 200));
     buttonPanel.add(loadButton);
@@ -99,6 +127,12 @@ public class RulesContainer extends JPanel implements ActionListener {
     buttonPanel.add(exportButton);
     buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
     buttonPanel.add(clearButton);
+    buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+    buttonPanel.add(modifyButton);
+    buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+    buttonPanel.add(suggestionButton);
+    buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+    buttonPanel.add(enableCorrelation);
     return buttonPanel;
   }
 
@@ -133,9 +167,23 @@ public class RulesContainer extends JPanel implements ActionListener {
         }
         loadFrame.showFrame();
         break;
+      case CORRELATE:
+        displayCorrelationWizard();
+        break;
+      case OPEN_SUGGESTIONS:
+        displayCorrelationSuggestions();
+        break;
       default:
         throw new UnsupportedOperationException(action);
     }
+  }
+
+  private void displayCorrelationWizard() {
+    onWizardDisplay.run();
+  }
+
+  private void displayCorrelationSuggestions() {
+    onSuggestionsDisplay.run();
   }
 
   private void clearContainer() {
@@ -245,5 +293,18 @@ public class RulesContainer extends JPanel implements ActionListener {
         ", groupsContainer=" + groupsContainer +
         ", isSiebelTestPlan=" + isSiebelTestPlan +
         '}';
+  }
+
+  public void setOnWizardDisplayMethod(Runnable onWizardDisplay) {
+    this.onWizardDisplay = onWizardDisplay;
+  }
+
+  public void setOnSuggestionsDisplayMethod(Runnable onSuggestionsDisplay) {
+    this.onSuggestionsDisplay = onSuggestionsDisplay;
+  }
+
+  public void setEnableCorrelationConsumer(
+      Consumer<Boolean> enableCorrelationConsumer) {
+    this.enableCorrelationConsumer = enableCorrelationConsumer;
   }
 }

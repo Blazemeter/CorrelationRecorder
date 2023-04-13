@@ -1,10 +1,10 @@
 package com.blazemeter.jmeter.correlation.gui;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.gui.common.RulePartType;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
 import com.google.common.base.Objects;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -115,11 +115,16 @@ public class CustomExtensionsDialog extends JDialog implements ActionListener {
   }
 
   private void prepareButtons() {
-    removeExtensionButton = SwingUtils.buildJButton("removeExtension", ">>", REMOVE, this);
-    removeExtensionButton.setEnabled(false);
+    SwingUtils.ButtonBuilder builder = new SwingUtils.ButtonBuilder()
+        .withActionListener(this);
+    removeExtensionButton = builder.withName("removeExtension")
+        .withAction(REMOVE).build();
+    removeExtensionButton.setText(">>");
     removeExtensionButton.setToolTipText("Select an extension before removing it");
 
-    addExtensionButton = SwingUtils.buildJButton("addExtension", "<<", ADD, this);
+    addExtensionButton = builder.withName("addExtension")
+        .withAction(ADD).build();
+    addExtensionButton.setText("<<");
     addExtensionButton.setEnabled(false);
     addExtensionButton.setToolTipText("Select an extension before adding it");
   }

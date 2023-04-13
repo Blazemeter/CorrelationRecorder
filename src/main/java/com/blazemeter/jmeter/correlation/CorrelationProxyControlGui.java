@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation;
 
+import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
@@ -12,6 +13,7 @@ import com.blazemeter.jmeter.correlation.gui.BlazemeterLabsLogo;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
 import com.blazemeter.jmeter.correlation.gui.TestPlanTemplatesRepository;
+import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationWizard;
 import com.google.common.annotations.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -32,9 +34,11 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CorrelationProxyControlGui extends ProxyControlGui implements
-    CorrelationTemplatesRepositoriesRegistryHandler, CorrelationTemplatesRegistryHandler {
+public class CorrelationProxyControlGui extends ProxyControlGui
+    implements CorrelationTemplatesRepositoriesRegistryHandler,
+    CorrelationTemplatesRegistryHandler {
 
+  public static Component mainParentGuiComponent;
   protected static final String TEMPLATES_FOLDER_PATH = "/templates/";
   protected static final String SIEBEL_CORRELATION_TEMPLATE = "siebel-1.0-template.json";
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationProxyControlGui.class);
@@ -44,13 +48,27 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "bzm - Correlation Recorder";
   private final RulesContainer rulesContainer;
   private CorrelationProxyControl model;
+  private CorrelationHistory history;
+  private CorrelationWizard wizard;
 
   public CorrelationProxyControlGui() {
     JTabbedPane siebelPane = findTabbedPane();
     rulesContainer = new RulesContainer(this, () -> modifyTestElement(model));
-    Objects.requireNonNull(siebelPane).add("Correlation Rules", rulesContainer);
+    Objects.requireNonNull(siebelPane).add("Correlation", rulesContainer);
     add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
     installDefaultFiles();
+    history = new CorrelationHistory();
+
+    wizard = new CorrelationWizard();
+    wizard.setHistory(history);
+    wizard.setVersionsSupplier(this::getTemplateVersions);
+    wizard.setAddRuleConsumer(rulesContainer.obtainRulesExporter());
+    wizard.init();
+    rulesContainer.setOnWizardDisplayMethod(() -> wizard.displayMethodSelection());
+    rulesContainer.setOnSuggestionsDisplayMethod(() -> wizard.displaySuggestions());
+    rulesContainer.setEnableCorrelationConsumer((enableCorrelation)
+        -> model.enableCorrelation(enableCorrelation));
+    mainParentGuiComponent = getParent();
   }
 
   @VisibleForTesting
@@ -79,14 +97,13 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
 
   private void installCorrelationRecorderTemplateTestPlan() {
     TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
-        Paths.get(
-            getJMeterDirPath(), "bin", TEMPLATES_FOLDER_PATH
-        ).toAbsolutePath().toString() + File.separator);
+        Paths.get(getJMeterDirPath(), "bin", TEMPLATES_FOLDER_PATH).toAbsolutePath().toString()
+            + File.separator);
 
-    templateRepository
-        .addCorrelationRecorderTemplate(CORRELATION_RECORDER_TEST_PLAN, TEMPLATES_FOLDER_PATH,
-            TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEMPLATE_DESC,
-            CORRELATION_RECORDER_TEMPLATE_NAME);
+    templateRepository.addCorrelationRecorderTemplate(CORRELATION_RECORDER_TEST_PLAN,
+        TEMPLATES_FOLDER_PATH,
+        TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEMPLATE_DESC,
+        CORRELATION_RECORDER_TEMPLATE_NAME);
     LOG.info("bzm - Correlation Recorder Test Plan Template installed");
   }
 
@@ -94,10 +111,11 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
     String siebelPluginPath = getClass().getProtectionDomain().getCodeSource().getLocation()
         .getPath();
 
-    /*This is done to obtain and remove the initial `/` from the path.
-      i.e: In Windows the path would be something like `/C:`,
-      so we check if the char at position 3 is ':' and if so, we remove the initial '/'.
-    */
+    /*
+     * This is done to obtain and remove the initial `/` from the path. i.e: In
+     * Windows the path would be something like `/C:`, so we check if the char at
+     * position 3 is ':' and if so, we remove the initial '/'.
+     */
     char aChar = siebelPluginPath.charAt(2);
     if (aChar == ':') {
       siebelPluginPath = siebelPluginPath.substring(1);
@@ -107,11 +125,9 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   }
 
   private void installSiebelCorrelationTemplate() {
-    TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
-        Paths.get(
-        getJMeterDirPath(), LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER)
-            .toAbsolutePath().toString() + File.separator
-    );
+    TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(Paths
+        .get(getJMeterDirPath(), LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER)
+        .toAbsolutePath().toString() + File.separator);
     templateRepository.addCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
         LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
     LOG.info("Siebel Correlation's Template installed");
@@ -129,7 +145,15 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
       model = (CorrelationProxyControl) el;
       model.update(rulesContainer.getCorrelationComponents(),
           rulesContainer.getRulesGroups(),
-          rulesContainer.getResponseFilter());
+          rulesContainer.getResponseFilter(),
+          history.getHistoryPath());
+      //model.update(analysisPanel.getAnalysis());
+      model.setCorrelationHistory(history);
+      model.setCorrelationHistoryPath(history.getHistoryPath());
+      model.setOnStopRecordingMethod(() -> {
+        wizard.setHistory(history);
+        wizard.requestPermissionToReplay();
+      });
     }
   }
 
@@ -153,6 +177,12 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
       model = correlationProxyControl;
       CorrelationComponentsRegistry.getInstance().reset();
       rulesContainer.configure(correlationProxyControl);
+      model.setOnStopRecordingMethod(() -> {
+        if (history != null) {
+          wizard.setHistory(history);
+        }
+        wizard.requestPermissionToReplay();
+      });
     }
   }
 
@@ -283,5 +313,12 @@ public class CorrelationProxyControlGui extends ProxyControlGui implements
   @VisibleForTesting
   protected CorrelationProxyControl getCorrelationProxyControl() {
     return model;
+  }
+
+  public List<TemplateVersion> getTemplateVersions() {
+    List<TemplateVersion> rawTemplates = new ArrayList<>();
+    getCorrelationRepositories().forEach(repository -> rawTemplates
+        .addAll(getCorrelationTemplatesByRepositoryName(repository.getName())));
+    return rawTemplates;
   }
 }

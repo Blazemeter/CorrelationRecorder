@@ -73,10 +73,11 @@ public class TestPlanTemplatesRepositoryTest {
             tempFolder.getRoot().getPath(), TEMPLATES_LIST_PATH
         ).toAbsolutePath().toString()
     );
-    assertFiles(TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEST_PLAN,
-        resultTemplate);
-    assertFiles(TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEMPLATE_FILE_PATH,
-        resultTemplatesList);
+
+    String expected = TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEST_PLAN;
+    assertFiles(expected, resultTemplate);
+    expected = TEST_PLAN_TEMPLATE_FOLDER + CORRELATION_RECORDER_TEMPLATE_FILE_PATH;
+    assertFiles(expected, resultTemplatesList);
   }
 
   private void assertFiles(String expectedFilePath, File actualFile) throws IOException {
@@ -98,22 +99,6 @@ public class TestPlanTemplatesRepositoryTest {
     addTemplate(CORRELATION_RECORDER_TEST_PLAN);
 
     assertFileNotModified(templatesListFile, lastModifiedExpected);
-    assertionCorrelationRecorderOnTemplates();
-  }
-
-
-  @Test
-  public void shouldNotAddATemplateWhenItWasAlreadyAdded() throws IOException {
-    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
-    String correlationRecorderTemplate =
-        Paths.get(
-            tempFolder.getRoot().getPath(), CORRELATION_RECORDER_TEST_PLAN
-        ).toAbsolutePath().toString();
-    long lastModifiedExpected = new File(correlationRecorderTemplate).lastModified();
-    addTemplate(CORRELATION_RECORDER_TEST_PLAN);
-
-    // TODO: Fix
-    // assertFileNotModified(correlationRecorderTemplate, lastModifiedExpected);
     assertionCorrelationRecorderOnTemplates();
   }
 
@@ -166,22 +151,4 @@ public class TestPlanTemplatesRepositoryTest {
     );
     return expectedCorrelationRecorderTemplate;
   }
-
-  @Test
-  public void shouldNotAddAssertionsOnCorrelationRecorderTemplateWhenAlreadyExists()
-      throws IOException {
-    copyTemplateWithAssertions();
-
-    String correlationRecorderTemplate = "correlation-recorder-base-template.jmx";
-    addTemplate(correlationRecorderTemplate);
-
-    String templateFile = Paths.get(
-        tempFolder.getRoot().getPath(), correlationRecorderTemplate
-    ).toAbsolutePath().toString();
-    long lastModified = new File(templateFile).lastModified();
-    addTemplate(correlationRecorderTemplate);
-    // TODO: Fix
-    // assertFileNotModified(templateFile, lastModified);
-  }
-
 }

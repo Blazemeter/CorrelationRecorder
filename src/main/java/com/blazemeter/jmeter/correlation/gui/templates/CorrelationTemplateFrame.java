@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui.templates;
 
+import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
@@ -8,8 +9,6 @@ import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
 import com.blazemeter.jmeter.correlation.gui.common.CollapsiblePanel;
 import com.blazemeter.jmeter.correlation.gui.common.PlaceHolderTextField;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils;
-import com.blazemeter.jmeter.correlation.gui.common.SwingUtils.ButtonBuilder;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -412,7 +411,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   }
 
   private JPanel buildDependencyButtonPanel() {
-    ButtonBuilder base = new SwingUtils.ButtonBuilder()
+    SwingUtils.ButtonBuilder base = new SwingUtils.ButtonBuilder()
         .withActionListener(this);
 
     JButton deleteButton = base.withName("delete").withAction(DELETE).build();
