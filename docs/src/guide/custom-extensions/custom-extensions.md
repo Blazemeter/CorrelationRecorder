@@ -97,7 +97,7 @@ When making your own Custom Extension, consider the order of the extracted value
 
 The following diagram will contain all the relationships between the Rule and the previously mentioned parts.
 
-![diagram]("$withBase('/exampleDiagram.png')")
+![diagram]($withBase('/exampleDiagram.png'))
 
 To resume the UML Diagram:
 
