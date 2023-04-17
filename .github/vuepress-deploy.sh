@@ -8,7 +8,7 @@ cd docs
 
 yarn && yarn build
 
-cd .vuepress/dist
+cd src/.vuepress/dist
 
 EMAIL="$(git log --format='%ae' HEAD^!)"
 USERNAME="$(git log --format='%an' HEAD^!)"
