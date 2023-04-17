@@ -6,11 +6,11 @@ Welcome to the Correlation Recorder's JMeter Plugin, the main and extensive docu
 
 ## Usage
 
-You can either use the plugin to [automatically correlate your dynamic variables](https://blazemeter.github.io/correlation-recorder/guide/#correlating-dynamic-variables) while recording in JMeter or, you can [implement your own logic for your particular case.](https://blazemeter.github.io/correlation-recorder/custom-extensions/)
+You can either use the plugin to [automatically correlate your dynamic variables](https://blazemeter.github.io/CorrelationRecorder/guide/#correlating-dynamic-variables) while recording in JMeter or, you can [implement your own logic for your particular case.](https://blazemeter.github.io/CorrelationRecorder/custom-extensions/)
 
 ## Contributing
 
-Got **something interesting** you'd like to **share**? Learn about [contributing](https://blazemeter.github.io/correlation-recorder/contributing/).
+Got **something interesting** you'd like to **share**? Learn about [contributing](https://blazemeter.github.io/CorrelationRecorder/contributing/).
 
 ## License
 
