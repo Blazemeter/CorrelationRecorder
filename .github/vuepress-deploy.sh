@@ -18,6 +18,6 @@ git config --local user.name  "$USERNAME"
 git add .
 git commit -m '[skip ci] Deploy docs to GitHub pages'
 
-git push -f https://git:${ACCESS_TOKEN}@github.com/Blazemeter/jmeter-siebel-plugin.git master:gh-pages
+git push -f https://git:${ACCESS_TOKEN}@github.com/Blazemeter/CorrelationRecorder.git master:gh-pages
 
 cd $GITHUB_WORKSPACE
