@@ -1,0 +1,19 @@
+{
+  "name": "CorrelationRecorder",
+  "version": "2.0.",
+  "description": "Effortlessly handle dynamic values in JMeter with the Correlation recorder plugin.",
+  "main": "index.js",
+  "authors": {
+    "name": "",
+    "email": ""
+  },
+  "repository": "Blazemeter/CorrelationRecorder",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "vuepress": "^1.9.2"
+  }
+}
