@@ -170,10 +170,14 @@ public class CorrelationProxyControlGui extends ProxyControlGui
 
   @Override
   public void configure(TestElement el) {
+    // Don't allow to update UI on recording, because add test element on the tree fire configure
     LOG.debug("Configuring gui with {}", el);
-    super.configure(el);
     if (el instanceof CorrelationProxyControl) {
       CorrelationProxyControl correlationProxyControl = (CorrelationProxyControl) el;
+      // Check if the server of recording is running, if the server is running, no update the UI
+      if (!correlationProxyControl.canRemove()) {
+        return;
+      }
       model = correlationProxyControl;
       CorrelationComponentsRegistry.getInstance().reset();
       rulesContainer.configure(correlationProxyControl);
@@ -184,6 +188,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
         wizard.requestPermissionToReplay();
       });
     }
+    super.configure(el);
   }
 
   @Override
