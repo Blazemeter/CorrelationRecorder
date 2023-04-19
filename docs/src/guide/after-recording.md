@@ -81,20 +81,22 @@ that it works as expected.
 To open the Correlation Wizard, you can either:
 - Accept the replay report Dialog, after the recording.
 - Click on the **Correlation Wizard** button in the **Correlation** tab.
-![Replay Report Dialog](/guide/img/replay-report-dialog.png)
+
+![Replay Report Dialog](./assets/replay-report-dialog.png)
 
 2. Select the **By Replay and Compare** method
 
 Regardless of the method used, the "Select Correlation Method" dialog will be displayed.
 Select the **Existing correlation rules (recommended** method and press "Continue".
-![Select Correlation Method](/guide/img/select-correlation-method.png)
+
+![Select Correlation Method](./assets/select-correlation-method.png)
 
 3. Select the Templates to use for the analysis
 
 The next step is to select the Correlation Templates to use for the analysis. You can select one or more templates.
 If you select more than one, the plugin will use the union of the dynamic values found in all of them.
 
-![Select Correlation Templates](/images/select-correlation-template.png)
+![Select Correlation Templates](./assets/select-correlation-template.png)
 
 ::: tip
 You can select which version of each Correlation Template to use. By default, the latest version is selected.
@@ -115,7 +117,7 @@ the results might not be as realistic as expected.
 6. Review the Correlation Suggestions
 Once the analysis is done, the plugin will display the Correlation Suggestions in the "Correlation Suggestions dialog".
 
-![Correlation Suggestions](/guide/img/correlation-suggestions.png)
+![Correlation Suggestions](./assets/correlation-suggestions.png)
 Review the name of the arguments, the values, where they were found and used. If you want to apply a suggestion,
 select the checkbox next to it. If you want to ignore a suggestion, uncheck the checkbox.
 
@@ -125,5 +127,5 @@ Once you are done reviewing the suggestions, press the "Auto Correlate" button t
 The plugin will automatically correlate the dynamic values in the Test Plan, and will display a dialog informing you
 that the process was successful.
 
-![Auto Correlate Successful](/guide/img/auto-correlate-successful.png)
+![Auto Correlate Successful](./assets/auto-correlation-successful-dialog.png)
 

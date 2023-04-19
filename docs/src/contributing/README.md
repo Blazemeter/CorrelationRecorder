@@ -27,5 +27,5 @@ Run JMeter and check the new Siebel HTTP(S) Test Script Recorder is available.
 
 The following diagram contains all the relationships between the classes. Please take a close look at it, and also the code, for further understanding.
 
-![Project Diagram](/assets/umlDiagram.png)
+![Project Diagram](./assets/umlDiagram.png)
 
