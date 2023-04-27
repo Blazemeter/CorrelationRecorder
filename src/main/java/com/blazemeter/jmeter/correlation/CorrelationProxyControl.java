@@ -162,7 +162,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   private static String getTemplateDirectoryPath() {
     return JMeterUtils.getPropDefault(TEMPLATE_PATH, JMeterUtils.getJMeterHome());
   }
-  
+
   private static boolean jMeterVersionGreaterThan53() {
     /*
      * From JMeter's 5.4, a fix was make to handle requests that
@@ -349,17 +349,22 @@ public class CorrelationProxyControl extends ProxyControl implements
 
     super.deliverSampler(proxy.getSampler(), proxy.getTestElements(), proxy.getResult());
 
-    try {
-      /*
-       * This forces the sampler to be added to the TestPlan.
-       * Fix for issues in the recording on JMeter +5.3
-       */
-      if (putSamplesIntoModel != null) {
-        ActionEvent e = new ActionEvent(this, 0, "putSamplesIntoModel");
-        putSamplesIntoModel.invoke(this, e);
-      }
-    } catch (IllegalAccessException | InvocationTargetException ex) {
-      LOG.error("Could not invoke putSamplesIntoModel", ex);
+    /*
+     * This forces the sampler to be added to the TestPlan.
+     * Fix for issues in the recording on JMeter +5.3
+     */
+    if (putSamplesIntoModel != null) {
+      ActionEvent e = new ActionEvent(this, 0, "putSamplesIntoModel");
+      Object reference = this;
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          try {
+            putSamplesIntoModel.invoke(reference, e);
+          } catch (IllegalAccessException | InvocationTargetException ex) {
+            LOG.error("Could not invoke putSamplesIntoModel", ex);
+          }
+        }
+      });
     }
 
   }

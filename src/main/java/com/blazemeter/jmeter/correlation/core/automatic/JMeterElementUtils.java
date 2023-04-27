@@ -582,9 +582,7 @@ public class JMeterElementUtils {
         TestElement testElement = subNode.getTestElement();
         if (testElement instanceof ResultCollector) {
           ResultCollector resultCollector = (ResultCollector) testElement;
-          if (resultCollector.getFilename().isEmpty()) {
-            resultCollector.setFilename(FileManagementUtils.getRecordingResultFileName());
-          }
+          resultCollector.setFilename(FileManagementUtils.getRecordingResultFileName());
           LOG.info("Recording's result from {} located at {}", resultCollector.getName(),
               resultCollector.getFilename());
         }

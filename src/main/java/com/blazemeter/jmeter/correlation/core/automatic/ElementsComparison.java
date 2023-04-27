@@ -19,9 +19,7 @@ import java.util.function.Function;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -107,14 +105,28 @@ public class ElementsComparison {
       }
 
       for (TestElement usage : appearance.getList()) {
+        String source = appearance.getSource();
         String regex = "";
-        if (usage instanceof HTTPSamplerBase) {
-          regex = name + "=([^&]+)";
-        } else if (usage instanceof HeaderManager) {
-          regex = name + ": (.+)";
-        } else {
-          LOG.warn("{} Not supported", referenceName);
-          continue;
+        switch (source) {
+          case "Header":
+          case "Header Request (Fields)":
+            regex = name + ": ([^&]+)";
+            break;
+          case "Body Data (JSON)":
+            //We don't expect this to work for now. Need to improve the regex
+            regex = name + ":([^&]+)";
+            break;
+          case "URL":
+            regex = "(?:\\?|?:&)" + name + "=(.+?)(?:&|?:$)";
+            break;
+          case "HTTP arguments":
+            regex = name + "=([^&]+)";
+            break;
+          case "Request Path":
+            regex = "\\/" + name + "\\/(.+?)(?:\\/|?:\\\\?|?:$)";
+            break;
+          default:
+            break;
         }
 
         RegexCorrelationReplacement<?> replacementSuggestion
@@ -365,7 +377,7 @@ public class ElementsComparison {
       regex = contextString.replace(originalValue, simpleRegexCapture);
     }
 
-    extractor.setParams(Arrays.asList(regex, "1", "1", targetField.name(), "false"));
+    extractor.setParams(Arrays.asList(regex, "1", "1", targetField.name(), "true"));
     return extractor;
   }
 
