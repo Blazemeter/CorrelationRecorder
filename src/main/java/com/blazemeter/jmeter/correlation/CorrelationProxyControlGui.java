@@ -174,10 +174,6 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     LOG.debug("Configuring gui with {}", el);
     if (el instanceof CorrelationProxyControl) {
       CorrelationProxyControl correlationProxyControl = (CorrelationProxyControl) el;
-      // Check if the server of recording is running, if the server is running, no update the UI
-      if (!correlationProxyControl.canRemove()) {
-        return;
-      }
       model = correlationProxyControl;
       CorrelationComponentsRegistry.getInstance().reset();
       rulesContainer.configure(correlationProxyControl);
