@@ -5,10 +5,10 @@ next: /guide/installation-guide.md
 
 # User Guide
 
-Correlations Recorder it's a [JMeter's](http://jmeter.apache.org/usermanual/get-started.html) plugin that simplifies
- the process of recording for applications with Dynamic Variables by providing automatic **correlations of variables**.
+The Correlations Recorder is a [JMeter's](http://jmeter.apache.org/usermanual/get-started.html) plugin that simplifies
+ the process of recording recording test scripts for applications with dynamic variables by providing automatic **correlation of variables**.
 
-You can perform exploratory detections of dynamic variables and create **correlation rules** to correlate them
+You can perform exploratory detection of dynamic variables and create **correlation rules** to correlate them
  in future recordings, or you can use the **automatic correlations** and let the plugin do the work for you. 
 
 Regardless of the method you choose, the plugin will help you create a test script that is more reliable and
@@ -18,7 +18,7 @@ Regardless of the method you choose, the plugin will help you create a test scri
 
 - Automated correlation detection and suggestions for faster and more accurate test script creation
 - Preloaded SIEBEL templates for convenience and faster test script creation
-- Auto install, download and update repositories for a convenient and hassle-free team collaboration
+- Auto install, download and update repositories for convenient and hassle-free team collaboration
 - Easy customization options for efficient test script creation and increased productivity
 - Customizable correlations to match your specific testing needs and requirements
 - Shareable templates to streamline team collaboration and accelerate project development
@@ -28,7 +28,7 @@ Regardless of the method you choose, the plugin will help you create a test scri
 Additional Features:
 
 - Automatic proposal of changes to correlate detected dynamic values for faster script development
-- Automatic generation of correlation rules for use in following recordings for even faster script creation
+- Automatic generation of correlation rules for use in subsequent recordings for even faster script creation
 - Automatic testing of proposed changes for a faster and more reliable test script
 
 ## Benefits
