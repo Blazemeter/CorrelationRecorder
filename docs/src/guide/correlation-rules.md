@@ -189,7 +189,7 @@ The generation and assignment of variables are tied to the Extractors which are 
 The most used and complex extractor is the [Regex Extractor](#list-of-correlation-extractors).
 This section will be divided into cases, from simple and common cases to unusual ones.
 
-### Extract specific match from the response (overwritable)
+### Extract specific match from the response (overridable)
 
 |  | Description |
 |---|---|
@@ -198,7 +198,7 @@ This section will be divided into cases, from simple and common cases to unusual
 | Visualization |![extractor_configuration_visualization](./assets/extraction-specific-match-overwritable.png) |
 | Overall | value will be stored in a JMeter variable, with the exact name as the value introduced on the reference variable name field. **If a variable exists (from previous extractions) the variable will be overwritten with new match value** |
 
-### Extract specific match from a response (not overwritable)
+### Extract specific match from a response (not overridable)
 |  | Description |
 |---|---|
 | Objective | extract a certain value from a specific match number on the response. The value will be saved in a non-overwritable variable. | 

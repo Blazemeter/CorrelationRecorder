@@ -1,6 +1,6 @@
 ---
 sidebar: auto
-next: /guide/installation-configuration.md
+next: /guide/installation-guide.md
 ---
 
 # User Guide
@@ -31,37 +31,33 @@ Additional Features:
 - Automatic generation of correlation rules for use in following recordings for even faster script creation
 - Automatic testing of proposed changes for a faster and more reliable test script
 
-## Usage
+## Benefits
 
-The Correlation Recorder plugin for JMeter can perform correlations in two scenarios:
- using [Automatic correlations](#automatic-correlations) after the recording is complete,
- or using [Correlation Rules](#correlation-rules) before or after the recording.
+Here are 10 key benefits of using the JMeter's Automatic Correlation Recorder Plugin:
 
-We recommend using the Automatic Correlations method, since it is the most efficient and reliable way to correlate
- dynamic values. However, if you need to correlate dynamic values that are not detected by the plugin, you can use
- Correlation Rules.
+1. Fast script creation
+2. Preloaded templates
+3. Hassle-free collaboration
+4. Customizable correlations
+5. Easy customization
+6. Streamlined collaboration
+7. Customizable extensions
+8. Dynamic value correlation
+9. Fast rule generation
+10. Reliable testing.
 
-With that in mind, let's take a look at the two methods.
+## System requirements
 
-### Automatic Correlations
+The system requirements to use the plugin are pretty much the sames as a regular JMeter environment, vary depending on
+ the operating system. In general terms, the requirements for each operating system are:
 
-Using automatic correlations, the plugin will request permission to analyze the recording and attempt to automatically
- detect potential correlations.
+- Windows: Windows 7 or later, 1 GB of RAM (2 GB recommended), 250 MB of free disk space
+- macOS: macOS 10.10 or later, 1 GB of RAM (2 GB recommended), 250 MB of free disk space
+- Linux: kernel 2.6.26 or later, 1 GB of RAM (2 GB recommended), 250 MB of free disk space
 
-Currently, there are two methods for automatic correlations:
+Please note that these are the minimum requirements, and higher specifications may be necessary for larger or more
+ complex load testing scenarios.
 
-1. **Correlation Templates** (recommended): This method applies pre-defined correlation templates that have been 
- specifically designed for different applications.
-2. **Replay and Compare**: This method involves replaying the recording and comparing responses to identify potential
- dynamic values that need to be correlated.
-
-::: tip Note
-You no longer need to configure Correlation Rules and make the recording over and over again. With the Correlation Template method,
-you just save them and test directly in your recordings.
+::: tip
+For a better experience, we recommend the usage of JMeter 5.4.1 or later.
 :::
-
-### Correlation Rules
-Using Correlation Rules involves configuring a set of rules in the plugin that will be used to evaluate every requests and responses
-    during the recording, making the correlations automatically for you. 
-
-After they are applied, simply replay the recording and see the results.
