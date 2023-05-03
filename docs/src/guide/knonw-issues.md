@@ -23,7 +23,10 @@ Take the steps from the previous section, but instead of feeding the JTL file to
 This will use the back method of the Correlating by Replay and Comparison method of using that auxiliary JTL file to
  perform the correlation process.
 
-::: warning roadmap
-We will be working on a solution for this issue in the future. Potentially, adding the Correlation History complete
-feature (such as visualization, rollback, etc) to the plugin.
-:::
+
+## 2. Manual Replay Correlation Analysis Issue After Choosing 'No' to Wizard Prompt
+We are aware that there is an issue where, if you click "No" when the Automatic Correlation Wizard offers
+ to generate suggestions after recording, manually opening the wizard, replaying, and selecting the Correlation
+ method may not trigger the analysis. 
+
+We recommend selecting "Yes" when the wizard prompts you to generate suggestions to avoid this issue.

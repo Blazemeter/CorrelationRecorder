@@ -129,3 +129,18 @@ that the process was successful.
 
 ![Auto Correlate Successful](./assets/auto-correlation-successful-dialog.png)
 
+
+### Forcing the correlation of a dynamic value
+As mentioned earlier, the plugin will only try to correlate the parameters in the requests that failed during the replay. If a request does not fail (for example, it returns a 200 status code), but you still want the plugin to include it in the automatic correlation process, you can force it by adding an assertion to the request.
+
+To add an assertion to an HTTP request in JMeter, follow these steps:
+
+1. Open your JMeter test plan and navigate to the Thread Group where the HTTP request is located.
+2. Select the HTTP request and right-click on it.
+3. Click on "Add" and then select "Assertions".
+4. Choose the type of assertion you want to add (for example, "Response Assertion").
+5. Configure the assertion by specifying the criteria that must be met for the assertion to pass.
+6. Save your changes and run the test again.
+
+Official documentation: https://jmeter.apache.org/usermanual/test_plan.html#assertions
+
