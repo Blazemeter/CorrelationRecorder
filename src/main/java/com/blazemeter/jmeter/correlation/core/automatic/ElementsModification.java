@@ -40,7 +40,7 @@ public class ElementsModification {
 
   public static Map<JMeterTreeNode, ModificationResult> applySelectedSuggestions(
       List<CorrelationSuggestion> suggestions) {
-    LOG.info("Applying the following suggestions: {}", suggestions);
+    LOG.info("Applying {} suggestions.", suggestions.size());
     HashTree testPlan = JMeterElementUtils.getNormalizedTestPlan();
     ModificationReport report = new ModificationReport();
     try {

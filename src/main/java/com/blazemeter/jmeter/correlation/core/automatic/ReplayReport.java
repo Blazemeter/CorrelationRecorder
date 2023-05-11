@@ -40,4 +40,13 @@ public class ReplayReport {
   public int getTotalNewErrors() {
     return replayNewErrors.size();
   }
+
+  @Override
+  public String toString() {
+    return "ReplayReport{" +
+        "collector=" + collector +
+        ", successful=" + successful +
+        ", replayNewErrors=" + replayNewErrors +
+        '}';
+  }
 }

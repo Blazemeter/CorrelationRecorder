@@ -360,7 +360,7 @@
         <stringProp name="ProxyControlGui.port">8888</stringProp>
         <collectionProp name="ProxyControlGui.exclude_list">
           <stringProp name="-1813442068">.*\.(bmp|css|gif|ico|jpe?g|png|swf|eot|otf|ttf|mp4|woff|woff2|svg)(\?.*|$)</stringProp>
-          <stringProp name="-1142022958">.*\.(yahoo|mozilla|firefox|msn|google|windows|google|bing|yimg|chrome|microsoft|digicert)\..*</stringProp>
+          <stringProp name="-1142022958">.*\.(yahoo|mozilla|firefox|msn|nel|google|googleapis|gstatic|gvt1|gvt2|clarity|windows|bing|yimg|ytimg|ggpht|youtube|doubleclick|googleusercontent|chrome|microsoft|live|nelreports|azureedge|digicert|browser-intake-datadoghq|icloud)\..*</stringProp>
           <stringProp name="1671794880">.*(?!(\.json))(.js)(\?.*|$)</stringProp>
         </collectionProp>
         <collectionProp name="ProxyControlGui.include_list"/>

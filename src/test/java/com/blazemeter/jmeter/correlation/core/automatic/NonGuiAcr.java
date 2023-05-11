@@ -41,8 +41,8 @@ public class NonGuiAcr {
 
   //Remember to use the absolute path of the files.
   protected static String jmxFilePath;
-  protected static String recordingFilePath;
-  protected static String replayFilePath;
+  protected static String recordingFilePath = "";
+  protected static String replayFilePath = "";
 
   protected static String correlationHistoryPath = "";
   protected static CorrelationHistory history;
@@ -64,7 +64,16 @@ public class NonGuiAcr {
         elementsComparison.generateSuggestionsFromFailingReplayTraceOnly(recordingFilePath,
             replayFilePath);
 
-    suggestions.forEach(System.out::println);
+    System.out.println("Total suggestions generated: " + suggestions.size());
+    System.out.println("Suggestions generated: ");
+    suggestions.forEach((suggestion) -> System.out.println(printSuggestionInfo(suggestion)));
+  }
+
+  //Just print the abridged info of the suggestions
+  private String printSuggestionInfo(CorrelationSuggestion suggestion) {
+    return "- '" + suggestion.getParamName() + "'= 'Value (# usages)': '" + suggestion.getOriginalValue()
+        + "'. Extracted from:  [" + suggestion.getObtainedFromString()
+        + "]. Used on: [" + suggestion.getUsedOnString() + "]. " + System.lineSeparator();
   }
 
   protected boolean hasNeededFiles(String ... files) {
