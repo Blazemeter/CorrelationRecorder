@@ -2,14 +2,10 @@ package com.blazemeter.jmeter.correlation.gui.automatic;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
-import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
-import com.blazemeter.jmeter.correlation.core.automatic.ReplayReport;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
-import javax.swing.SwingWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,17 +15,18 @@ import org.slf4j.LoggerFactory;
 public class WizardStepPanel extends JPanel {
   private static final long serialVersionUID = 1L;
   private static final Logger LOG = LoggerFactory.getLogger(WizardStepPanel.class);
-  protected JDialog runDialog;
   protected Supplier<CorrelationHistory> getCorrelationHistorySupplier;
   protected Runnable displaySuggestionsPanel;
   protected Runnable displayTemplateSelectionPanel;
+
+  protected Runnable displaySelectMethodPanel;
   protected Runnable toggleWizardVisibility;
   protected Supplier<String> getRecordingTraceSupplier;
   protected Supplier<String> getReplayTraceSupplier;
   protected Supplier<String> getLastTestPlanSupplier;
   protected Consumer<String> logStepConsumer;
   protected Consumer<List<CorrelationRule>> exportRulesConsumer;
-  protected SwingWorker<ReplayReport, Void> replay;
+  private Runnable replayTestPlan;
 
   public WizardStepPanel() {
     super();
@@ -64,10 +61,6 @@ public class WizardStepPanel extends JPanel {
     this.getLastTestPlanSupplier = getLastTestPlanSupplier;
   }
 
-  public CorrelationHistory getCorrelationHistory() {
-    return getCorrelationHistorySupplier.get();
-  }
-
   public void setToggleWizardVisibility(Runnable toggleWizardVisibility) {
     this.toggleWizardVisibility = toggleWizardVisibility;
   }
@@ -97,74 +90,19 @@ public class WizardStepPanel extends JPanel {
     exportRulesConsumer.accept(rules);
   }
 
-  protected void displayWaitingScreen(String message) {
-    runDialog = JMeterElementUtils.makeWaitingFrame(message);
-    runDialog.pack();
-    runDialog.repaint();
-    runDialog.setAlwaysOnTop(true);
-    runDialog.setVisible(true);
-    runDialog.toFront();
+  public void setDisplayMethodSelectionPanel(Runnable displayMethodSelection) {
+    this.displaySelectMethodPanel = displayMethodSelection;
   }
 
-  protected SwingWorker setupReplayWorker() {
-    replay = new SwingWorker<ReplayReport, Void>() {
-      @Override
-      public ReplayReport doInBackground() {
-        try {
-          return getCurrentTestPlanReplayErrors();
-        } catch (Exception ex) {
-          LOG.error("Error while processing the Replay", ex);
-          replay.cancel(true);
-          disposeWaitingDialog();
-          toggleWizardVisibility();
-          return null;
-        }
-      }
-
-      @Override
-      public void done() {
-        runDialog.dispose();
-      }
-    };
-    return replay;
+  public void displayMethodSelectionPanel() {
+    displaySelectMethodPanel.run();
   }
 
-  protected void startReplayWorker() {
-    replay.execute();
+  public void setReplayTestPlan(Runnable replayTestPlan) {
+    this.replayTestPlan = replayTestPlan;
   }
 
-  protected ReplayReport getReplayReport() {
-    try {
-      return replay.get();
-    } catch (Exception ex) {
-      LOG.error("Error while replaying the recording. ", ex);
-      return null;
-    }
-  }
-
-  protected ReplayReport getCurrentTestPlanReplayErrors() {
-    String currentTestPlan = JMeterElementUtils.saveTestPlanSnapshot();
-    LOG.info("Current Test Plan: {}", currentTestPlan);
-    String recordingTraceFilepath = getRecordingTraceSupplier.get();
-    LOG.info("Recording Trace Filepath: {}", recordingTraceFilepath);
-    CorrelationHistory history = getCorrelationHistorySupplier.get();
-    LOG.info("Correlation History: {}", history);
-
-    if (isEmpty(currentTestPlan) || isEmpty(recordingTraceFilepath) || history == null) {
-      LOG.error("Apparently, there is no steps to replay");
-      return null;
-    }
-
-    return new JMeterElementUtils()
-        .getReplayErrors(currentTestPlan, recordingTraceFilepath, history);
-  }
-
-  private boolean isEmpty(String str) {
-    return str == null || str.isEmpty();
-  }
-
-  public void disposeWaitingDialog() {
-    runDialog.dispose();
-    runDialog.setVisible(false);
+  public void replayTestPlan() {
+    replayTestPlan.run();
   }
 }

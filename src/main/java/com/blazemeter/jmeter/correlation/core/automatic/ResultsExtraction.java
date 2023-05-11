@@ -27,6 +27,7 @@ import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.util.JMeterUtils;
+import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -294,7 +295,9 @@ public class ResultsExtraction implements AppearancesExtraction {
     List<Pair<String, Object>> list = JMeterElementUtils.extractDataParametersFromJson(body);
     List<Pair<String, String>> parameters = new ArrayList<>();
     for (Pair<String, Object> pair : list) {
-      parameters.add(Pair.of(pair.getKey(), pair.getValue().toString()));
+      if (!(pair.getValue() instanceof JSONArray)) {
+        parameters.add(Pair.of(pair.getKey(), pair.getValue().toString()));
+      }
     }
     return parameters;
   }
@@ -385,8 +388,14 @@ public class ResultsExtraction implements AppearancesExtraction {
 
   private static ContentType getRequestContentType(LinkedHashMap<String, String> headers) {
     String contentType = headers.get("Content-Type");
+    //Some servers are not case-sensitive when parsing the content-type
+    String contentTypeLowerCased = headers.get("content-type");
     if (contentType != null) {
       return ContentType.parse(contentType);
+    }
+
+    if (contentTypeLowerCased != null) {
+      return ContentType.parse(contentTypeLowerCased);
     }
 
     return ContentType.DEFAULT_TEXT;

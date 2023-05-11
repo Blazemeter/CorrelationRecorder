@@ -19,7 +19,7 @@ public class Configuration {
   private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
   private static final int DEFAULT_MIN_LENGTH = 2;
   private static final int DEFAULT_CONTEXT_LENGTH = 10;
-  private static final int MAX_NUMBER_OF_APPEARANCES = 50;
+  private static final int MAX_NUMBER_OF_APPEARANCES = 500;
   private static final boolean IGNORE_BOOLEAN_VALUES = true;
   private static final List<String> DEFAULT_IGNORED_DOMAINS = Arrays.asList("mozilla.org",
       "mozilla.net", "mozilla.com",
@@ -41,7 +41,7 @@ public class Configuration {
       "X-Requested-With", "Transfer-Encoding", "X-Redirect-By",
       "Content-Security-Policy", "Strict-Transport-Security",
       "max-age", "max-stale", "min-fresh", "no-cache", "no-store", "no-transform",
-      "only-if-cached", "stale-if-error",
+      "only-if-cached", "stale-if-error", "Sec-CH-UA-Mobile",
       "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Sec-Fetch-Dest",
       "CF-ray", "X-nc", "X-XSS-Protection", "Content-Security-Policy-Report-Only"
   );

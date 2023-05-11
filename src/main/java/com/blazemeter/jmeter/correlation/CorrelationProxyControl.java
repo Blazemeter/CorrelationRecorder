@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -62,6 +63,7 @@ import org.apache.jmeter.protocol.http.control.RecordingController;
 import org.apache.jmeter.protocol.http.proxy.Daemon;
 import org.apache.jmeter.protocol.http.proxy.ProxyControl;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
+import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.samplers.SampleResult;
@@ -343,6 +345,26 @@ public class CorrelationProxyControl extends ProxyControl implements
           // Rename the header
           tep.setName("X-CR-" + HTTPConstants.HEADER_AUTHORIZATION);
           break;
+        }
+      }
+    }
+
+    // WA, JMeter generate sample results without sampler for some methods like CONNECT
+    // and the filterUrl not filter this results because the sampler not exist.
+    if (Objects.isNull(proxy.getSampler()) && Objects.isNull(proxy.getResult().getURL())) {
+      if (proxy.getResult().getSamplerData().startsWith("CONNECT ")) {
+        // Take the domain data from SamplerData
+        try {
+          String connectDomain = proxy.getResult().getSamplerData().split(" ")[1].split(":")[0];
+          // Create a dummy http sample to evaluate if needed to be filtered
+          HTTPSampler dummySample = new HTTPSampler();
+          dummySample.setDomain(connectDomain);
+          if (!filter(dummySample, proxy.getResult())) {
+            // A result without sample from a not allowed domain, exclude to deliverSampler
+            return;
+          }
+        } catch (Exception ex) {
+          LOG.error("Could not get domain information from sample result", ex);
         }
       }
     }

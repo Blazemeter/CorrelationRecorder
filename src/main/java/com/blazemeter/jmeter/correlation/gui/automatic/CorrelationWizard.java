@@ -1,11 +1,14 @@
 package com.blazemeter.jmeter.correlation.gui.automatic;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayReport;
+import com.blazemeter.jmeter.correlation.core.automatic.ReplayWorker;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.gui.analysis.CorrelationTemplatesSelectionPanel;
 import com.helger.commons.annotation.VisibleForTesting;
@@ -21,6 +24,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jorphan.gui.ComponentUtil;
+import org.slf4j.Logger;
 
 /**
  * This class will be the main class for the correlation wizard.
@@ -32,15 +36,16 @@ import org.apache.jorphan.gui.ComponentUtil;
  */
 public class CorrelationWizard extends JDialog {
 
+  private static final Logger LOG = getLogger(CorrelationWizard.class);
   private static final long serialVersionUID = 1L;
   private static final String TITLE = "Correlation Wizard";
-  private WizardStepPanel replayStep;
-  private ReplayReport replayReport;
+  protected ReplayWorker replayWorker;
+
+  protected JDialog runDialog;
   private CorrelationMethodPanel selectMethodPanel;
   private CorrelationSuggestionsPanel suggestionsPanel;
   private CorrelationTemplatesSelectionPanel templateSelectionPanel;
   private CorrelationHistory history;
-
   private Supplier<List<TemplateVersion>> versionsSupplier;
   private Consumer<List<CorrelationRule>> exportRulesConsumer;
 
@@ -51,7 +56,6 @@ public class CorrelationWizard extends JDialog {
   }
 
   public void init() {
-    replayStep = new WizardStepPanel();
     selectMethodPanel = new CorrelationMethodPanel();
     this.setAlwaysOnTop(true);
     initCorrelateByComparisonPanels();
@@ -123,18 +127,20 @@ public class CorrelationWizard extends JDialog {
   }
 
   private void initWizardStepsCallbacks() {
-    List<WizardStepPanel> steps = Arrays.asList(replayStep, selectMethodPanel, suggestionsPanel,
+    List<WizardStepPanel> steps = Arrays.asList(selectMethodPanel, suggestionsPanel,
         templateSelectionPanel);
     for (WizardStepPanel step : steps) {
       step.setGetCorrelationHistorySupplier(() -> history);
       step.setDisplaySuggestionsPanel(this::loadAndDisplaySuggestions);
       step.setDisplayTemplateSelectionPanel(this::displayTemplateSelection);
+      step.setDisplayMethodSelectionPanel(this::displayMethodSelection);
       step.setLogStepConsumer(this::logStep);
       step.setGetCorrelationHistorySupplier(() -> history);
       step.setGetRecordingTraceSupplier(() -> history.getOriginalRecordingTrace());
       step.setGetReplayTraceSupplier(() -> history.getLastReplayTraceFilepath());
       step.setGetLastTestPlanSupplier(() -> history.getLastTestPlanFilepath());
       step.setToggleWizardVisibility(this::toggleWizardVisibility);
+      step.setReplayTestPlan(this::requestPermissionToReplay);
       step.setExportRulesConsumer(exportRulesConsumer);
     }
   }
@@ -164,23 +170,54 @@ public class CorrelationWizard extends JDialog {
   }
 
   public void loadAndDisplaySuggestions() {
+
+    CorrelationWizard swContext = this;
+
+    suggestionsPanel.setReplaySelectionMethod(this::displayMethodSelection);
+    suggestionsPanel.setAutoCorrelateMethod(() -> {
+      displayApplyingSuggestionsWaitingScreen();
+      SwingWorker swAnalysis = new SwingWorker() {
+        @Override
+        protected String doInBackground() {
+          suggestionsPanel.applySuggestions();
+          return null;
+        }
+
+        @Override
+        protected void done() {
+          disposeWaitingDialog();
+          JOptionPane.showMessageDialog(swContext,
+              "The suggestions were applied successfully to your Test Plan."
+                  + System.lineSeparator()
+                  + "Please review the changes and, when you are ready, "
+                  + "replay to review the results.");
+          hideWizard();
+        }
+      };
+      swAnalysis.execute();
+    });
+
+    ReplayReport replayReport = replayWorker.getReplayReport();
     if (replayReport != null) {
       int totalNewErrors = replayReport.getTotalNewErrors();
-      suggestionsPanel.triggerSuggestionsGeneration(totalNewErrors);
+      displayGeneratingSuggestionsWaitingScreen();
+      SwingWorker swSuggestionsGeneration = new SwingWorker() {
+        @Override
+        protected String doInBackground() {
+          suggestionsPanel.triggerSuggestionsGeneration(totalNewErrors);
+          return null;
+        }
+
+        @Override
+        protected void done() {
+          disposeWaitingDialog();
+          displaySuggestions();
+        }
+      };
+      swSuggestionsGeneration.execute();
+    } else {
+      LOG.warn("Replay report is null, cannot generate suggestions.");
     }
-    suggestionsPanel.setReplaySelectionMethod(() -> {
-      displayMethodSelection();
-    });
-    suggestionsPanel.setAutoCorrelateMethod(() -> {
-      suggestionsPanel.applySuggestions();
-      JOptionPane.showMessageDialog(this,
-          "The suggestions were applied successfully to your Test Plan."
-              + System.lineSeparator()
-              + "Please review the changes and, when you are ready, "
-              + "replay to review the results.");
-      hideWizard();
-    });
-    displaySuggestions();
   }
 
   public void displaySuggestions() {
@@ -241,54 +278,15 @@ public class CorrelationWizard extends JDialog {
       return;
     }
 
-    SwingWorker replay = replayStep.setupReplayWorker();
-    replay.addPropertyChangeListener(evt -> {
-      String name = evt.getPropertyName();
-      if ("state".equals(name)) {
-        SwingWorker.StateValue state = (SwingWorker.StateValue) evt
-            .getNewValue();
-        if (state.equals(SwingWorker.StateValue.DONE)) {
-          showReport();
-        }
-      }
-    });
-    replayStep.displayWaitingScreen("We are replaying the test plan, please wait...");
-    replayStep.startReplayWorker();
-
+    replayTestPlan();
   }
 
-  private void showReport() {
-    replayReport = replayStep.getReplayReport();
-    if (replayReport == null) {
-      JOptionPane.showMessageDialog(this,
-          "Replay failed, please check the logs for more details.",
-          TITLE, JOptionPane.ERROR_MESSAGE);
-      return;
-    }
-
-    replayStep.disposeWaitingDialog();
-    if (!wantsToAutoCorrelate(replayReport, this)) {
-      return;
-    }
-    displayMethodSelection();
+  private void replayTestPlan() {
+    setupReplayWorker();
+    displayReplayWaitingScreen();
+    startReplayWorker();
   }
-
-  public static boolean wantsToAutoCorrelate(ReplayReport report, Component parent) {
-    return wantToAutoCorrelate(report, parent) == JOptionPane.YES_OPTION;
-  }
-
-  public static int wantToAutoCorrelate(ReplayReport report, Component parent) {
-    int totalErrors = report.getTotalNewErrors();
-    if (totalErrors == 0) {
-      JOptionPane.showMessageDialog(parent,
-          "After replaying the test plan, no new errors were found.",
-          TITLE, JOptionPane.INFORMATION_MESSAGE);
-      return JOptionPane.CANCEL_OPTION;
-    }
-
-    return requestPermissionToCorrelate(totalErrors, parent);
-  }
-
+  
   public static int requestPermissionToCorrelate(int totalErrors, Component parent) {
     return JOptionPane.showConfirmDialog(parent,
         getAfterReplayErrorMessage(totalErrors),
@@ -310,5 +308,113 @@ public class CorrelationWizard extends JDialog {
 
   public void setLocationRelativeTo(Component component) {
     super.setLocationRelativeTo(component);
+  }
+
+  public void setupReplayWorker() {
+    replayWorker = new ReplayWorker();
+    replayWorker.setMethodToRun(this::getCurrentTestPlanReplayErrors);
+    replayWorker.setOnDoneMethod(this::endReplayAndReport);
+    replayWorker.setOnFailureMethod((exception) -> {
+      replayWorker.cancel(true);
+      onFailReplay(exception);
+    });
+  }
+
+  protected ReplayReport getCurrentTestPlanReplayErrors() {
+    String currentTestPlan = JMeterElementUtils.saveTestPlanSnapshot();
+    String recordingTraceFilepath = history.getOriginalRecordingTrace();
+    LOG.info("Current Test Plan: {}", currentTestPlan);
+    LOG.info("Recording Trace Filepath: {}", recordingTraceFilepath);
+    LOG.info("Correlation History: {}", history);
+
+    if (isEmpty(currentTestPlan) || isEmpty(recordingTraceFilepath) || history == null) {
+      LOG.error("Apparently, there are no steps to replay");
+      return null;
+    }
+
+    return new JMeterElementUtils()
+        .getReplayErrors(currentTestPlan, recordingTraceFilepath, history);
+  }
+
+  private boolean isEmpty(String str) {
+    return str == null || str.isEmpty();
+  }
+
+  public void endReplayAndReport() {
+    disposeWaitingDialog();
+    showReport();
+  }
+
+  public void showReport() {
+    ReplayReport replayReport = replayWorker.getReplayReport();
+    if (replayReport == null) {
+      JOptionPane.showMessageDialog(this,
+          "Replay failed, please check the logs for more details.",
+          TITLE, JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+
+    if (!wantsToAutoCorrelate(replayReport, this)) {
+      return;
+    }
+
+    displayMethodSelection();
+  }
+
+  public static boolean wantsToAutoCorrelate(ReplayReport report, Component parent) {
+    return wantToAutoCorrelate(report, parent) == JOptionPane.YES_OPTION;
+  }
+
+  public static int wantToAutoCorrelate(ReplayReport report, Component parent) {
+    int totalErrors = report.getTotalNewErrors();
+    if (totalErrors == 0) {
+      JOptionPane.showMessageDialog(parent,
+          "After replaying the test plan, no new errors were found.",
+          TITLE, JOptionPane.INFORMATION_MESSAGE);
+      return JOptionPane.CANCEL_OPTION;
+    }
+
+    return requestPermissionToCorrelate(totalErrors, parent);
+  }
+
+  public void onFailReplay(Exception ex) {
+    LOG.error("Error while replaying the recording. {}", ex.getMessage(), ex);
+    disposeWaitingDialog();
+    toggleWizardVisibility();
+    JOptionPane.showMessageDialog(this, "Error while replaying the recording. "
+            + System.lineSeparator() + "Check the logs for more details. "
+            + System.lineSeparator()
+            + System.lineSeparator() + "Error message:  " + ex.getMessage(),
+        "Error", JOptionPane.ERROR_MESSAGE);
+  }
+
+  public void displayReplayWaitingScreen() {
+    displayWaitingScreen("We are replaying the test plan, please wait...");
+  }
+
+  protected void displayWaitingScreen(String message) {
+    runDialog = JMeterElementUtils.makeWaitingFrame(message);
+    runDialog.pack();
+    runDialog.repaint();
+    runDialog.setAlwaysOnTop(true);
+    runDialog.setVisible(true);
+    runDialog.toFront();
+  }
+
+  public void disposeWaitingDialog() {
+    runDialog.dispose();
+    runDialog.setVisible(false);
+  }
+
+  protected void startReplayWorker() {
+    replayWorker.execute();
+  }
+
+  public void displayApplyingSuggestionsWaitingScreen() {
+    displayWaitingScreen("We are applying the suggestions, please wait...");
+  }
+
+  public void displayGeneratingSuggestionsWaitingScreen() {
+    displayWaitingScreen("We are generating suggestions, please wait...");
   }
 }

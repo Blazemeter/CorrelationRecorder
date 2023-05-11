@@ -6,7 +6,6 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ElementsComparison;
 import com.blazemeter.jmeter.correlation.core.automatic.ElementsModification;
 import com.blazemeter.jmeter.correlation.core.automatic.ModificationResult;
-import com.blazemeter.jmeter.correlation.core.automatic.ReplayReport;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -14,8 +13,6 @@ import java.awt.Font;
 import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +28,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.table.DefaultTableModel;
@@ -68,7 +64,6 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
 
   public CorrelationSuggestionsPanel() {
     init();
-    setupReplayWorker();
     setupDefaultAutoCorrelateMethod();
   }
 
@@ -285,54 +280,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
 
   private void manualReplayAndGenerateSuggestions() {
     toggleWizardVisibility();
-    displayWaitingScreen("We are replaying the test plan, please wait...");
-    setupReplayWorker();
-    replay.addPropertyChangeListener(new PropertyChangeListener() {
-      @Override
-      public void propertyChange(PropertyChangeEvent evt) {
-        String name = evt.getPropertyName();
-        if ("state".equals(name)) {
-          SwingWorker.StateValue state = (SwingWorker.StateValue) evt
-              .getNewValue();
-          if (state.equals(SwingWorker.StateValue.DONE)) {
-            showReport();
-          }
-        }
-      }
-    });
-    startReplayWorker();
-  }
-
-  private void showReport() {
-    ReplayReport report = getReplayReport();
-    disposeWaitingDialog();
-    if (report == null) {
-      JOptionPane.showMessageDialog(this,
-          "Replay failed, please check the logs for more details.",
-          "", JOptionPane.ERROR_MESSAGE);
-      return;
-    }
-
-    int totalErrors = report.getTotalNewErrors();
-    if (totalErrors == 0) {
-      JOptionPane.showMessageDialog(this,
-          "After replaying the test plan, no new errors were found.",
-          "Test Plan Replay", JOptionPane.INFORMATION_MESSAGE);
-      return;
-    }
-    int option = JOptionPane.showConfirmDialog(this,
-        "After replaying the test plan, " + totalErrors
-            + " request" + (totalErrors > 1 ? "s" : "")
-            + " failed. We will try to generate correlation suggestions to fix "
-            + (totalErrors > 1 ? "them." : "it."
-            + "\n\nDo you want to continue?"),
-        "Test Plan Replay with errors", JOptionPane.YES_NO_OPTION);
-
-    if (option != JOptionPane.YES_OPTION) {
-      return;
-    }
-    replaySelectionMethod.run();
-
+    replayTestPlan();
   }
 
   private void setupDefaultAutoCorrelateMethod() {

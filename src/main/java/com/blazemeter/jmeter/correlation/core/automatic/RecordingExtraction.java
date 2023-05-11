@@ -112,7 +112,7 @@ public class RecordingExtraction implements AppearancesExtraction {
           JSONObject jsonObject = new JSONObject(value);
           utils.extractParametersFromJson(jsonObject, appearanceMap, sampler, 2);
         } catch (JSONException e) {
-          LOG.error(e.getMessage());
+          LOG.trace("There was an error while extracting JSON values for {}. ", value, e);
         }
       } else if (utils.isParameterized(value)) {
         LOG.warn("Parameterized value: '" + key + "'='" + value + "'");

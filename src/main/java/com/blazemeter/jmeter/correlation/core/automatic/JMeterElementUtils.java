@@ -341,7 +341,7 @@ public class JMeterElementUtils {
           try {
             jsonObject = new JSONObject(stringValue);
           } catch (JSONException e) {
-            LOG.error("Error parsing JSON: " + stringValue, e);
+            LOG.trace("Error parsing JSON: " + stringValue, e);
             continue;
           }
 
@@ -462,6 +462,12 @@ public class JMeterElementUtils {
           LOG.debug(
               "Value detected is already added, excluded: " + value + " key:" + key + " source:" +
                   source);
+          return;
+        }
+
+        // If the value and the source are the same, but the sampler is different, we add it to the
+        if (appearances.getSource().equals(source)) {
+          appearances.getList().add(sampler);
           return;
         }
       }
@@ -726,8 +732,7 @@ public class JMeterElementUtils {
     JProgressBar progressBar = new JProgressBar();
     progressBar.setIndeterminate(true);
     runDialog.add(progressBar, BorderLayout.SOUTH);
-    JLabel label = new JLabel("Performing analysis while executing",
-        SwingConstants.CENTER);
+    JLabel label = new JLabel(message, SwingConstants.CENTER);
     label.setBorder(new EmptyBorder(25, 50, 25, 50));
     runDialog.add(label);
     runDialog.pack();
