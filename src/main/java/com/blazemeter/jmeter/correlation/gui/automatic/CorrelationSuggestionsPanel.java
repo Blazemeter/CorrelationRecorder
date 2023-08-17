@@ -6,6 +6,12 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ElementsComparison;
 import com.blazemeter.jmeter.correlation.core.automatic.ElementsModification;
 import com.blazemeter.jmeter.correlation.core.automatic.ModificationResult;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.repository.Properties;
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -15,8 +21,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -62,7 +71,8 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   private final boolean isExtraDebuggingEnabled = JMeterUtils.getPropDefault(
       "correlation.debug.extra_debugging", false);
 
-  public CorrelationSuggestionsPanel() {
+  public CorrelationSuggestionsPanel(CorrelationWizard wizard) {
+    super(wizard);
     init();
     setupDefaultAutoCorrelateMethod();
   }
@@ -157,7 +167,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     JPanel buttonsPanel = new JPanel();
     buttonsPanel.add(builder.withAction(CORRELATE)
         .withName("correlate")
-        .withText("Auto Correlate")
+        .withText("Apply")
         .build());
 
     buttonsPanel.add(builder.withAction(EXPORT_AS_RULES)
@@ -329,22 +339,66 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
       return;
     }
 
-    List<CorrelationRule> rules = new ArrayList<>();
-    List<List<CorrelationRule>> collect = suggestions.stream()
-        .map(CorrelationSuggestion::getCorrelationRules)
-        .collect(Collectors.toList());
+    Map<String, Set<TemplateVersion>> repositoryAndSuggestions = new HashMap<>();
+    for (CorrelationSuggestion suggestion : suggestions) {
+      Template source = suggestion.getSource();
+      if (source != null) { // Source null is automatic, and not null is Template based
+        String repositoryId = source.getRepositoryId();
+        if (!repositoryAndSuggestions.containsKey(repositoryId)) {
+          repositoryAndSuggestions.put(repositoryId, new HashSet<>());
+        }
+        repositoryAndSuggestions.get(repositoryId).add(source.toTemplateVersion());
+      }
+    }
 
-    for (List<CorrelationRule> list : collect) {
-      for (CorrelationRule rule : list) {
-        if (!rules.contains(rule)) {
-          rules.add(rule);
+    Set<Template> canExport = new HashSet<>();
+    Set<Template> cannotExport = new HashSet<>();
+    for (Map.Entry<String, Set<TemplateVersion>> entry : repositoryAndSuggestions.entrySet()) {
+      String repositoryName = entry.getKey();
+      List<TemplateVersion> templates = new ArrayList<>(entry.getValue());
+      RepositoryManager repManager =
+          this.wizard.getRepositoriesConfiguration().getRepositoryManager(repositoryName);
+      Map<Template, TemplateProperties> templatesAndProperties =
+          repManager.getTemplatesAndProperties(templates);
+
+      for (Map.Entry<Template, TemplateProperties> templateEntry
+          : templatesAndProperties.entrySet()) {
+        TemplateProperties value = templateEntry.getValue();
+        Properties properties = new Properties();
+        properties.putAll(value);
+
+        if (properties.canExport()) {
+          canExport.add(templateEntry.getKey());
+        } else {
+          cannotExport.add(templateEntry.getKey());
         }
       }
     }
 
-    exportRulesConsumer.accept(rules);
+    if (!cannotExport.isEmpty()) {
+      JOptionPane.showMessageDialog(this,
+          "The suggestions generated from the following sources\n can't be exported:\n"
+              + String.join("\n", cannotExport.stream()
+              .map(RepositoryUtils::getTemplateInfo)
+              .collect(Collectors.joining("\n"))),
+          "Non-exportable templates",
+          JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    Set<CorrelationRule> rules = new HashSet<>();
+    for (CorrelationSuggestion suggestion : suggestions) {
+      Template source = suggestion.getSource();
+      // Automatic or Template based
+      if (source == null || canExport.contains(source)) {
+        rules.addAll(suggestion.getCorrelationRules());
+      }
+    }
+
+    exportRulesConsumer.accept(new ArrayList<>(rules));
     JOptionPane.showMessageDialog(this,
-        "Rules exported successfully.", "Export successful",
+        rules.isEmpty() ? "We didn't find any rules to export."
+            : "Export successful.",
+        "Exporting rules",
         JOptionPane.INFORMATION_MESSAGE);
   }
 
@@ -372,12 +426,19 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     showColumn(3, 0);
   }
 
+  public void loadSuggestionsMap(Map<Template, List<CorrelationSuggestion>> suggestions) {
+    SuggestionsTableModel model = (SuggestionsTableModel) table.getModel();
+    model.loadSuggestionsMap(suggestions);
+  }
+
   public static class SuggestionsTableModel extends DefaultTableModel {
     //Extended table will also show "New Value" column
     private boolean extended = false;
-    private final List<String> columns = Arrays.asList("Select", "Name",
-        "Value", "New Value", "Used on", "Obtained from");
+    private final List<String> columns = Arrays.asList("Select", "Source", "Name",
+        "Value", "Used on", "Obtained from");
     private final List<SuggestionItem> suggestionList = new ArrayList<>();
+    private final Map<Template, List<CorrelationSuggestion>> suggestionsMap =
+        new HashMap<>();
 
     @Override
     public String getColumnName(int column) {
@@ -413,11 +474,11 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
         case 0:
           return item.isSelected();
         case 1:
-          return suggestion.getParamName();
+          return resolveSource(suggestion);
         case 2:
-          return suggestion.getOriginalValueString();
+          return suggestion.getParamName();
         case 3:
-          return suggestion.getNewValue();
+          return suggestion.getOriginalValueString();
         case 4:
           return suggestion.getUsedOnString();
         case 5:
@@ -425,6 +486,15 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
         default:
           return "N/A";
       }
+    }
+
+    private String resolveSource(CorrelationSuggestion suggestion) {
+      Template sourceTemplate = suggestion.getSource();
+      if (sourceTemplate == null) {
+        return "'Auto-generated'";
+      }
+
+      return "'" + sourceTemplate.getId() + "' (" + sourceTemplate.getRepositoryId() + ")";
     }
 
     @Override
@@ -451,6 +521,12 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     public void loadSuggestions(List<CorrelationSuggestion> suggestions) {
       suggestionList.clear();
       suggestions.forEach(suggestion -> suggestionList.add(new SuggestionItem(suggestion)));
+      fireTableDataChanged();
+    }
+
+    public void loadSuggestionsMap(Map<Template, List<CorrelationSuggestion>> suggestions) {
+      suggestionsMap.clear();
+      suggestionsMap.putAll(suggestions);
       fireTableDataChanged();
     }
 

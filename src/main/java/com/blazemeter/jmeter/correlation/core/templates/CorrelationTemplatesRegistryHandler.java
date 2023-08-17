@@ -1,6 +1,6 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import java.io.IOException;
 import java.util.List;
 
@@ -10,7 +10,7 @@ public interface CorrelationTemplatesRegistryHandler {
 
   void onLoadTemplate(String repositoryOwner, String id, String templateVersion) throws IOException;
 
-  List<TemplateVersion> getInstalledCorrelationTemplates();
+  List<Template> getInstalledCorrelationTemplates();
 
   boolean isLocalTemplateVersionSaved(String templateId, String templateVersion);
 

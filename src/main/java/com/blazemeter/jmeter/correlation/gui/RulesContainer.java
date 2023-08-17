@@ -8,10 +8,10 @@ import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtract
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
-import com.blazemeter.jmeter.correlation.gui.templates.CorrelationTemplateFrame;
-import com.blazemeter.jmeter.correlation.gui.templates.CorrelationTemplatesFrame;
+import com.blazemeter.jmeter.correlation.gui.templates.TemplateSaveFrame;
+import com.blazemeter.jmeter.correlation.gui.templates.TemplatesManagerFrame;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -55,11 +55,11 @@ public class RulesContainer extends JPanel implements ActionListener {
   private final CorrelationTemplatesRegistryHandler templatesRegistryHandler;
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
   private final Runnable modelUpdater;
-  private final Set<TemplateVersion> loadedTemplates;
+  private final Set<Template> loadedTemplates;
   private final GroupsContainer groupsContainer;
   private final ResponseFilterPanel responseFilterPanel;
-  private CorrelationTemplateFrame templateFrame;
-  private CorrelationTemplatesFrame loadFrame;
+  private TemplateSaveFrame templateFrame;
+  private TemplatesManagerFrame loadFrame;
   private boolean isSiebelTestPlan;
   private JCheckBox enableCorrelation;
   private Runnable onWizardDisplay;
@@ -68,7 +68,7 @@ public class RulesContainer extends JPanel implements ActionListener {
   private Consumer<Boolean> enableCorrelationConsumer;
 
   public RulesContainer(CorrelationTemplatesRegistryHandler correlationTemplatesRegistryHandler,
-      Runnable modelUpdater) {
+                        Runnable modelUpdater) {
     this.modelUpdater = modelUpdater;
     templatesRegistryHandler = correlationTemplatesRegistryHandler;
     repositoriesRegistryHandler =
@@ -88,12 +88,12 @@ public class RulesContainer extends JPanel implements ActionListener {
   }
 
   @VisibleForTesting
-  public void setLoadFrame(CorrelationTemplatesFrame loadFrame) {
+  public void setLoadFrame(TemplatesManagerFrame loadFrame) {
     this.loadFrame = loadFrame;
   }
 
   @VisibleForTesting
-  public void setTemplateFrame(CorrelationTemplateFrame templateFrame) {
+  public void setTemplateFrame(TemplateSaveFrame templateFrame) {
     this.templateFrame = templateFrame;
   }
 
@@ -155,14 +155,14 @@ public class RulesContainer extends JPanel implements ActionListener {
         break;
       case SAVE:
         if (templateFrame == null) {
-          templateFrame = new CorrelationTemplateFrame(templatesRegistryHandler,
+          templateFrame = new TemplateSaveFrame(templatesRegistryHandler,
               getSnapshotBufferedImage(), this::updateLoadedTemplate, this);
         }
         displaySaveTemplateFrame();
         break;
       case LOAD:
         if (loadFrame == null) {
-          loadFrame = new CorrelationTemplatesFrame(templatesRegistryHandler,
+          loadFrame = new TemplatesManagerFrame(templatesRegistryHandler,
               repositoriesRegistryHandler, this::updateLoadedTemplate, this);
         }
         loadFrame.showFrame();
@@ -279,7 +279,7 @@ public class RulesContainer extends JPanel implements ActionListener {
     responseFilterPanel.setResponseFilter(responseFilter);
   }
 
-  public void updateLoadedTemplate(TemplateVersion template) {
+  public void updateLoadedTemplate(Template template) {
     if (loadedTemplates.add(template)) {
       LOG.debug("Updated loaded templates. New Total={}. 'Last Template' = {}. ",
           loadedTemplates.size(), template);

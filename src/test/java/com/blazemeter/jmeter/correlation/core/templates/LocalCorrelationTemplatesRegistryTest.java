@@ -1,18 +1,17 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
 import static org.junit.Assert.assertEquals;
-
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.CorrelationProxyControlBuilder;
 import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
-import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +60,7 @@ public class LocalCorrelationTemplatesRegistryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    LocalConfiguration configuration = new LocalConfiguration(folder.getRoot().getPath());
+    LocalConfiguration configuration = new LocalConfiguration(folder.getRoot().getPath(), true);
     CorrelationProxyControlBuilder builder = new CorrelationProxyControlBuilder();
     builder.withCorrelationEngine(correlationEngine)
         .withCorrelationTemplatesRegistry(new LocalCorrelationTemplatesRegistry(configuration))
@@ -99,7 +98,7 @@ public class LocalCorrelationTemplatesRegistryTest {
   private File getGeneratedJSON(String fileNamePath) {
     return new File(
         Paths.get(
-            folder.getRoot().getAbsolutePath() , TEMPLATES_FOLDER ,
+            folder.getRoot().getAbsolutePath(), TEMPLATES_FOLDER,
             fileNamePath).toAbsolutePath().toString()
     );
   }

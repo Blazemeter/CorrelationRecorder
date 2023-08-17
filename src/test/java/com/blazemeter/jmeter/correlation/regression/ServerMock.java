@@ -130,7 +130,7 @@ public class ServerMock extends RecordingJtlVisitor implements Closeable {
     String responseHeadersString = sample.getResponseHeaders();
     int statusLineEnd = responseHeadersString.indexOf('\n');
     List<Header> headers = Arrays.stream(responseHeadersString.substring(statusLineEnd + 1)
-        .split("\n"))
+            .split("\n"))
         .map(Header::new)
         .filter(h -> {
           String headerName = h.name.toLowerCase();

@@ -1,8 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui.templates;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import com.blazemeter.jmeter.correlation.gui.templates.Validation;
 import org.junit.Test;
 
 public class ValidationTest {

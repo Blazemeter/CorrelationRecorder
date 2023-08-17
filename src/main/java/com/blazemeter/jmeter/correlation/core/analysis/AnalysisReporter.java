@@ -39,12 +39,13 @@ public class AnalysisReporter {
 
   /**
    * Add a report entry to the AnalysisReporter for the given Correlation Rule Part.
-   * @param part Correlation Rule Part that successfully applied.
-   *             This is used to identify upon which part the report entry is for.
-   * @param value Value that was affected by the Correlation Rule Part.
+   *
+   * @param part            Correlation Rule Part that successfully applied.
+   *                        This is used to identify upon which part the report entry is for.
+   * @param value           Value that was affected by the Correlation Rule Part.
    * @param affectedElement Element that was affected by the Correlation Rule Part.
-   * @param variableName Variable name that is used to store or extract the value from.
-   * @param location Location within the affectedElement for the affected value.
+   * @param variableName    Variable name that is used to store or extract the value from.
+   * @param location        Location within the affectedElement for the affected value.
    */
   public static void report(CorrelationRulePartTestElement<?> part, String value,
                             Object affectedElement, String variableName, String location) {
@@ -88,7 +89,8 @@ public class AnalysisReporter {
   }
 
   private static ReportEntry generateReport(CorrelationRulePartTestElement<?> part, String value,
-                                Object affectedElement, String variableName, String location) {
+                                            Object affectedElement, String variableName,
+                                            String location) {
     ReportEntry entry = new ReportEntry();
     entry.value = value;
     entry.affectedElement = affectedElement;

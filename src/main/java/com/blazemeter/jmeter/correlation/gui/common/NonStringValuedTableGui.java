@@ -141,7 +141,7 @@ public abstract class NonStringValuedTableGui<T> extends JTable {
   }
 
   public void configureColumn(String columnName, TableCellRenderer renderer,
-      TableCellEditor editor) {
+                              TableCellEditor editor) {
     TableColumn groupColumn = getColumn(columnName);
     if (groupColumn == null) {
       return;

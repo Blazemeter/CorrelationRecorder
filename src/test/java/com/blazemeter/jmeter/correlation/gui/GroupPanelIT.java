@@ -2,7 +2,6 @@ package com.blazemeter.jmeter.correlation.gui;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
-
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;

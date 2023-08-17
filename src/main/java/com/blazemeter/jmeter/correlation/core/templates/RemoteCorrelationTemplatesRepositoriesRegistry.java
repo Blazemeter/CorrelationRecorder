@@ -1,9 +1,10 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.CENTRAL_REPOSITORY_ID;
-import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.CENTRAL_REPOSITORY_URL;
+import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.PROPERTIES_FILE_SUFFIX;
 import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.TEMPLATE_FILE_SUFFIX;
 
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.fasterxml.jackson.core.JsonParseException;
 import java.io.File;
 import java.io.IOException;
@@ -29,40 +30,15 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
 
   public RemoteCorrelationTemplatesRepositoriesRegistry(LocalConfiguration localConfiguration) {
     super(localConfiguration);
-    setupCentralRemoteRepository();
-  }
-
-  private void setupCentralRemoteRepository() {
-    File repositoryFile = new File(
-        Paths.get(configuration.getCorrelationsTemplateInstallationFolder() +
-            CENTRAL_REPOSITORY_ID, CENTRAL_REPOSITORY_ID
-            + REPOSITORY_FILE_SUFFIX).toAbsolutePath().toString());
-    if (!repositoryFile.exists()) {
-      try {
-        save(CENTRAL_REPOSITORY_ID, CENTRAL_REPOSITORY_URL);
-      } catch (IOException e) {
-        LOG.warn("Error while trying to setup remote central repository", e);
-      }
-    }
   }
 
   @Override
   public void save(String name, String url) throws IOException {
-    String repositoryFolderName = name;
-
-    File repositoryFolder = new File(Paths.get(
-        configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderName)
-        .toAbsolutePath().toString());
-    if (!repositoryFolder.exists() && repositoryFolder.mkdir()) {
-      LOG.info("Folder created for the repository {}", name);
-    }
-
-    String installationFolderPath = Paths.get(
-        configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderName)
-        .toAbsolutePath().toString();
+    String installationFolderPath = RepositoryUtils.createRepositoryFolder(configuration, name);
 
     String repositoryFilePath =
-        Paths.get(installationFolderPath, name + REPOSITORY_FILE_SUFFIX).toAbsolutePath()
+        Paths.get(installationFolderPath, RepositoryUtils.getRepositoryFileName(name))
+            .toAbsolutePath()
             .toString();
 
     try {
@@ -71,8 +47,8 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
 
       String baseURL = getBaseURL(url);
 
-      for (Map.Entry<String, CorrelationTemplateReference> templateReference
-          : readTemplatesReferences(new File(repositoryFilePath)).entrySet()) {
+      for (Map.Entry<String, CorrelationTemplateVersions> templateReference
+          : readTemplatesVersions(new File(repositoryFilePath)).entrySet()) {
         for (String templateVersion : templateReference.getValue().getVersions()) {
           String templateWithVersionName = templateReference.getKey() + "-" + templateVersion;
 
@@ -85,6 +61,10 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
             saveFileFromURL(baseURL + encodeSpecialCharacters(snapshotFileName),
                 Paths.get(installationFolderPath, snapshotFileName).toAbsolutePath().toString());
           }
+
+          String propertiesFileName = templateWithVersionName + PROPERTIES_FILE_SUFFIX;
+          File propertiesFile = Paths.get(installationFolderPath, propertiesFileName).toFile();
+          configuration.writeValue(propertiesFile, new TemplateProperties());
         }
       }
     } catch (JsonParseException e) {

@@ -90,6 +90,10 @@ public class GroupsContainer extends JPanel implements ActionListener {
   }
 
   public void addExportedGroup(List<CorrelationRule> rules) {
+    if (rules.isEmpty()) {
+      return;
+    }
+
     RulesGroup group = new RulesGroup();
     group.setRules(rules);
     group.setEnable(true);

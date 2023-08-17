@@ -16,10 +16,10 @@ public enum RulePartType {
   }
 
   public static RulePartType fromComponent(CorrelationRulePartTestElement<?> component) {
-    if (component instanceof CorrelationExtractor 
+    if (component instanceof CorrelationExtractor
         || component.equals(CorrelationComponentsRegistry.NONE_EXTRACTOR)) {
       return EXTRACTOR;
-    } else if (component instanceof CorrelationReplacement 
+    } else if (component instanceof CorrelationReplacement
         || component.equals(CorrelationComponentsRegistry.NONE_REPLACEMENT)) {
       return REPLACEMENT;
     } else {

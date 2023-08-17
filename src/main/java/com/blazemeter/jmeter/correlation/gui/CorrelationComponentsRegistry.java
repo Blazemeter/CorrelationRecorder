@@ -127,8 +127,8 @@ public class CorrelationComponentsRegistry {
   private Object getClassInstance(Class<?> correlationPartClass) {
     try {
       return correlationPartClass.getConstructor().newInstance();
-    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException 
-        | InvocationTargetException e) {
+    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+             | InvocationTargetException e) {
       LOG.warn("Couldn't build the correlation type '{}'.", correlationPartClass, e);
       return null;
     }
@@ -137,15 +137,15 @@ public class CorrelationComponentsRegistry {
   public CorrelationContext getContext(Class<? extends CorrelationContext> contextType) {
     try {
       return contextType.getConstructor().newInstance();
-    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException 
-        | InvocationTargetException e) {
+    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+             | InvocationTargetException e) {
       LOG.warn("Couldn't build the correlation type='{}'.", contextType, e);
       return null;
     }
   }
 
   public String updateActiveComponents(String components,
-      List<String> missingSelectedExtensions) {
+                                       List<String> missingSelectedExtensions) {
     reset();
     //Deprecated components shouldn't appear nor in ComboBoxes nor in ComponentsContainer
     List<String> validComponents = removeDeprecatedComponents(components);

@@ -9,13 +9,18 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayReport;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayWorker;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
+import com.blazemeter.jmeter.correlation.core.templates.Repository;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.gui.analysis.CorrelationTemplatesSelectionPanel;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Component;
 import java.awt.GridLayout;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -46,8 +51,11 @@ public class CorrelationWizard extends JDialog {
   private CorrelationSuggestionsPanel suggestionsPanel;
   private CorrelationTemplatesSelectionPanel templateSelectionPanel;
   private CorrelationHistory history;
-  private Supplier<List<TemplateVersion>> versionsSupplier;
+  private Supplier<List<Template>> versionsSupplier;
+  private Supplier<Map<String, Repository>> repositoriesSupplier;
   private Consumer<List<CorrelationRule>> exportRulesConsumer;
+
+  private CorrelationTemplatesRepositoriesConfiguration repositoriesConfiguration;
 
   public CorrelationWizard() {
     super();
@@ -56,7 +64,7 @@ public class CorrelationWizard extends JDialog {
   }
 
   public void init() {
-    selectMethodPanel = new CorrelationMethodPanel();
+    selectMethodPanel = new CorrelationMethodPanel(this);
     this.setAlwaysOnTop(true);
     initCorrelateByComparisonPanels();
     initCorrelateByRulesPanels();
@@ -64,12 +72,17 @@ public class CorrelationWizard extends JDialog {
     ComponentUtil.centerComponentInWindow(this);
   }
 
+  public void setRepositoriesConfiguration(
+      CorrelationTemplatesRepositoriesConfiguration repositoriesConfiguration) {
+    this.repositoriesConfiguration = repositoriesConfiguration;
+  }
+
   private void initCorrelateByComparisonPanels() {
-    suggestionsPanel = new CorrelationSuggestionsPanel();
+    suggestionsPanel = new CorrelationSuggestionsPanel(this);
   }
 
   private void initCorrelateByRulesPanels() {
-    templateSelectionPanel = new CorrelationTemplatesSelectionPanel(versionsSupplier);
+    templateSelectionPanel = new CorrelationTemplatesSelectionPanel(this);
     if (history != null) {
       templateSelectionPanel.setGetCorrelationHistorySupplier(() -> history);
     }
@@ -77,13 +90,24 @@ public class CorrelationWizard extends JDialog {
     templateSelectionPanel.setStartNonCorrelatedAnalysis(startNonCorrelatedAnalysis());
   }
 
-  private BiConsumer<List<TemplateVersion>, String> startNonCorrelatedAnalysis() {
+  private BiConsumer<List<Template>, String> startNonCorrelatedAnalysis() {
     return (selectedTemplates, tracePath) -> {
       history.addAnalysisStep("Before applying Rules Analysis (Non-Correlated)",
           JMeterElementUtils.saveTestPlanSnapshot(), tracePath);
 
-      templateSelectionPanel.runNonCorrelatedAnalysis(selectedTemplates, tracePath);
-      List<CorrelationSuggestion> suggestions = AnalysisReporter.generateCorrelationSuggestions();
+      List<CorrelationSuggestion> suggestions = new ArrayList<>();
+      for (Template version : selectedTemplates) {
+        templateSelectionPanel
+            .runNonCorrelatedAnalysis(Collections.singletonList(version), tracePath);
+        List<CorrelationSuggestion> generatedSuggestions
+            = AnalysisReporter.generateCorrelationSuggestions();
+
+        for (CorrelationSuggestion suggestion : generatedSuggestions) {
+          suggestion.setSource(version);
+          suggestions.add(suggestion);
+        }
+      }
+
       if (suggestions.isEmpty()) {
         JOptionPane.showMessageDialog(this,
             "The analysis was completed successfully, but we did not find any suggestions."
@@ -92,12 +116,8 @@ public class CorrelationWizard extends JDialog {
         hideWizard();
         return;
       }
-
       suggestionsPanel.loadSuggestions(suggestions);
-
-      suggestionsPanel.setReplaySelectionMethod(() -> {
-        displayMethodSelection();
-      });
+      suggestionsPanel.setReplaySelectionMethod(this::displayMethodSelection);
 
       //We set the "Correlate Method" for the SuggestionsPanel because apply the Suggestions
       //using the same method as the one used for the Analysis.
@@ -112,6 +132,7 @@ public class CorrelationWizard extends JDialog {
                 + "replay to review the results.");
         hideWizard();
       });
+
       displaySuggestions();
       suggestionsPanel.displaySuggestionsTab();
       JOptionPane.showMessageDialog(this, "The analysis was completed successfully!"
@@ -197,6 +218,15 @@ public class CorrelationWizard extends JDialog {
       swAnalysis.execute();
     });
 
+    if (replayWorker == null) {
+      JOptionPane.showMessageDialog(swContext,
+          "Option not available."
+              + System.lineSeparator()
+              + "You must have previously made a recording to access this functionality.");
+      hideWizard();
+      return;
+    }
+
     ReplayReport replayReport = replayWorker.getReplayReport();
     if (replayReport != null) {
       int totalNewErrors = replayReport.getTotalNewErrors();
@@ -229,7 +259,7 @@ public class CorrelationWizard extends JDialog {
   public void displayTemplateSelection() {
     getContentPane().removeAll();
     getContentPane().add(templateSelectionPanel);
-    templateSelectionPanel.reloadCorrelationTemplates();
+    templateSelectionPanel.loadPanel();
     templateSelectionPanel.setRecordingTrace();
     updateView(60);
   }
@@ -238,7 +268,7 @@ public class CorrelationWizard extends JDialog {
   public void displayTemplateSelection(String recordingTrace) {
     getContentPane().removeAll();
     getContentPane().add(templateSelectionPanel);
-    templateSelectionPanel.reloadCorrelationTemplates();
+    templateSelectionPanel.loadCorrelationTemplates();
     templateSelectionPanel.setRecordingTrace(recordingTrace);
     updateView(60);
   }
@@ -262,8 +292,12 @@ public class CorrelationWizard extends JDialog {
     this.history = history;
   }
 
-  public void setVersionsSupplier(Supplier<List<TemplateVersion>> versionsSupplier) {
+  public void setVersionsSupplier(Supplier<List<Template>> versionsSupplier) {
     this.versionsSupplier = versionsSupplier;
+  }
+
+  public void setRepositoriesSupplier(Supplier<Map<String, Repository>> repositoriesSupplier) {
+    this.repositoriesSupplier = repositoriesSupplier;
   }
 
   public void requestPermissionToReplay() {
@@ -286,7 +320,7 @@ public class CorrelationWizard extends JDialog {
     displayReplayWaitingScreen();
     startReplayWorker();
   }
-  
+
   public static int requestPermissionToCorrelate(int totalErrors, Component parent) {
     return JOptionPane.showConfirmDialog(parent,
         getAfterReplayErrorMessage(totalErrors),
@@ -416,5 +450,13 @@ public class CorrelationWizard extends JDialog {
 
   public void displayGeneratingSuggestionsWaitingScreen() {
     displayWaitingScreen("We are generating suggestions, please wait...");
+  }
+
+  public CorrelationTemplatesRepositoriesConfiguration getRepositoriesConfiguration() {
+    return this.repositoriesConfiguration;
+  }
+
+  public Supplier<Map<String, Repository>> getRepositoriesSupplier() {
+    return repositoriesSupplier;
   }
 }

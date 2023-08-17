@@ -80,7 +80,7 @@ public class ExtractionSuggestion {
         + ", value='" + value + '\''
         + ", source='" + source + '\''
         + (comesFromSampleResult ? ", sampleResult=" + sampleResult.getSampleLabel()
-            : ", httpSamplerBase=" + sampler.getName())
+        : ", httpSamplerBase=" + sampler.getName())
         + ", \nextractor=" + extractor + '}';
   }
 }

@@ -7,16 +7,12 @@ prev: /guide/
 # Installing the Plugin
 In this section, you will find instructions on how to install the plugin on your system.
 
-## Installation instructions for different operating systems
-In this section we will cover the prerequisites, installation and configuration steps for each operating system.
-Remember that, if you already have the plugin installed, you can skip the installation step and go straight to
-the configuration section.
-
 The installation is usually the same regardless of your operating system. However, the configuration steps may vary
 since it depends on how your proxy is configured.
 
-### Prerequisites
+## Prerequisites
 
+### Plugin
 Before attempting to install the plugin, make sure you have the following prerequisites:
 
 1. **JMeter**: If you haven't done so already, download and install JMeter. You can find the latest version of
@@ -26,18 +22,33 @@ Before attempting to install the plugin, make sure you have the following prereq
 
 These two downloads are all you need to get started.
 
-### Installing the plugin
+### Integration with BlazeMeter
+If you want to use the plugin with BlazeMeter, you will also need to have the following:
+
+1. A BlazeMeter account. If you don't have one, you can [sign up for free](https://accounts.blazemeter.com/).
+2. A BlazeMeter api-key. If you don't have one, you can learn how to generate it from this article [BlazeMeter Api Key](https://guide.blazemeter.com/hc/en-us/articles/13329040973073-BlazeMeter-API-keys-).
+
+## Installation
 The installation of the plugin is usually done using the Plugin Manager, which is the recommended way of installing, however,
 you can also do it manually. This section will cover both methods.
 
-#### Installing using the Plugin Manager
+### With Plugin Manager
 1. Launch **JMeter** and open the **JMeter Plugins Manager**.
 2. In the Available Plugins tab, search and select "**BlazeMeter - Correlation Recorder Plugin**".
 3. Click the "**Apply Changes and Restart JMeter**" button and wait for the installation process to complete.
 
-Once JMeter restarts, the Correlation Recorder plugin will be installed. 
+Once JMeter restarts, the Correlation Recorder plugin will be installed.
 
-## Verifying the installation
+### Manually
+1. Go to the [Correlation Recorder plugin page](https://jmeter-plugins.org/wiki/CorrelationRecorder/) and download the
+   latest version of the plugin, with the dependencies.
+2. Place the Plugin jar in the ext folder of your JMeter installation. The ext folder is usually located in
+   `<JMeter_Home>/lib/ext`.
+3. Place the dependencies jars in the lib folder of your JMeter installation. The lib folder is usually located in
+   `<JMeter_Home>/lib`.
+4. Restart JMeter.
+
+## Verifying
 
 You can verify the plugin being installed by opening the Plugins Manager and checking the Installed Plugins tab. Search for
 the Correlation Recorder plugin and make sure it is listed there.
@@ -50,7 +61,7 @@ follow these steps:
 3. Search for the **Correlation Recorder** template and click on **Open**.
 4. If the template loads successfully, the plugin is properly installed.
 
-## Updating or uninstalling the plugin
+## Updating
 If you already had the plugin installed and want to update it, you can do so by following the same steps as the installation,
 but instead of searching the plugin in the Available Plugins tab, search for it in the Available Plugins tab.
 
@@ -62,16 +73,49 @@ If you want to uninstall the plugin, you can do so by following these steps:
 4. Wait for the uninstallation process to complete.
 5. Restart JMeter.
 
-## Configuring the plugin
+## Configuration
 Before we jump right into recording, let's take a look at the basic configuration options available for the
 Correlation Recorder plugin.
 
-### Local configurations
+### Properties
+Here is a list of properties that you need to configure in order to use the Correlation Recorder plugin:
 
 1. Disable redirect disabling: Set the `proxy.redirect.disabling` property to false in your `user.properties` file.
    This is required for a proper and automatic correlation experience.
 2. Set deflate mode: If you plan to record in *Siebel CRM environments*, set the `httpclient4.deflate_relax_mode`
    property to true in your `user.properties` file. This will help you avoid `Unexpected end of input stream` errors.
+3. (Optional) Set the scope of post-processors to all: Set the `Sample.scope` property to `all` in your
+   `user.properties` file. This will help you to avoid the post-processors to only limit to the main sampler.
+
+### BlazeMeter Api Key
+If you are planning on using the integration with Blazemeter, you need to provide your BlazeMeter api-key. 
+You can do that by doing one of the following options:
+
+1. You can drop the api-key.json in your bin directory. This is the recommended way to do it.
+2. You can provide the path to your api-key.json file in the configuration.
+
+**Drop the file in your bin directory**
+It is as simple as it sounds. You just need to drop the api-key.json file in your <JMeter_Home>/bin directory,
+making sure you don't have any other api-key.json file in that directory.
+
+Restart JMeter and you are good to go.
+
+**Configure the properties file**
+If you don't want to drop the api-key.json file in your bin directory, you can provide the path to your api-key.json file in the configuration.
+To do that, you need to open the blazemeter.properties file in your <JMeter_Home>/bin directory and add the following line:
+
+```
+blazemeter.api.key.file=<path_to_your_api_key.json_file>
+```
+
+Restart JMeter and you are good to go.
+
+Note: make sure the path you provide is correct, it points to a file, rather than a folder, and the file exists.
+It should look something like this:
+
+```
+blazemeter.api.key.file=/Users/username/.blazemeter/api-key.json
+```
 
 ### Proxy configurations
 
@@ -145,7 +189,7 @@ To configure JMeter to record HTTP/HTTPS traffic in **Chrome**, **Firefox**, or 
 3. Perform the actions you want to record (e.g. filling out forms, clicking links).
 4. In JMeter, click on the "Stop" button to stop recording.
 
-### Recording on Localhost configurations
+#### Recording on Localhost configurations
 We need to configure the _local proxy_, otherwise, **you will not be able to record
 any requests**. To do so, take a look at the "Configure your browser to use the JMeter Proxy" section in the
 

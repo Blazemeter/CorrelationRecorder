@@ -60,7 +60,7 @@ public class CorrelationRulePartPanel extends JPanel {
   private boolean usingEnabledColors = true;
 
   private CorrelationRulePartPanel(Runnable update, String name,
-      List<CorrelationRulePartTestElement<?>> options) {
+                                   List<CorrelationRulePartTestElement<?>> options) {
     setName(name);
     setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
     setFocusable(true);
@@ -276,7 +276,7 @@ public class CorrelationRulePartPanel extends JPanel {
     listAdvancedComponents.forEach(c -> c.setForeground(color));
     repaint();
   }
-  
+
   public int getCellNeededHeight() {
     if (listAdvancedComponents.isEmpty()) {
       return RulesContainer.ROW_PREFERRED_HEIGHT;
@@ -396,7 +396,7 @@ public class CorrelationRulePartPanel extends JPanel {
         ", values=" + getComponentsValues() +
         '}';
   }
-  
+
   @VisibleForTesting
   public JLabel getHelper() {
     return helper;

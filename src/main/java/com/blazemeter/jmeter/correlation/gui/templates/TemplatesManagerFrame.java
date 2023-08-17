@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.gui.templates;
 
 import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.INSTALL;
 import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.UNINSTALL;
+import static com.blazemeter.jmeter.correlation.gui.common.TemplateVersionUtils.getInformationAsHTLM;
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import static javax.swing.GroupLayout.Alignment.TRAILING;
 
@@ -9,8 +10,10 @@ import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
+import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.repository.Properties;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIcon;
 import com.helger.commons.annotation.VisibleForTesting;
@@ -19,10 +22,9 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +36,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,7 +47,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
-import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -56,13 +56,11 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import javax.swing.SwingWorker.StateValue;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.DocumentEvent;
@@ -73,12 +71,11 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CorrelationTemplatesFrame extends JDialog implements ActionListener {
+public class TemplatesManagerFrame extends JDialog implements ActionListener {
 
-  private static final Logger LOG = LoggerFactory.getLogger(CorrelationTemplatesFrame.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TemplatesManagerFrame.class);
   private static final Dimension FIELDS_DIMENSION = new Dimension(100, 30);
   private static final Dimension TEMPLATE_LIST_DIMENSION = new Dimension(200, 300);
-
   private static final String CONFIG = "config";
   private static final String LOAD = "load";
   private static final String REPLACE = "replace";
@@ -91,29 +88,29 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   private static final String CONFIRM_REFRESH = "confirmRefresh";
   private final CorrelationTemplatesRegistryHandler templatesRegistryHandler;
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
-  private final Consumer<TemplateVersion> lastTemplateHandler;
+  private final Consumer<Template> lastTemplateHandler;
   private JTextField templatesSearchField;
-  private DefaultListModel<Template> installedModel;
-  private DefaultListModel<Template> availableModel;
-  private JList<Template> installedTemplates;
-  private JList<Template> availableTemplates;
+  private DefaultListModel<TemplateManagerDisplay> installedModel;
+  private DefaultListModel<TemplateManagerDisplay> availableModel;
+  private JList<TemplateManagerDisplay> installedTemplates;
+  private JList<TemplateManagerDisplay> availableTemplates;
   private JTabbedPane templatesTabbedPane;
-  private JComboBox<TemplateVersion> version;
+  private JComboBox<Template> version;
   private JLabel templateID;
   private JLabel versionLabel;
   private JTextPane templateInfoPane;
   private JButton installTemplateButton;
   private JButton loadTemplate;
-  private JButton confirmRefreshButton;
   private JButton refreshButton;
-  private CorrelationTemplatesRepositoryConfigFrame configFrame;
-  private SwingWorker<Boolean, Integer> refreshTask;
-  private JProgressBar progressBar;
+  private RepositoriesConfigFrame configFrame;
 
-  public CorrelationTemplatesFrame(CorrelationTemplatesRegistryHandler templatesRegistryHandler,
-      CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler,
-      Consumer<TemplateVersion> lastTemplateHandler, JPanel parent) {
-    super((JFrame) SwingUtilities.getWindowAncestor(parent), true);
+  private Map<Template, TemplateProperties> templatesProperties = new HashMap<>();
+
+  public TemplatesManagerFrame(CorrelationTemplatesRegistryHandler templatesRegistryHandler,
+                               CorrelationTemplatesRepositoriesRegistryHandler
+                                   repositoriesRegistryHandler,
+                               Consumer<Template> lastTemplateHandler, JPanel parent) {
+    super((JFrame) SwingUtilities.getWindowAncestor(parent), false);
     this.templatesRegistryHandler = templatesRegistryHandler;
     this.repositoriesRegistryHandler = repositoriesRegistryHandler;
     this.lastTemplateHandler = lastTemplateHandler;
@@ -131,7 +128,6 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     prepareVersionCombo();
     installedTemplates = prepareTemplatesList("installedTemplatesList");
     availableTemplates = prepareTemplatesList("availableTemplatesList");
-    updateTemplatesList();
 
     JScrollPane installedTemplatesScroll = prepareTemplatesScrollList(installedTemplates);
     JScrollPane availableTemplatesScroll = prepareTemplatesScrollList(availableTemplates);
@@ -146,11 +142,15 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     templatesTabbedPane.addTab("Installed", installedTemplatesScroll);
     templatesTabbedPane.addTab("Available", availableTemplatesScroll);
     templatesTabbedPane.addChangeListener(e -> {
-      if (templatesTabbedPane.getSelectedIndex() == 0
-          && installedTemplates.getSelectedIndex() != -1) {
+      if (templatesTabbedPane.getSelectedIndex() == 0) {
+        if (installedTemplates.getSelectedIndex() == -1) {
+          installedTemplates.setSelectedIndex(installedTemplates.getFirstVisibleIndex());
+        }
         displaySelectedItem(installedTemplates.getSelectedValue());
-      } else if (templatesTabbedPane.getSelectedIndex() == 1
-          && availableTemplates.getSelectedIndex() != -1) {
+      } else if (templatesTabbedPane.getSelectedIndex() == 1) {
+        if (availableTemplates.getSelectedIndex() == -1) {
+          availableTemplates.setSelectedIndex(availableTemplates.getFirstVisibleIndex());
+        }
         displaySelectedItem(availableTemplates.getSelectedValue());
       }
     });
@@ -171,14 +171,11 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
                         .addComponent(refreshButton)
                         .addComponent(configButton))
                     .addComponent(templatesTabbedPane, TEMPLATE_LIST_DIMENSION.width,
-                        TEMPLATE_LIST_DIMENSION.width, TEMPLATE_LIST_DIMENSION.width)
+                        TEMPLATE_LIST_DIMENSION.width, Short.MAX_VALUE)
                 )
                 .addGroup(layout.createParallelGroup(LEADING)
                     .addComponent(versionTemplateDisplayPanel, 400, 400, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(confirmRefreshButton)
-                        .addGap(75, 75, Short.MAX_VALUE)
-                        .addComponent(progressBar, 200, 200, Short.MAX_VALUE))))
+                ))
     );
     layout.setVerticalGroup(
         layout.createSequentialGroup()
@@ -194,9 +191,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
                         .addGroup(layout.createSequentialGroup()
                             .addComponent(versionTemplateDisplayPanel, 400,
                                 GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addGroup(layout.createParallelGroup()
-                                .addComponent(confirmRefreshButton)
-                                .addComponent(progressBar, Alignment.CENTER))))))
+                        ))))
     );
 
     return main;
@@ -206,27 +201,23 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     refreshButton = buildButton("refreshButton", "", REFRESH);
     refreshButton.setToolTipText("Refresh repositories and templates");
     refreshButton.setIcon(ThemedIcon.fromResourceName("refresh-button.png"));
-    progressBar = SwingUtils.createComponent("loadingProgressBar", new JProgressBar(0, 100));
-    confirmRefreshButton = buildButton("confirmRefreshButton", "Refresh",
-        CONFIRM_REFRESH);
-    setRefreshComponentVisible(false);
   }
 
-  private JList<Template> prepareTemplatesList(String listName) {
-    JList<Template> template = SwingUtils.createComponent(listName, new JList<>());
+  private JList<TemplateManagerDisplay> prepareTemplatesList(String listName) {
+    JList<TemplateManagerDisplay> template = SwingUtils.createComponent(listName, new JList<>());
     template.setPreferredSize(new Dimension(100, 500));
 
     template.setCellRenderer(new DefaultListCellRenderer() {
       @Override
       public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-          boolean isSelected, boolean cellHasFocus) {
+                                                    boolean isSelected, boolean cellHasFocus) {
         Component renderer = super
             .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-        if (renderer instanceof JLabel && value instanceof Template) {
-          Template template = (Template) value;
+        if (renderer instanceof JLabel && value instanceof TemplateManagerDisplay) {
+          TemplateManagerDisplay templateManagerDisplay = (TemplateManagerDisplay) value;
           JLabel templateLabel = (JLabel) renderer;
-          templateLabel.setText(StringUtils.capitalize(template.getId()));
+          templateLabel.setText(StringUtils.capitalize(templateManagerDisplay.getId()));
         }
         return renderer;
       }
@@ -241,17 +232,17 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     return template;
   }
 
-  private void displaySelectedItem(Template template) {
-    if (template != null) {
-      DefaultComboBoxModel<TemplateVersion> versionsModel = new DefaultComboBoxModel<>();
-      List<TemplateVersion> versions = template.getVersions();
+  private void displaySelectedItem(TemplateManagerDisplay templateManagerDisplay) {
+    if (templateManagerDisplay != null) {
+      DefaultComboBoxModel<Template> versionsModel = new DefaultComboBoxModel<>();
+      List<Template> versions = templateManagerDisplay.getVersions();
       versions.forEach(versionsModel::addElement);
       version.setVisible(true);
       version.setModel(versionsModel);
       versionLabel.setVisible(true);
 
-      Optional<TemplateVersion> installedTemplate = versions.stream()
-          .filter(TemplateVersion::isInstalled)
+      Optional<Template> installedTemplate = versions.stream()
+          .filter(Template::isInstalled)
           .findFirst();
 
       if (installedTemplate.isPresent()) {
@@ -263,7 +254,8 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   }
 
   private void prepareVersionCombo() {
-    versionLabel = SwingUtils.createComponent("versionLabel", new JLabel("Versions: "));
+    versionLabel = SwingUtils.createComponent("versionLabel",
+        new JLabel("Versions: "));
     versionLabel.setVisible(false);
     Dimension versionDimension = new Dimension(70, 30);
     version = new JComboBox<>();
@@ -275,10 +267,10 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
 
     version.setRenderer(new BasicComboBoxRenderer() {
       public Component getListCellRendererComponent(JList list, Object value, int index,
-          boolean isSelected, boolean cellHasFocus) {
+                                                    boolean isSelected, boolean cellHasFocus) {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        if (value instanceof TemplateVersion) {
-          setText(((TemplateVersion) value).getVersion());
+        if (value instanceof Template) {
+          setText(((Template) value).getVersion());
         }
         return this;
       }
@@ -286,7 +278,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
 
     version.addActionListener(e -> {
       if (e.getSource() instanceof JComboBox) {
-        TemplateVersion selectedTemplate = version.getItemAt(version.getSelectedIndex());
+        Template selectedTemplate = version.getItemAt(version.getSelectedIndex());
         if (selectedTemplate != null) {
           updateTemplateDisplay(selectedTemplate);
         }
@@ -294,11 +286,11 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     });
   }
 
-  private void updateTemplateDisplay(TemplateVersion selectedTemplate) {
+  private void updateTemplateDisplay(Template selectedTemplate) {
     templateID.setText(StringUtils.capitalize(selectedTemplate.getId()));
     templateID.repaint();
     templateInfoPane.validate();
-    templateInfoPane.setText(getDescriptionHTML(selectedTemplate));
+    templateInfoPane.setText(getInformationAsHTLM(selectedTemplate, true, true));
     templateInfoPane.setCaretPosition(0);
     templateInfoPane.repaint();
     cacheImage(selectedTemplate);
@@ -308,20 +300,31 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   private void toggleVersionButtons(boolean installed) {
     loadTemplate.setVisible(true);
     loadTemplate.setEnabled(installed);
-    loadTemplate
-        .setToolTipText(!installed ? "You need to install this version before loading it" : "");
+    loadTemplate.setToolTipText(!installed
+        ? "You need to install this version before loading it" : "");
     installTemplateButton.setVisible(true);
-    installTemplateButton
-        .setText(installed ? StringUtils.capitalize(UNINSTALL) : StringUtils.capitalize(INSTALL));
+    installTemplateButton.setText(installed
+        ? StringUtils.capitalize(UNINSTALL) : StringUtils.capitalize(INSTALL));
     installTemplateButton.setActionCommand(installed ? UNINSTALL : INSTALL);
   }
 
-  private void updateTemplatesList() {
-    List<TemplateVersion> rawTemplates = new ArrayList<>();
-    repositoriesRegistryHandler.getCorrelationRepositories().forEach(repository -> rawTemplates
-        .addAll(repositoriesRegistryHandler
-            .getCorrelationTemplatesByRepositoryName(repository.getName())));
-    DefaultListModel<Template> unifiedTemplates = unifyTemplates(rawTemplates);
+  private void updateTemplatesList(boolean useLocal) {
+    Map<Template, TemplateProperties> rawTemplates = new HashMap<>();
+
+    for (CorrelationTemplatesRepository repository
+        : repositoriesRegistryHandler.getCorrelationRepositories()) {
+      Map<Template, TemplateProperties> templatesAndProperties =
+          repositoriesRegistryHandler
+              .getCorrelationTemplatesAndPropertiesByRepositoryName(
+                  repository.getName(), useLocal);
+
+      rawTemplates.putAll(templatesAndProperties);
+    }
+
+    templatesProperties = rawTemplates;
+
+    DefaultListModel<TemplateManagerDisplay> unifiedTemplates
+        = unifyTemplates(new ArrayList<>(rawTemplates.keySet()));
 
     installedModel = new DefaultListModel<>();
     availableModel = new DefaultListModel<>();
@@ -338,13 +341,15 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     availableTemplates.setModel(availableModel);
   }
 
-  private DefaultListModel<Template> unifyTemplates(
-      List<TemplateVersion> relatedTemplates) {
-    Map<String, Template> groupedTemplates = new HashMap<>();
+  private DefaultListModel<TemplateManagerDisplay> unifyTemplates(
+      List<Template> relatedTemplates) {
+
+    Map<String, TemplateManagerDisplay> groupedTemplates = new HashMap<>();
     relatedTemplates.forEach(template -> {
       String templateKey = template.getId() + " (" + template.getRepositoryId() + ")";
       if (!groupedTemplates.containsKey(templateKey)) {
-        groupedTemplates.put(templateKey, new Template(templateKey, template.isInstalled()));
+        groupedTemplates.put(templateKey,
+            new TemplateManagerDisplay(templateKey, template.isInstalled()));
       }
       if (template.isInstalled()) {
         groupedTemplates.get(templateKey).setHasInstalled(template.isInstalled());
@@ -352,7 +357,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
       groupedTemplates.get(templateKey).addTemplate(template);
     });
 
-    DefaultListModel<Template> groupedTemplatesModel = new DefaultListModel<>();
+    DefaultListModel<TemplateManagerDisplay> groupedTemplatesModel = new DefaultListModel<>();
     for (String templateName : groupedTemplates.keySet()) {
       groupedTemplatesModel.addElement(groupedTemplates.get(templateName));
     }
@@ -360,7 +365,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     return groupedTemplatesModel;
   }
 
-  private void cacheImage(TemplateVersion template) {
+  private void cacheImage(Template template) {
     if (template.getSnapshot() != null) {
       Dictionary cache = (Dictionary) templateInfoPane.getDocument()
           .getProperty(IMAGE_CACHE_PROPERTY_NAME);
@@ -385,68 +390,12 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     return button;
   }
 
-  private JScrollPane prepareTemplatesScrollList(JList<Template> template) {
+  private JScrollPane prepareTemplatesScrollList(JList<TemplateManagerDisplay> template) {
     JScrollPane scroll = new JScrollPane();
     scroll.setViewportView(template);
     scroll.createVerticalScrollBar();
     scroll.createHorizontalScrollBar();
     return scroll;
-  }
-
-  private void addFieldContent(StringBuilder content, String fieldText, String fieldHeader) {
-    if (fieldText != null && !fieldText.isEmpty()) {
-      content.append(makeHeader(fieldHeader))
-          .append(makeParagraph(fieldText));
-    }
-  }
-
-  private String getDescriptionHTML(TemplateVersion template) {
-    StringBuilder content = new StringBuilder();
-
-    content.append(makeHeader("Repository"))
-        .append(makeParagraph(StringUtils.capitalize(template.getRepositoryId())));
-
-    if (template.isInstalled()) {
-      content.append(makeHeader("This version is installed"));
-    }
-
-    addFieldContent(content, template.getDescription(),
-        "Description");
-
-    addFieldContent(content, template.getAuthor(), "Author");
-
-    addFieldContent(content, template.getUrl(), "Url/Email");
-
-    addFieldContent(content, template.getChanges(), "Changes");
-
-    if (template.getDependencies() != null && !template.getDependencies().isEmpty()) {
-      content.append(makeHeader("Dependencies"))
-          .append("<pre> [")
-          .append(template.getDependencies().stream()
-              .map(d -> d.getName() + ">=" + d.getVersion()).collect(Collectors.joining(",")))
-          .append("]</pre>");
-    }
-
-    if (template.getSnapshot() != null) {
-      content.append(makeHeader("Screenshot"))
-          .append("<p> <img src='file:")
-          .append(template.getSnapshotPath())
-          .append("'/></p>");
-    }
-
-    return content.toString();
-  }
-
-  private String makeHeader(String text) {
-    return makeParagraph(makeBold(text));
-  }
-
-  private String makeParagraph(String text) {
-    return "<p>" + text + "</p>";
-  }
-
-  private String makeBold(String text) {
-    return "<b>" + text + "</b>";
   }
 
   private JPanel prepareTemplateInfoPanel() {
@@ -488,15 +437,20 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     GroupLayout layout = new GroupLayout(versionTemplateDisplayPanel);
     versionTemplateDisplayPanel.setLayout(layout);
 
+    JScrollPane scroll = new JScrollPane();
+    scroll.setViewportView(templateInfoPane);
+    scroll.createVerticalScrollBar();
+    scroll.createHorizontalScrollBar();
+
     layout.setHorizontalGroup(layout.createParallelGroup(LEADING)
         .addComponent(header)
-        .addComponent(templateInfoPane)
+        .addComponent(scroll)
         .addComponent(buttonsPanel)
     );
 
     layout.setVerticalGroup(layout.createSequentialGroup()
         .addComponent(header)
-        .addComponent(templateInfoPane)
+        .addComponent(scroll)
         .addComponent(buttonsPanel)
     );
 
@@ -515,7 +469,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   }
 
   private JPanel prepareGluedPanelWithTwoComponents(JComponent leftComponent,
-      JComponent rightComponent) {
+                                                    JComponent rightComponent) {
     JPanel gluedPanel = new JPanel();
     gluedPanel.setLayout(new BoxLayout(gluedPanel, BoxLayout.LINE_AXIS));
 
@@ -549,13 +503,29 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     });
   }
 
-  private Predicate<Template> containsText(String text) {
+  private Predicate<TemplateManagerDisplay> containsText(String text) {
     return item -> item.getId().toLowerCase().contains(text.toLowerCase());
   }
 
   private void loadTemplate() {
-    TemplateVersion selectedTemplate = version.getItemAt(version.getSelectedIndex());
+    Template selectedTemplate = version.getItemAt(version.getSelectedIndex());
+
     if (selectedTemplate != null) {
+      TemplateProperties templateProperty = templatesProperties.get(selectedTemplate);
+      Properties properties = new Properties();
+      properties.putAll(templateProperty);
+
+      if (!properties.canExport()) {
+        JOptionPane
+            .showMessageDialog(null, "You are not allowed to load the template '"
+                    + selectedTemplate.getId() + "' from the repository '"
+                    + selectedTemplate.getRepositoryId() + "'.",
+                "Load error", JOptionPane.ERROR_MESSAGE);
+        LOG.warn("You are not allowed to load the template '{}' from the repository '{}'.",
+            selectedTemplate.getId(), selectedTemplate.getRepositoryId());
+        return;
+      }
+
       try {
         templatesRegistryHandler
             .onLoadTemplate(selectedTemplate.getRepositoryId(), selectedTemplate.getId(),
@@ -575,27 +545,27 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     }
   }
 
-  private void filterTemplates(Predicate<Template> filterCondition) {
+  private void filterTemplates(Predicate<TemplateManagerDisplay> filterCondition) {
     filterList(filterCondition, installedTemplates, installedModel);
     filterList(filterCondition, availableTemplates, availableModel);
   }
 
-  private void filterList(Predicate<Template> filterCondition,
-      JList<Template> templatesList,
-      DefaultListModel<Template> model) {
-    DefaultListModel<Template> filteredTemplates = new DefaultListModel<>();
+  private void filterList(Predicate<TemplateManagerDisplay> filterCondition,
+                          JList<TemplateManagerDisplay> templatesList,
+                          DefaultListModel<TemplateManagerDisplay> model) {
+    DefaultListModel<TemplateManagerDisplay> filteredTemplates = new DefaultListModel<>();
     for (int i = 0; i < model.getSize(); i++) {
-      Template template = model.get(i);
+      TemplateManagerDisplay templateManagerDisplay = model.get(i);
 
-      if (filterCondition.test(template)) {
+      if (filterCondition.test(templateManagerDisplay)) {
         filteredTemplates.addElement(model.get(i));
       }
     }
     updateJListModel(templatesList, filteredTemplates);
   }
 
-  private void updateJListModel(JList<Template> templatesList,
-      DefaultListModel<Template> filteredTemplates) {
+  private void updateJListModel(JList<TemplateManagerDisplay> templatesList,
+                                DefaultListModel<TemplateManagerDisplay> filteredTemplates) {
     templatesList.setModel(filteredTemplates);
     templatesList.repaint();
   }
@@ -605,12 +575,24 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
      * For the cases the user modifies the templates
      * after closing this frame, and open it again.
      * */
-    if (installedTemplates != null && availableTemplates != null) {
-      updateTemplatesList();
-      clearTemplateInfo();
-    }
+
+    Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+    // calculate the new location of the window
+    int x = (dim.width - this.getSize().width) / 2;
+    int y = (dim.height - this.getSize().height) / 2;
+    this.setLocation(x, y);
+
     setVisible(true);
-    refreshRepositoriesAndTemplates();
+    clearTemplateInfo();
+    if (repositoriesRegistryHandler.getCorrelationRepositories().size() == 0) {
+      refreshRepositoriesAndTemplates();
+    } else {
+      updateTemplatesList(true);
+    }
+  }
+
+  private boolean needsRefresh(DefaultListModel<TemplateManagerDisplay> listModel) {
+    return listModel == null || listModel.getSize() == 0;
   }
 
   private void clearTemplateInfo() {
@@ -643,8 +625,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
         refreshRepositoriesAndTemplates();
         break;
       case CONFIRM_REFRESH:
-        setRefreshComponentVisible(false);
-        updateTemplatesList();
+        updateTemplatesList(true);
         break;
       default:
         LOG.warn("Unsupported action {}", action);
@@ -656,44 +637,24 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
     if (configFrame == null) {
       initializeConfigFrame();
     }
-    refreshTask = refreshTask == null ? buildRefreshRepositoriesWorker() : refreshTask;
+    UpdateRepositoriesWorker refreshTask = buildRefreshRepositoriesWorker();
     refreshTask.addPropertyChangeListener(evt -> {
-      if (evt.getPropertyName().equals("progress")) {
-        progressBar.setValue(refreshTask.getProgress());
-      } else if (evt.getPropertyName().equals("state") && evt.getNewValue()
+      if (evt.getPropertyName().equals("state") && evt.getNewValue()
           .equals(StateValue.DONE)) {
-        progressBar.setValue(100);
-        confirmRefreshButton.setEnabled(true);
-        try {
-          if (refreshTask.get()) {
-            setRefreshComponentVisible(false);
-          } else {
-            confirmRefreshButton.setEnabled(true);
-          }
-          refreshTask = null;
-        } catch (InterruptedException | ExecutionException e) {
-          LOG.error("There was an error trying verify if Templates are up to date", e);
-        }
+        updateTemplatesList(true);
+        clearTemplateInfo();
       }
     });
-    progressBar.setValue(0);
-    setRefreshComponentVisible(true);
-    confirmRefreshButton.setEnabled(false);
     refreshTask.execute();
   }
 
-  private void setRefreshComponentVisible(boolean isVisible) {
-    progressBar.setVisible(isVisible);
-    confirmRefreshButton.setVisible(isVisible);
-  }
-
-  private SwingWorker<Boolean, Integer> buildRefreshRepositoriesWorker() {
-    return new SwingWorker<Boolean, Integer>() {
+  private UpdateRepositoriesWorker buildRefreshRepositoriesWorker() {
+    return new UpdateRepositoriesWorker() {
       @Override
       protected Boolean doInBackground() {
         return repositoriesRegistryHandler
             .refreshRepositories(repositoriesRegistryHandler.getConfigurationRoute(),
-                this::setProgress);
+                this::setProgress, this::publish);
       }
     };
   }
@@ -706,18 +667,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   }
 
   private void initializeConfigFrame() {
-    configFrame = new CorrelationTemplatesRepositoryConfigFrame(repositoriesRegistryHandler, this);
-    configFrame.addWindowListener(new WindowAdapter() {
-      @Override
-      public void windowClosed(WindowEvent e) {
-        updateTemplatesList();
-      }
-
-      @Override
-      public void windowLostFocus(WindowEvent e) {
-        updateTemplatesList();
-      }
-    });
+    configFrame = new RepositoriesConfigFrame(repositoriesRegistryHandler, this);
   }
 
   private void installTemplate() {
@@ -726,7 +676,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
           JOptionPane.WARNING_MESSAGE);
       return;
     }
-    TemplateVersion selectedTemplate = version.getItemAt(version.getSelectedIndex());
+    Template selectedTemplate = version.getItemAt(version.getSelectedIndex());
     if (selectedTemplate == null) {
       displayMessageDialog("There must be a Template selected", INSTALL_TEMPLATE_WARNING_TITLE,
           JOptionPane.WARNING_MESSAGE);
@@ -775,10 +725,10 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   }
 
   private boolean isAnotherVersionInstalled() {
-    TemplateVersion selectedTemplate = version.getItemAt(version.getSelectedIndex());
-    ComboBoxModel<TemplateVersion> versionModel = version.getModel();
+    Template selectedTemplate = version.getItemAt(version.getSelectedIndex());
+    ComboBoxModel<Template> versionModel = version.getModel();
     for (int i = 0; i < versionModel.getSize(); i++) {
-      TemplateVersion template = versionModel.getElementAt(i);
+      Template template = versionModel.getElementAt(i);
       if (!template.getVersion().equals(selectedTemplate.getVersion()) && template.isInstalled()) {
         return true;
       }
@@ -815,23 +765,28 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
       int installedTemplateIndex = installedTemplates.getSelectedIndex();
       int installedVersionIndex = version.getSelectedIndex();
 
-      Template template = installedModel.getElementAt(installedTemplateIndex);
-      template.getVersions().forEach(v -> v.setInstalled(false));
-      template.getVersions().get(installedVersionIndex).setInstalled(true);
+      TemplateManagerDisplay templateManagerDisplay =
+          installedModel.getElementAt(installedTemplateIndex);
+      templateManagerDisplay.getVersions().forEach(v -> v.setInstalled(false));
+      templateManagerDisplay.getVersions().get(installedVersionIndex).setInstalled(true);
       installedTemplates.setSelectedIndex(installedTemplateIndex);
       return;
     } else if (triggerAction.equals(UNINSTALL)) {
       int selectedTemplateIndex = installedTemplates.getSelectedIndex();
       version.getItemAt(version.getSelectedIndex()).setInstalled(false);
-      Template template = installedModel.getElementAt(selectedTemplateIndex);
-      template.setHasInstalled(false);
+      TemplateManagerDisplay templateManagerDisplay =
+          installedModel.getElementAt(selectedTemplateIndex);
+      templateManagerDisplay.setHasInstalled(false);
       availableModel.addElement(installedModel.remove(selectedTemplateIndex));
       //The 1st tab its for installed and the 2nd its for available templates
       templatesTabbedPane.setSelectedIndex(1);
+
+      availableTemplates.setSelectedIndex(availableTemplates.getLastVisibleIndex());
+
     } else {
       int selectedIndex = version.getSelectedIndex();
 
-      ComboBoxModel<TemplateVersion> model = version.getModel();
+      ComboBoxModel<Template> model = version.getModel();
       for (int i = 0; i < model.getSize(); i++) {
         model.getElementAt(i).setInstalled(false);
       }
@@ -843,21 +798,27 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
       //This update only applies for Templates that didn't had an installed version
       if (selectedIndex != -1 && !availableModel.getElementAt(selectedIndex)
           .hasInstalledVersion()) {
-        Template template = availableModel.getElementAt(selectedIndex);
-        template.setHasInstalled(true);
+        TemplateManagerDisplay templateManagerDisplay = availableModel.getElementAt(selectedIndex);
+        templateManagerDisplay.setHasInstalled(true);
         installedModel.addElement(availableModel.remove(selectedIndex));
         templatesTabbedPane.setSelectedIndex(0);
       }
     }
-    updateJListModel(installedTemplates, installedModel);
-    installedTemplates.setSelectedIndex(installedModel.size() - 1);
 
+    updateJListModel(installedTemplates, installedModel);
     updateJListModel(availableTemplates, availableModel);
-    availableTemplates.setSelectedIndex(availableModel.size() - 1);
+
+    if (triggerAction.equals(INSTALL)) {
+      availableTemplates.setSelectedIndex(-1);
+      installedTemplates.setSelectedIndex(installedTemplates.getLastVisibleIndex());
+    } else if (triggerAction.equals(UNINSTALL)) {
+      availableTemplates.setSelectedIndex(availableTemplates.getLastVisibleIndex());
+      installedTemplates.setSelectedIndex(-1);
+    }
   }
 
   private void uninstallTemplates() {
-    TemplateVersion selectedTemplate = version.getItemAt(version.getSelectedIndex());
+    Template selectedTemplate = version.getItemAt(version.getSelectedIndex());
 
     if (selectedTemplate == null) {
       displayMessageDialog("No template selected", INSTALL_TEMPLATE_WARNING_TITLE,
@@ -885,7 +846,7 @@ public class CorrelationTemplatesFrame extends JDialog implements ActionListener
   }
 
   @VisibleForTesting
-  public void setConfigFrame(CorrelationTemplatesRepositoryConfigFrame configFrame) {
+  public void setConfigFrame(RepositoriesConfigFrame configFrame) {
     this.configFrame = configFrame;
   }
 

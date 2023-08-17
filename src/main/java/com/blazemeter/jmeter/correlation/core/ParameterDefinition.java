@@ -25,7 +25,7 @@ public class ParameterDefinition {
 
   //Left for backward compatibility
   public ParameterDefinition(String name, String description, String defaultValue,
-      Map<String, String> availableValuesToDisplayNamesMapping) {
+                             Map<String, String> availableValuesToDisplayNamesMapping) {
     this.name = name;
     this.description = description;
     this.defaultValue = defaultValue;
@@ -34,7 +34,8 @@ public class ParameterDefinition {
   }
 
   public ParameterDefinition(String name, String description, String defaultValue,
-      Map<String, String> availableValuesToDisplayNamesMapping, boolean advanced) {
+                             Map<String, String> availableValuesToDisplayNamesMapping,
+                             boolean advanced) {
     this.name = name;
     this.description = description;
     this.defaultValue = defaultValue;
@@ -107,7 +108,7 @@ public class ParameterDefinition {
     }
 
     public TextParameterDefinition(String name, String description, String defaultValue,
-        boolean advanced) {
+                                   boolean advanced) {
       super(name, description, defaultValue, null, advanced);
     }
 
@@ -127,12 +128,13 @@ public class ParameterDefinition {
 
     //Left for backward compatibility
     public ComboParameterDefinition(String name, String description, String defaultValue,
-        Map<String, String> availableValuesToDisplayNamesMapping) {
+                                    Map<String, String> availableValuesToDisplayNamesMapping) {
       super(name, description, defaultValue, availableValuesToDisplayNamesMapping);
     }
 
     public ComboParameterDefinition(String name, String description, String defaultValue,
-        Map<String, String> availableValuesToDisplayNamesMapping, boolean advanced) {
+                                    Map<String, String> availableValuesToDisplayNamesMapping,
+                                    boolean advanced) {
       super(name, description, defaultValue, availableValuesToDisplayNamesMapping, advanced);
     }
 
@@ -156,7 +158,7 @@ public class ParameterDefinition {
     }
 
     public CheckBoxParameterDefinition(String name, String description, boolean defaultValue,
-        boolean advanced) {
+                                       boolean advanced) {
       super(name, description, Boolean.toString(defaultValue), null, advanced);
     }
 

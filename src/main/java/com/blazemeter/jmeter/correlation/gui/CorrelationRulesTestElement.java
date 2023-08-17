@@ -43,7 +43,8 @@ public class CorrelationRulesTestElement extends ConfigTestElement implements Se
   }
 
   private void updateExtractorFromTestElement(CorrelationRuleTestElement e,
-      CorrelationRule correlationRule, String referenceName) {
+                                              CorrelationRule correlationRule,
+                                              String referenceName) {
     try {
       //Only when no Extractor was selected, this method returns null
       correlationRule.setCorrelationExtractor(e.getCorrelationExtractor());
@@ -54,7 +55,8 @@ public class CorrelationRulesTestElement extends ConfigTestElement implements Se
   }
 
   private void updateReplacementFromTestElement(CorrelationRuleTestElement e,
-      CorrelationRule correlationRule, String referenceName) {
+                                                CorrelationRule correlationRule,
+                                                String referenceName) {
     try {
       //Only when no Replacement was selected, this method returns null
       correlationRule.setCorrelationReplacement(e.getCorrelationReplacement());

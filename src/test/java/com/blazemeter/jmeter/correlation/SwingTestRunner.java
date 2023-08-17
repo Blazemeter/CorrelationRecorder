@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation;
 
 import static org.assertj.swing.junit.runner.Formatter.testNameFrom;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
@@ -18,7 +17,7 @@ import org.mockito.quality.Strictness;
 /**
  * Class which takes screenshot captures when a test fails and applies mockito rule (building mocks,
  * reset, etc).
- *
+ * <p>
  * We use this to avoid having to use GuiTestRunner which requires GuiTest annotation and also would
  * require definition of Mockito rule for proper mocks initialization. Additionally, this class uses
  * existing failsafe reports directory to put failed-gui-tests which is cleaner than creating such

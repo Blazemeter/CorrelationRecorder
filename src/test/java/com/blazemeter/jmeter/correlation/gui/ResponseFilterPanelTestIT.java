@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui;
 
 import static org.assertj.swing.fixture.Containers.showInFrame;
-
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import java.util.Arrays;

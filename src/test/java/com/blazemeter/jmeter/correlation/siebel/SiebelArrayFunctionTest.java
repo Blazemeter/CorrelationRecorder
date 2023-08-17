@@ -2,7 +2,6 @@ package com.blazemeter.jmeter.correlation.siebel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import org.apache.jmeter.engine.util.CompoundVariable;

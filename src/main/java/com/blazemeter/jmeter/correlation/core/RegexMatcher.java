@@ -32,7 +32,7 @@ public class RegexMatcher {
       }
       if (matchNumber > matchCount && matchCount != 0) {
         LOG.warn("Match number {} is bigger than actual matches {}, return value is null",
-                matchNumber, matchCount);
+            matchNumber, matchCount);
         return null;
       }
 
@@ -42,7 +42,7 @@ public class RegexMatcher {
 
       if (group < 0) {
         LOG.warn("Group number {} is invalid. It has to be a positive number. Using 1 instead.",
-                group);
+            group);
         return matcher.getMatch().group(1);
       }
 

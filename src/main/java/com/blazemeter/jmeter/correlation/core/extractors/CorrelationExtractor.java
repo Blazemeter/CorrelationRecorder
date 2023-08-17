@@ -83,7 +83,7 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
    * Handles the saving of values of the Correlation Extractor into {@link
    * CorrelationRuleTestElement} for later storage in Test Plans and CorrelationTemplates.
    *
-   * <p>This method has to be overwritten when implementing custom Correlation Extractors, 
+   * <p>This method has to be overwritten when implementing custom Correlation Extractors,
    * otherwise, only the target field will be saved
    *
    * @param testElem CorrelationRuleTestElement where the fields will be stored
@@ -98,7 +98,7 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
    * Handles the loading of values from Test Plans and CorrelationTemplates.
    *
    * <p>Gets the values using the property names used to store it on the <code>updateTestElem
-   * (CorrelationRuleTestElement testElem)</code> method. This method has to be overwritten when 
+   * (CorrelationRuleTestElement testElem)</code> method. This method has to be overwritten when
    * implementing custom Correlation Extractors, otherwise, only target field will be loaded
    *
    * @param testElem CorrelationRuleTestElement from which the values are obtained
@@ -111,21 +111,20 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
    * Process every response obtained from the server, after a request is made.
    *
    * <p>The logic for extracting the desired values will be contained here. This method has to be
-   * implemented when creating custom Correlation Extractors. This method is expected to add 
-   * children to the sampler to the Test Plan, in order to get the desire information from the 
+   * implemented when creating custom Correlation Extractors. This method is expected to add
+   * children to the sampler to the Test Plan, in order to get the desire information from the
    * SampleResult, during the replay as well.
    *
-   * @param sampler recorded sampler containing the information of the request
+   * @param sampler  recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the condition is matched, a component
-   * will be added to it)
-   * @param result result containing information about request and associated response from server
-   * @param vars stored variables shared between requests during recording
-   * @see
-   * <a href="https://github.com/Blazemeter/CorrelationRecorder/examples/CustomCorrelationExtractor#process">
+   *                 will be added to it)
+   * @param result   result containing information about request and associated response from server
+   * @param vars     stored variables shared between requests during recording
+   * @see <a href="https://github.com/Blazemeter/CorrelationRecorder/examples/CustomCorrelationExtractor#process">
    * Process Example Explanation</a>
    */
   public abstract void process(HTTPSamplerBase sampler, List<TestElement> children,
-      SampleResult result, JMeterVariables vars);
+                               SampleResult result, JMeterVariables vars);
 
   public ResultField getTarget() {
     return target;

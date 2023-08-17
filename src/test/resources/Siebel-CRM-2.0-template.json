@@ -1,5 +1,6 @@
 {
-  "id":"Siebel-CRM",
+"type":"correlation",
+"id":"Siebel-CRM",
 "description":"Thisisadescription",
 "version":"1.0",
 "author":"BlazeMeter",

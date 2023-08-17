@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
@@ -31,7 +30,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 @RunWith(SwingTestRunner.class)
-public class CorrelationTemplatesRepositoryConfigFrameTestIT {
+public class RepositoriesConfigFrameTestIT {
 
   private static final String LOCAL_REPOSITORY_NAME = "local";
   private static final String FIRST_REPOSITORY_NAME = "R1";
@@ -41,8 +40,8 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   private static final String NEW_REPO_ID = "R3";
   private static final String NEW_REPO_URL = "URL3";
   private static final String[][] INITIAL_REPOSITORIES = {
-      new String[]{FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL},
-      new String[]{SECOND_REPOSITORY_NAME, SECOND_REPOSITORY_URL},
+      new String[] {FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL},
+      new String[] {SECOND_REPOSITORY_NAME, SECOND_REPOSITORY_URL},
   };
   private static final String ERROR_DIALOG_TITLE = "Error saving repositories";
 
@@ -65,8 +64,8 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   @Before
   public void setup() {
     prepareRepositories();
-    CorrelationTemplatesRepositoryConfigFrame configFrame =
-        new CorrelationTemplatesRepositoryConfigFrame(repositoryHandler, new JDialog());
+    RepositoriesConfigFrame configFrame =
+        new RepositoriesConfigFrame(repositoryHandler, new JDialog());
     frame = showInFrame(configFrame.getContentPane());
     repositoriesTable = frame.table("repositoriesTable");
     repositoriesTable.replaceCellWriter(new MyCellWriter(frame.robot()));
@@ -130,7 +129,7 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   public void shouldAddEmptyRowAtTheEndWhenClickAddButton() {
     addButton.click();
     String[][] tableContents = repositoriesTable.contents();
-    assertThat(tableContents[tableContents.length - 1]).isEqualTo(new String[]{"", ""});
+    assertThat(tableContents[tableContents.length - 1]).isEqualTo(new String[] {"", ""});
   }
 
   @Test
@@ -216,10 +215,10 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   public void shouldKeepAddedRepositoriesWhenErrorAndClickCancel() {
     addDuplicateRepository();
     clickCancel();
-    assertThat(repositoriesTable.contents()).isEqualTo(new String[][]{
-        new String[]{FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL},
-        new String[]{SECOND_REPOSITORY_NAME, SECOND_REPOSITORY_URL},
-        new String[]{FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL}
+    assertThat(repositoriesTable.contents()).isEqualTo(new String[][] {
+        new String[] {FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL},
+        new String[] {SECOND_REPOSITORY_NAME, SECOND_REPOSITORY_URL},
+        new String[] {FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL}
     });
   }
 
@@ -238,8 +237,8 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   public void shouldRemoveInputFromTableWhenClickRemoveButton() {
     repositoriesTable.click(TableCell.row(1).column(1), MouseButton.LEFT_BUTTON);
     removeButton.click();
-    assertThat(repositoriesTable.contents()).isEqualTo(new String[][]{
-        new String[]{FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL}
+    assertThat(repositoriesTable.contents()).isEqualTo(new String[][] {
+        new String[] {FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL}
     });
   }
 
@@ -247,9 +246,9 @@ public class CorrelationTemplatesRepositoryConfigFrameTestIT {
   public void shouldUpdateRepositoryWhenChangeUrlAndSave() {
     this.fillCell(NEW_REPO_URL, 1, 1);
     saveButton.click();
-    assertThat(repositoriesTable.contents()).isEqualTo(new String[][]{
-        new String[]{FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL},
-        new String[]{SECOND_REPOSITORY_NAME, NEW_REPO_URL}
+    assertThat(repositoriesTable.contents()).isEqualTo(new String[][] {
+        new String[] {FIRST_REPOSITORY_NAME, FIRST_REPOSITORY_URL},
+        new String[] {SECOND_REPOSITORY_NAME, NEW_REPO_URL}
     });
   }
 

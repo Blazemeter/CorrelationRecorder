@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.siebel;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext.Field;
 import java.nio.charset.Charset;
@@ -19,7 +18,8 @@ public class SiebelContextTest {
   private static final String PARAM_WITH_STRING_TYPE_FIELD = "s_2_1_24_0";
   private static final String IGNORED_CHARS_REGEX = "[\\()\\- ]";
   private static final String VALID_RESPONSE_DATA_PATH = "src/test/resources/validResponseData.txt";
-  private static final String INVALID_RESPONSE_DATA_PATH = "src/test/resources/invalidResponseData.txt";
+  private static final String INVALID_RESPONSE_DATA_PATH =
+      "src/test/resources/invalidResponseData.txt";
   private static final SampleResult validResponse = new SampleResult();
   private static final SampleResult invalidResponse = new SampleResult();
   private final SiebelContext siebelContext = new SiebelContext();

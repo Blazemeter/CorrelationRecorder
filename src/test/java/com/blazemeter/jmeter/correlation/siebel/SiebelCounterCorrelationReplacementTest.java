@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.siebel;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.blazemeter.jmeter.correlation.TestUtils;
 import java.net.MalformedURLException;
 import java.net.URL;

@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.automatic;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,8 @@ public class CorrelationSuggestion {
   private final List<ExtractionSuggestion> extractionSuggestions = new ArrayList<>();
   private final List<ReplacementSuggestion> replacementSuggestions = new ArrayList<>();
   private String method = "Replay";
+
+  private Template source;
 
   public CorrelationSuggestion() {
 
@@ -165,7 +168,7 @@ public class CorrelationSuggestion {
       }
 
       return map.entrySet().stream()
-          .map(entry ->  "(" + entry.getValue() + ") " + entry.getKey())
+          .map(entry -> "(" + entry.getValue() + ") " + entry.getKey())
           .collect(Collectors.joining(", "));
     }
   }
@@ -189,6 +192,14 @@ public class CorrelationSuggestion {
         + ", usages=" + usages
         + ", \nextractionSuggestions={" + extractionSuggestions + "}"
         + ", \nreplacementSuggestions={" + replacementSuggestions + "}}";
+  }
+
+  public Template getSource() {
+    return source;
+  }
+
+  public void setSource(Template version) {
+    this.source = version;
   }
 
   public static class Builder {

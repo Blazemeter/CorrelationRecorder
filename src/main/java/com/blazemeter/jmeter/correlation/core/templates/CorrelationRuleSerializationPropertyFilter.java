@@ -19,7 +19,7 @@ public class CorrelationRuleSerializationPropertyFilter extends SimpleBeanProper
 
   @Override
   public void serializeAsField(Object object, JsonGenerator jgen, SerializerProvider provider,
-      PropertyWriter writer) throws Exception {
+                               PropertyWriter writer) throws Exception {
     if (include(writer)) {
 
       CorrelationRulePartTestElement<?> correlationElement =
@@ -29,7 +29,7 @@ public class CorrelationRuleSerializationPropertyFilter extends SimpleBeanProper
           || correlationElement.equals(CorrelationComponentsRegistry.NONE_REPLACEMENT)) {
         return;
       }
-      
+
       List<ParameterDefinition> paramsDefinition = correlationElement.getParamsDefinition();
       for (int i = 0; i < paramsDefinition.size(); i++) {
         if (paramsDefinition.get(i).getName().endsWith(writer.getName())) {
@@ -50,19 +50,19 @@ public class CorrelationRuleSerializationPropertyFilter extends SimpleBeanProper
 
   @Override
   public void serializeAsElement(Object elementValue, JsonGenerator gen, SerializerProvider prov,
-      PropertyWriter writer) throws Exception {
+                                 PropertyWriter writer) throws Exception {
 
   }
 
   @Override
   public void depositSchemaProperty(PropertyWriter writer, ObjectNode propertiesNode,
-      SerializerProvider provider) throws JsonMappingException {
+                                    SerializerProvider provider) throws JsonMappingException {
 
   }
 
   @Override
   public void depositSchemaProperty(PropertyWriter writer, JsonObjectFormatVisitor objectVisitor,
-      SerializerProvider provider) throws JsonMappingException {
+                                    SerializerProvider provider) throws JsonMappingException {
 
   }
 

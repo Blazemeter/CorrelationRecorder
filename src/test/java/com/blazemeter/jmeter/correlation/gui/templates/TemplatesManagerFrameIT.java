@@ -6,19 +6,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import javax.swing.JPanel;
@@ -44,7 +46,7 @@ import org.xml.sax.SAXException;
 import org.xmlunit.matchers.CompareMatcher;
 
 @RunWith(SwingTestRunner.class)
-public class CorrelationTemplatesFrameIT {
+public class TemplatesManagerFrameIT {
 
   private static final String LOCAL_TEMPLATE_ID = "LocalTemplate (local)";
   private static final String EXTERNAL_TEMPLATE_ID = "ExternalTemplate (external)";
@@ -57,11 +59,11 @@ public class CorrelationTemplatesFrameIT {
   @Mock
   private CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
   @Mock
-  private TemplateVersion firstVersionFirstTemplateLocalRepository;
+  private Template firstVersionFirstTemplateLocalRepository;
   @Mock
-  private TemplateVersion secondVersionFirstTemplateLocalRepository;
+  private Template secondVersionFirstTemplateLocalRepository;
   @Mock
-  private TemplateVersion firstVersionFirstTemplateExternalRepository;
+  private Template firstVersionFirstTemplateExternalRepository;
   @Mock
   private CorrelationTemplatesRepository localRepository;
   @Mock
@@ -69,9 +71,9 @@ public class CorrelationTemplatesFrameIT {
   @Mock
   private CorrelationTemplatesRepository alphaRepository;
   @Mock
-  private Consumer<TemplateVersion> lastTemplateHandler;
+  private Consumer<Template> lastTemplateHandler;
   @Mock
-  private CorrelationTemplatesRepositoryConfigFrame configFrame;
+  private RepositoriesConfigFrame configFrame;
 
   @Before
   public void setup() {
@@ -84,17 +86,22 @@ public class CorrelationTemplatesFrameIT {
     setupRepository(alphaRepository, "external",
         Collections.singletonList(firstVersionFirstTemplateExternalRepository));
 
-    CorrelationTemplatesFrame correlationTemplatesFrame = new CorrelationTemplatesFrame(
+    TemplatesManagerFrame templatesManagerFrame = new TemplatesManagerFrame(
         templatesRegistryHandler, repositoriesRegistryHandler, lastTemplateHandler, new JPanel());
-    correlationTemplatesFrame.setConfigFrame(configFrame);
-    frame = showInFrame(correlationTemplatesFrame.getContentPane());
+    templatesManagerFrame.setConfigFrame(configFrame);
+    frame = showInFrame(templatesManagerFrame.getContentPane());
   }
 
   private void setupRepository(CorrelationTemplatesRepository repository, String name,
-      List<TemplateVersion> templates) {
+                               List<Template> templates) {
     when(repository.getName()).thenReturn(name);
-    when(repositoriesRegistryHandler.getCorrelationTemplatesByRepositoryName(name))
-        .thenReturn(templates);
+    Map<Template, TemplateProperties> templateAndProperties = new HashMap<>();
+    for (Template template : templates) {
+      templateAndProperties.put(template, new TemplateProperties());
+    }
+    when(repositoriesRegistryHandler.getCorrelationTemplatesAndPropertiesByRepositoryName(name,
+        false))
+        .thenReturn(templateAndProperties);
     for (int i = 0; i < templates.size(); i++) {
       when(templates.get(i).getId()).thenReturn(StringUtils.capitalize(name) + "Template");
       when(templates.get(i).getDescription()).thenReturn("Description" + i);
@@ -113,7 +120,7 @@ public class CorrelationTemplatesFrameIT {
   @Test
   public void shouldDisplayOnlyInstalledTemplatesWhenVisible() {
     assertThat(findInstalledTemplateList().contents())
-        .isEqualTo(new String[]{LOCAL_TEMPLATE_ID});
+        .isEqualTo(new String[] {LOCAL_TEMPLATE_ID});
   }
 
   private JListFixture findInstalledTemplateList() {
@@ -233,7 +240,7 @@ public class CorrelationTemplatesFrameIT {
   @Test
   public void shouldFilterTemplatesWithContainingText() {
     searchForSpecificText(localRepository.getName());
-    assertThat(findInstalledTemplateList().contents()).isEqualTo(new String[]{LOCAL_TEMPLATE_ID});
+    assertThat(findInstalledTemplateList().contents()).isEqualTo(new String[] {LOCAL_TEMPLATE_ID});
   }
 
   private void searchForSpecificText(String str) {
@@ -253,7 +260,7 @@ public class CorrelationTemplatesFrameIT {
   public void shouldDisplayOnlyUninstalledTemplatesWhenClickAvailableTab() {
     changeToAvailableTemplates();
     assertThat(findAvailableTemplatesList().contents())
-        .isEqualTo(new String[]{EXTERNAL_TEMPLATE_ID});
+        .isEqualTo(new String[] {EXTERNAL_TEMPLATE_ID});
   }
 
   private void changeToAvailableTemplates() {
@@ -312,7 +319,7 @@ public class CorrelationTemplatesFrameIT {
       latch.await();
       consumer.accept(100);
       return false;
-    }).when(repositoriesRegistryHandler).refreshRepositories(any(), any());
+    }).when(repositoriesRegistryHandler).refreshRepositories(any(), any(), any());
     return latch;
   }
 

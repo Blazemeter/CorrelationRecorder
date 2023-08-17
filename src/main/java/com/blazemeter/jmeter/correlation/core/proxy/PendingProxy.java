@@ -18,7 +18,7 @@ public class PendingProxy {
   }
 
   public void update(HTTPSamplerBase sampler, TestElement[] testElements,
-      SampleResult result) {
+                     SampleResult result) {
     this.sampler = sampler;
     this.testElements = testElements;
     this.result = result;

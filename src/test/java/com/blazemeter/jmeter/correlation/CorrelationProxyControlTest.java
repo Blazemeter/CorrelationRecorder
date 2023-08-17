@@ -17,8 +17,8 @@ import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,7 +75,7 @@ public class CorrelationProxyControlTest {
   @Mock
   private LocalConfiguration localConfiguration;
   @Mock
-  private TemplateVersion testTemplate;
+  private Template testTemplate;
   @Mock
   private JMeterTreeNode target;
 
@@ -159,7 +159,7 @@ public class CorrelationProxyControlTest {
         new CorrelationRule(SECOND_RULE_REF_VAR_NAME, null, regexReplacement));
   }
 
-  private TemplateVersion prepareExpectedTemplate(List<RulesGroup> groups) {
+  private Template prepareExpectedTemplate(List<RulesGroup> groups) {
     return BASE_TEMPLATE_BUILDER
         .withGroups(groups)
         .build();

@@ -85,7 +85,7 @@ title __Correlations Recorder's Class Diagram__\n
             - dependencyModel : ObjectTableModel
         }
 
-        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateReference {
+        class com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateVersions {
             - name : String
             - versions : List<String>
             + addVersion()

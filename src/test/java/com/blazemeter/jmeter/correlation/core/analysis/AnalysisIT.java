@@ -98,7 +98,6 @@ public class AnalysisIT extends AnalysisTest {
   }
 
 
-
   @Test
   public void shouldAddReplacementReportWhenRegexReplacementIsApplied() throws IOException {
     engineProcess(createLoggedUserRequest(), createLoggedUserResponse());

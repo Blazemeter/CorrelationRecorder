@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.core;
 
 import static org.junit.Assert.assertEquals;
-
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;

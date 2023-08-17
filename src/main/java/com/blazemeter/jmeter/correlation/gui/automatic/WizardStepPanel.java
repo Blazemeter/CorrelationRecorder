@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.gui.automatic;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
+import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,10 +27,13 @@ public class WizardStepPanel extends JPanel {
   protected Supplier<String> getLastTestPlanSupplier;
   protected Consumer<String> logStepConsumer;
   protected Consumer<List<CorrelationRule>> exportRulesConsumer;
+  protected CorrelationTemplatesRepositoriesConfiguration manager;
+  protected CorrelationWizard wizard;
   private Runnable replayTestPlan;
 
-  public WizardStepPanel() {
+  public WizardStepPanel(CorrelationWizard wizard) {
     super();
+    this.wizard = wizard;
   }
 
   public void setDisplaySuggestionsPanel(Runnable displaySuggestionsPanel) {

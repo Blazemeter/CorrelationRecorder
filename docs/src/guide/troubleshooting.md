@@ -5,32 +5,41 @@ prev: /guide/best-practices.md
 ---
 
 # Troubleshooting
-In this section you will find information about common errors and behaviors that you may encounter while using the plugin.
+
+In this section you will find information about:
+- [Common issues and solutions](#common-issues-and-solutions)
+- [Debugging tips](#debugging-tips)
+- [FAQ](#faq)
+
+Most of these issues, if not all, can be solved by: 
+
+- Ensuring your plugin is appropriately [configured](/guide/installation-guide.html#configuration)
+- Ensuring that your Test Plan aligns [consistently with the recording](#the-replay-is-not-consistent-with-the-recording).
+
+Make sure you check aforementioned point and the following sections before opening a [new issue](https://github.com/Blazemeter/CorrelationRecorder/issues) in the repository.
 
 ## Common issues and solutions
 
+We will assume that you have already reviewed the previously mentioned guides and that you have a basic understanding of how the plugin works.
+
 ### My correlation rules are not being applied
-There is a great chance that the rules you created are not being applied because they are not being matched. This usually happens for a variety of reasons, but the most common ones are:
 
-- Your regular expression is not matching the value you are trying to correlate. 
-- Your regular expression is matching the value you are trying to correlate when extracting, but the correlation rule is not applying in the request where it should be. 
-- Your current Test Plan does not reach the request where the correlation rule should be applied due to the lack of correlation. 
-- Your current Test Plan goes through the whole recorded process but the element you are trying to correlate is not being executed (it appears disabled in the Tree View).
+If your correlation rules aren't being applied, it's likely that they aren't matching. This mismatch can occur due to various reasons, but the most prevalent ones include:
 
-- As a general rule, you should always check the following:
+- The Regex for the Extractor doesn't match the value you aim to correlate.
+- The Regex for the Replacement doesn't match the request.
+- The Regex for the Replacement matches the value, but the extracted value isn't what you anticipated.
+- Interference from other third-party plugins affecting the behavior of your plugin.
 
-- The state of the elements in your Test Plan (enabled/disabled). 
-- The state of your correlation rules (enabled/disabled). 
-- The configuration of your JMeter (have you configured the flags correctly in the user.properties?)
-- The variables extracted by the plugin at any moment of the replay. 
-- The regular expressions you are using to extract the values. 
-- The regular expressions you are using to match the requests where the correlation rules should be applied. 
-- The response of the elements where supposedly the value should be extracted. 
-- Other third-party plugins that may be affecting the behavior of the plugin.
+If, after reviewing the previous reasons, you still can't find the root cause of the issue, we recommend you:
+
+- Review if your issues was already [reported](https://github.com/Blazemeter/CorrelationRecorder/issues) or [solved](https://github.com/Blazemeter/CorrelationRecorder/issues?q=is%3Aissue+is%3Aclosed) in our GitHub's repository.
+- For Local Repository Templates, initiate a [new issue](https://github.com/Blazemeter/CorrelationRecorder/issues/new/choose) in the GitHub's repository.
+- For BlazeMeter Cloud Templates, please reach out to [BlazeMeter Support](https://guide.blazemeter.com/hc/en-us/requests/new).
 
 ## Debugging tips
 
-In general, we recommend always using the Correlation Template that comes with the plugin to do all your recordings since we have added all the necessary elements, preconfigured, to make the recording process as easy as possible. This template also has all the required elements in the correct order and in the right places so that the information is not only shown correctly but can also be used in the debugging process.
+In general, we recommend always using the JMeter Template (not to be confused with Correlation Templates) for the Plugin to do all your recordings since we have added all the necessary elements, preconfigured, to make the recording process as easy as possible. This template also has all the required elements in the correct order and in the right places so that the information is not only shown correctly but can also be used in the debugging process.
 
 The most common debugging tips are:
 
@@ -77,3 +86,164 @@ Describe what actually happened when performing the steps outlined in the previo
 Include any additional information that you think might be relevant or helpful in diagnosing the issue. This could include screenshots, log files, or any other relevant details.
 
 By following these steps and providing as much detail as possible, you can help ensure that your issue is properly diagnosed and resolved.
+
+
+## Guides
+
+### Checking your JMeter configuration
+One of the many reason as why the Templates or Rules do not work is because the plugin is not properly configured. This means that the plugin might be missing critical configuration in order to work properly.
+
+Make sure you have followed the instructions in the [Installation Guide](/guide/installation-guide.html) and the [Configuration Guide](/guide/installation-guide.html#configuration) in order to properly configure the plugin.
+
+
+### Checking your Test Plan for consistency
+One of the many reason as why the Templates or Rules do not work is because the Test Plan is not consistent. This means that the Test Plan is not being executed in the same way as it was recorded.
+
+This can happen for a variety of reasons, but the most common ones are:
+
+- The Test Plan's elements is not being executed in the same order as it was recorded.
+- The Test Plan is missing elements that were present in the recording.
+- The Test Plan has elements that are disabled and are relevant in the recording.
+
+
+### Checking the server responses
+Another common reason as why the Templates or Rules do not work is because the responses from the server are totally different from the recording. This means that the server is not responding with the same values as it was recorded.
+
+This can happen for a variety of reasons, but the most common ones are:
+
+- The server returns a different response due to: 
+  - previous requests not being properly correlated.
+  - the Test Plan not being consistent.
+  - Additional configuration's required to run the Test Plan.
+- The server needs Javascript to be executed in order to return the correct response.
+
+
+
+
+
+## FAQ
+
+### The value that I need to Correlate does not appear in the Tree View
+This is a pretty common issue that can affect the capabilities of you or the plugin to correlate a value. 
+
+The most common reasons are:
+
+1. Cookies and cached values are not being cleared before recording. 
+2. Requests are being filtered on recording.
+
+Can these be fixed? Yes, they can. Here is how:
+
+#### Cookies and cached values are not being cleared before recording
+
+The short recommendation for this problem is: **Always clear your cookies and cached values before recording**
+
+**Explanation:**
+
+If your browser has **cached values** or **cookies** from previous sessions, it is possible that the value you are trying 
+to correlate **is not being sent to JMeter** from the server (because your browser already has the value stored and
+use it directly). 
+
+This is why we always **recommend** to _clear your cookies and cached values before recording_ or _make a new Incognito
+session in your browser_ each time you record.
+
+#### Requests are being filtered on recording
+If the Request are being filtered on recording, it is possible that the server is sending the request to JMeter, 
+but it is not being stored since it matches the filtering configurations.
+
+By default, these filtered request won't appear in the Recording's View Result tree. However, you can disable this
+behavior and retry the recording to ensure this is the problem.
+
+::: warning
+**Note:** Only use this for debugging purposes since the plugin can misbehave if there are inconsistencies between the recorded elements and the requests that are stored in the View Result Tree.
+
+Along the possible issues this can cause, the most common ones are:
+
+- The plugin will identify values in requests that is not part of the Test Plan and will make incorrect suggestions. This will give the impression of a value being correlated when it is not.
+- The plugin will identify the appearance of a value more times than it should. This will give the impression of a value being more important than it actually is.
+- The analysis (either by Templates or by Automatic detection) will take longer than usual since it will have to go through all the requests in the View Result Tree, even the ones that are not part of the Test Plan.
+:::
+
+Before jumping into conclusions, let's test the hypothesis that the request is being filtered.
+
+**Check if the request appears in the Recording JTL:** 
+
+1. Go to your Test Plan 
+2. Click in the "bzm - Correlation Recorder" element
+3. Click the "View Results Tree" element
+
+Either manually review the list of elements or use the search field to find the request you are looking for.
+
+If the request does not appear in the recording JTL, it might have been filtered.
+If the request is present in the recording JTL, it was not filtered.
+
+::: tip
+If the request is present in the Recording JTL but the name appears between brackets ([]), it means that the request was filtered, and you have the notify children option enabled. 
+:::
+
+**Disable the filtering of requests in the Recording JTL:**
+If you validated that the request is being filtered, you can disable the filtering of requests in the Recording JTL by following these steps:
+
+1. Go to the Request filtering tab (Test Plan > bzm - Correlation Recorder > Requests Filtering
+   tab).
+2. Check the "Notify Child Listeners of filtered samplers" option at the bottom of the
+   element in the "Notify Child Listeners of filtered samplers" section.
+3. Clear the recording (Test Plan > Recording Controller > Clear all the recorded samples).
+4. Clear the Recording JTL (Test Plan > bzm - Correlation Recorder > View Results Tree >
+   Right Click > Clear).
+5. Record again.
+
+Now, when you check the Recording's View Result Tree, you should see all the requests that are being sent to JMeter. 
+The ones that are being filtered will appear between brackets ([]), while the ones that are not being filtered will
+appear normally (without the wrapping brackets).
+
+Just like the previous step, you can either manually review the list of elements or use the search field to find the
+request you are looking for.
+
+If you confirmed that the request is being filtered, you might need to review the filtering configuration to ensure
+that the request is not being filtered.
+
+::: warning
+**Note:** You will feel tempted to leave the "Notify Child Listeners of filtered samplers" option enabled. However, this is not recommended since it can cause the plugin to misbehave.
+Likewise, we highly encourage you to fine tune the filtering configuration to ensure that the request is not being filtered rather than removing the filtering altogether. Having extra requests in the Recording will only make the analysis slower and suggest values that are not relevant or should not be correlated.
+:::
+
+
+## Your regular expression is not matching the value you are trying to correlate
+More often than not, the regular expression that you are using to correlate a value is not matching the value you are
+trying to correlate. 
+
+Depending on which part of the Correlation Rule you are configuring or testing, you might need to use a different
+mechanism to validate that the regular expression is matching the value you are trying to correlate.
+
+### For Extraction
+You can test your Regex inside JMeter by going into your Recording's View Result Tree do one of the following:
+
+1. Search by Regular exp.
+2. Use the "RegExp Tester" view.
+
+### For Replacement
+By default, the Plugin will concatenate both the `name of the argument` and `value` with `:`, when evaluating the replacement. 
+
+For instance:
+If the value you want to correlate appears in the HTTP Sampler as `wpnonce` (in name's column) and `123ABC` (in value's column), when the plugin tries to match the Regex, it will do it against `wpnonce: 123ABC`.
+
+::: tip
+Even if your Regex matches the value you are trying to correlate, in the request body or headers, you still need to make sure that the Extractor effectively extracted the value you are trying to correlate.
+:::
+
+## How to confirm the value is being extracted correctly
+If you are not sure if the value is being extracted correctly, you can use the "Debug Post-Processor" to confirm it.
+
+To do this, you need to:
+
+1. Add a "Debug Post-Processor" to your Test Plan.
+2. Add a "View Results Tree" element to your Test Plan.
+3. Replay the Test Plan
+
+You will see that now every request will have a child element inside them in the View Result Tree. Inside this child element, in the Response Body tab, you will see all the JMeter variables and their respective values during the replay in that request.
+
+If your Regex Extractor is located inside the Request #1, the value will appear (or will be available) from the Request #2 onwards.
+
+If the variable **is not present** in the Debug Sampler, it means that the **regex is not matching** any value in the recording until that point and that **you don't have a default value assigned to it**.
+If the variable **is present** but the **value is "NOT_FOUND"**, it means that the regex **is not matching** any value.
+If the variable **is present** but the value **is not the one that you want**, it means **you need to improve** either **the Regex** or **the configuration** of the Extractor.

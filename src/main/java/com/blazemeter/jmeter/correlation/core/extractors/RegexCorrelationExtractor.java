@@ -88,7 +88,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   }
 
   public RegexCorrelationExtractor(String regex, int groupNr, int matchNr,
-      ResultField target) {
+                                   ResultField target) {
     this(regex, String.valueOf(matchNr), String.valueOf(groupNr), target.name(),
         Boolean.FALSE.toString());
   }
@@ -97,15 +97,16 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
    * Constructor that receives all the fields from the GUI, as strings, and handles the parsing of
    * them.
    *
-   * @param regex regular expression used to obtain the values from the responses
-   * @param groupNr number of the group, in the regex, from where the values will be extracted
-   * @param matchNr number of the matched appearance that needs to be considered for extracting the
-   * value
+   * @param regex             regular expression used to obtain the values from the responses
+   * @param groupNr           number of the group, in the regex, from where the values will be
+   *                          extracted
+   * @param matchNr           number of the matched appearance that needs to be considered for
+   *                          extracting the value
    * @param targetDescription name of the target where the Correlation Extractor will be applied
-   * @param multiValued flag which determines if extraction needs to be multi-evaluated.
+   * @param multiValued       flag which determines if extraction needs to be multi-evaluated.
    */
   public RegexCorrelationExtractor(String regex, String matchNr, String groupNr,
-      String targetDescription, String multiValued) {
+                                   String targetDescription, String multiValued) {
     super(ResultField.valueOf(targetDescription));
     this.regex = regex;
     this.matchNr = parseInteger(matchNr,
@@ -190,15 +191,15 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
    * <code>variableName</code>. During the recording, the matched value will be stored in the
    * JMeterVariables to be considered for future Correlation Extractors/Replacements
    *
-   * @param sampler recorded sampler containing the information of the request
+   * @param sampler  recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the Regular Expression is matched, a
-   * Regex Extractor will be added to it)
-   * @param result result containing information about request and associated response from server
-   * @param vars stored variables shared between requests during recording
+   *                 Regex Extractor will be added to it)
+   * @param result   result containing information about request and associated response from server
+   * @param vars     stored variables shared between requests during recording
    */
   @Override
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      JMeterVariables vars) {
+                      JMeterVariables vars) {
     if (regex.isEmpty()) {
       return;
     }
@@ -254,7 +255,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   }
 
   private void addVarAndChildPostProcessor(String match, String variableName,
-      RegexExtractor postProcessor) {
+                                           RegexExtractor postProcessor) {
     if (AnalysisReporter.canCorrelate()) {
       currentSamplersChild.add(postProcessor);
     }
@@ -271,8 +272,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
    * <code>variableName</code>.
    *
    * @return the created RegexExtractor Post Processor
-   * @see
-   * <a href="https://jmeter.apache.org/api/org/apache/jmeter/extractor/RegexExtractor.html">RegexExtractor</a>
+   * @see <a href="https://jmeter.apache.org/api/org/apache/jmeter/extractor/RegexExtractor.html">RegexExtractor</a>
    */
   public RegexExtractor createPostProcessor(String varName, int matchNr) {
     RegexExtractor regexExtractor = new RegexExtractor();
@@ -284,6 +284,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     regexExtractor.setMatchNumber(matchNr);
     regexExtractor.setDefaultValue(varName + DEFAULT_REGEX_EXTRACTOR_SUFFIX);
     regexExtractor.setUseField(target.getCode());
+    regexExtractor.setScopeAll();
     return regexExtractor;
   }
 

@@ -59,9 +59,9 @@ public class CorrelationRuleTestElement extends AbstractTestElement {
 
   @VisibleForTesting
   public CorrelationRuleTestElement(String referenceName,
-      CorrelationRulePartTestElement<?> extractor,
-      CorrelationRulePartTestElement<?> replacement,
-      Function<String, String> propertyProvider) {
+                                    CorrelationRulePartTestElement<?> extractor,
+                                    CorrelationRulePartTestElement<?> replacement,
+                                    Function<String, String> propertyProvider) {
 
     setReferenceName(referenceName);
     this.extractorDefinitions = extractor;

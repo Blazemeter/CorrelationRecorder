@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.LOCAL_REPOSITORY_NAME;
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.JSON_FILE_EXTENSION;
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.LOCAL_REPOSITORY_NAME;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -15,11 +16,12 @@ import org.slf4j.LoggerFactory;
 public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRegistry {
 
   public static final String SNAPSHOT_FILE_TYPE = "png";
-  public static final String JSON_FILE_EXTENSION = ".json";
   private static final Logger LOG = LoggerFactory
       .getLogger(LocalCorrelationTemplatesRegistry.class);
   private static final String TEMPLATE_SUFFIX = "-template";
+  private static final String PROPERTIES_SUFFIX = "-properties";
   public static final String TEMPLATE_FILE_SUFFIX = TEMPLATE_SUFFIX + JSON_FILE_EXTENSION;
+  public static final String PROPERTIES_FILE_SUFFIX = PROPERTIES_SUFFIX + JSON_FILE_EXTENSION;
 
   private final LocalConfiguration localConfiguration;
 
@@ -28,55 +30,52 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
   }
 
   @Override
-  public void save(TemplateVersion templateVersion) throws IOException {
-    saveTemplate(templateVersion);
-    saveSnapshot(templateVersion);
+  public void save(Template template) throws IOException {
+    saveTemplate(template);
+    saveSnapshot(template);
   }
 
-  private void saveTemplate(TemplateVersion template) throws IOException {
+  private String getFileForTemplate(String repository, String templateId, String version) {
+    return localConfiguration.getCorrelationsTemplateInstallationFolder()
+        + getRepositoryFolderName(repository) + templateId + "-"
+        + version
+        + TEMPLATE_FILE_SUFFIX;
+  }
+
+  private void saveTemplate(Template template) throws IOException {
     localConfiguration
-        .writeValue(new File(localConfiguration.getCorrelationsTemplateInstallationFolder()
-            + (
-            template.getRepositoryId().equals(LOCAL_REPOSITORY_NAME) ? "" : template
-                .getRepositoryId() + File.separator) + template.getId() + "-"
-            + template.getVersion()
-            + TEMPLATE_FILE_SUFFIX), template);
+        .writeValue(new File(getFileForTemplate(template.getRepositoryId(), template.getId(),
+            template.getVersion())), template);
   }
 
-  private void saveSnapshot(TemplateVersion templateVersion) throws IOException {
-    File snapshotFile = getSnapshotFile(templateVersion);
+  private void saveSnapshot(Template template) throws IOException {
+    File snapshotFile = getSnapshotFile(template);
 
-    if (templateVersion.getSnapshot() != null) {
-      localConfiguration.writeValue(snapshotFile, templateVersion);
-      ImageIO.write(templateVersion.getSnapshot(), SNAPSHOT_FILE_TYPE,
+    if (template.getSnapshot() != null) {
+      localConfiguration.writeValue(snapshotFile, template);
+      ImageIO.write(template.getSnapshot(), SNAPSHOT_FILE_TYPE,
           snapshotFile);
     }
   }
 
-  private File getSnapshotFile(TemplateVersion templateVersion) {
+  private File getSnapshotFile(Template template) {
     return new File(localConfiguration.getCorrelationsTemplateInstallationFolder()
-        + (
-        templateVersion.getRepositoryId().equals(LOCAL_REPOSITORY_NAME) ? ""
-            : templateVersion.getRepositoryId() + File.separator),
-        templateVersion.getSnapshotName());
+        + getRepositoryFolderName(template.getRepositoryId()),
+        template.getSnapshotName());
   }
 
   @Override
-  public Optional<TemplateVersion> findByID(String repositoryOwner, String id,
-      String templateVersion)
+  public Optional<Template> findByID(String repositoryOwner, String id,
+                                     String templateVersion)
       throws IOException {
-    TemplateVersion correlationTemplate = localConfiguration.readValue(
-        new File(localConfiguration.getCorrelationsTemplateInstallationFolder()
-            + (
-            repositoryOwner.equals(LOCAL_REPOSITORY_NAME) ? "" : repositoryOwner + File.separator)
-            + id
-            + "-" + templateVersion + TEMPLATE_FILE_SUFFIX),
-        TemplateVersion.class);
+    Template correlationTemplate = localConfiguration.readValue(
+        new File(getFileForTemplate(repositoryOwner, id, templateVersion)),
+        Template.class);
     correlationTemplate.setSnapshot(getSnapshot(correlationTemplate));
     return Optional.of(correlationTemplate);
   }
 
-  private BufferedImage getSnapshot(TemplateVersion loadedTemplate) {
+  private BufferedImage getSnapshot(Template loadedTemplate) {
     try {
       File snapshotFile = getSnapshotFile(loadedTemplate);
       if (!snapshotFile.exists()) {
@@ -95,28 +94,27 @@ public class LocalCorrelationTemplatesRegistry implements CorrelationTemplatesRe
     }
   }
 
+  private String getRepositoryFolderName(String name) {
+    return name.equals(LOCAL_REPOSITORY_NAME) ? "" : name + File.separator;
+  }
+
   @Override
-  public List<TemplateVersion> getInstalledTemplates() {
-    ArrayList<TemplateVersion> loadedTemplates = new ArrayList<>();
+  public List<Template> getInstalledTemplates() {
+    ArrayList<Template> loadedTemplates = new ArrayList<>();
     localConfiguration.getRepositoriesWithInstalledTemplates()
         .forEach(r -> r.getInstalledTemplates().forEach((template, version) -> {
-          String installedTemplateName =
-              localConfiguration.getCorrelationsTemplateInstallationFolder()
-                  + (
-                  r.getName().equals(LOCAL_REPOSITORY_NAME) ? "" : r.getName() + File.separator)
-                  + template
-                  + "-"
-                  + version + TEMPLATE_FILE_SUFFIX;
+          String installedTemplateFile =
+              getFileForTemplate(r.getName(), template, version);
 
           try {
-            TemplateVersion loadedTemplate = localConfiguration
-                .readValue(new File(installedTemplateName), TemplateVersion.class);
+            Template loadedTemplate = localConfiguration
+                .readValue(new File(installedTemplateFile), Template.class);
             loadedTemplate.setRepositoryId(r.getName());
             loadedTemplate.setSnapshot(getSnapshot(loadedTemplate));
             loadedTemplates.add(loadedTemplate);
           } catch (IOException e) {
             LOG.warn("There was an error trying to get the CorrelationTemplate from the file {}",
-                installedTemplateName, e);
+                installedTemplateFile, e);
           }
         }));
 

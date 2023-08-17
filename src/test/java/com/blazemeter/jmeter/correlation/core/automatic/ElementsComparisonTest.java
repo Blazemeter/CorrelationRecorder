@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -66,6 +65,7 @@ public class ElementsComparisonTest {
     //The first element of the params is the Regex
     return correlationExtractor.getParams().get(0);
   }
+
   @Test
   public void shouldGenerateRegexSupportingNewLines() throws InvalidVariableException {
     String rawHeader = "Cache-Control: no-cache, must-revalidate, max-age=0\n" +

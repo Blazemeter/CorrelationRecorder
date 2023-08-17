@@ -150,7 +150,8 @@ public class CorrelationHistory {
     @JsonIgnore
     private Supplier<String> saveCurrentTestPlanSupplier = saveCurrentTestPlan();
 
-    public Step() {}
+    public Step() {
+    }
 
     public Step(String stepMessage) {
       this.stepMessage = stepMessage;

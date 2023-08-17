@@ -1,10 +1,12 @@
 package com.blazemeter.jmeter.correlation.gui.templates;
 
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.CENTRAL_REPOSITORY_NAME;
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.LOCAL_REPOSITORY_NAME;
+
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
-import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.gui.common.HelperDialog;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIconLabel;
 import java.awt.Component;
@@ -51,12 +53,12 @@ import org.apache.jorphan.gui.GuiUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implements ActionListener {
+public class RepositoriesConfigFrame extends JDialog implements ActionListener {
 
   private static final Logger LOG = LoggerFactory
-      .getLogger(CorrelationTemplatesRepositoryConfigFrame.class);
+      .getLogger(RepositoriesConfigFrame.class);
 
-  private static final String[] REPOSITORY_TABLE_HEADERS = {"Id", "URL"};
+  private static final String[] REPOSITORY_TABLE_HEADERS = {"Id", "Information"};
   private static final String ADD_ACTION = "add";
   private static final String DELETE_ACTION = "delete";
   private static final String SAVE_ACTION = "save";
@@ -64,9 +66,13 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
   private final SwingUtils.ButtonBuilder builder = new SwingUtils.ButtonBuilder()
       .withActionListener(this);
   private final JButton removeButton = builder.withName("repositoryRemove")
-      .withAction(DELETE_ACTION).build();
+      .withAction(DELETE_ACTION)
+      .withText("Remove")
+      .build();
   private final JButton saveButton = builder.withName("repositorySave")
-      .withAction(SAVE_ACTION).build();
+      .withText("Save")
+      .withAction(SAVE_ACTION)
+      .build();
   private final RepositoryInputTableModel repositoryTableModel = new RepositoryInputTableModel();
   private final JTable repositoryTable = SwingUtils
       .createComponent("repositoriesTable", new JTable(repositoryTableModel));
@@ -74,7 +80,7 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
   private boolean isChanged = false;
   private HelperDialog helperDialog;
 
-  public CorrelationTemplatesRepositoryConfigFrame(
+  public RepositoriesConfigFrame(
       CorrelationTemplatesRepositoriesRegistryHandler repositoryHandler, Dialog owner) {
     super(owner, "Repositories Manager", true);
     setName("correlationTemplatesRepositoryConfigFrame");
@@ -120,7 +126,6 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
     repositoryTable.setDefaultRenderer(centralRepository,
         buildDefaultRender(repositoryTable.getDefaultRenderer(centralRepository)));
     repositoryTable.revalidate();
-    updateRepositoriesTable();
     return new JScrollPane(repositoryTable);
   }
 
@@ -153,14 +158,19 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
     return new DefaultTableCellRenderer() {
       @Override
       public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-          boolean hasFocus, int row, int column) {
-        if (row == 0 && (column == 0 || column == 1)) {
+                                                     boolean hasFocus, int row, int column) {
+
+        boolean disableConfig =
+            ((RepositoryInputTableModel) table.getModel()).inputs.get(row).disableConfig;
+
+        if (disableConfig) {
           setBackground(table.getBackground());
           setValue(value);
           setFocusable(false);
           setEnabled(false);
           return this;
         }
+
         return defaultRenderer
             .getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
       }
@@ -173,13 +183,18 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
         .getCorrelationRepositories();
     repositoryTableModel.clear();
     listCorrelationRepositories.forEach(r -> {
-      if (!r.getName().equals(LocalConfiguration.LOCAL_REPOSITORY_NAME)) {
-        if (r.getName().equals(LocalConfiguration.CENTRAL_REPOSITORY_ID)) {
-          repositoryTableModel.addRow(0,
-              new RepositoryInput(r.getName(), repositoryHandler.getRepositoryURL(r.getName())));
+      if (!r.getName().equals(LOCAL_REPOSITORY_NAME)) {
+        boolean disableConfig = repositoryHandler.getRepositoryManager(r.getName()).disableConfig();
+        RepositoryInput repositoryInput =
+            new RepositoryInput(
+                r.getName(),
+                repositoryHandler.getRepositoryURL(r.getName()),
+                disableConfig
+            );
+        if (r.getName().equals(CENTRAL_REPOSITORY_NAME)) {
+          repositoryTableModel.addRow(0, repositoryInput);
         } else {
-          repositoryTableModel.addRow(
-              new RepositoryInput(r.getName(), repositoryHandler.getRepositoryURL(r.getName())));
+          repositoryTableModel.addRow(repositoryInput);
         }
       }
     });
@@ -201,7 +216,7 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
     helper.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent mouseEvent) {
-        helperDialog = new HelperDialog(CorrelationTemplatesRepositoryConfigFrame.this);
+        helperDialog = new HelperDialog(RepositoriesConfigFrame.this);
         helperDialog.setName("helperDialog");
         helperDialog.setTitle("Repository Manager Information");
         helperDialog.updateDialogContent(descriptionFile);
@@ -334,7 +349,7 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
 
     for (CorrelationTemplatesRepository r : repositoryHandler.getCorrelationRepositories()) {
       try {
-        if (!r.getName().equals(LocalConfiguration.LOCAL_REPOSITORY_NAME) && repositoryTableModel
+        if (!r.getName().equals(LOCAL_REPOSITORY_NAME) && repositoryTableModel
             .stream().noneMatch(i -> i.id.equals(r.getName()))) {
           repositoryHandler.deleteRepository(r.getName());
         }
@@ -399,14 +414,18 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
     private String id;
     private String url;
 
+    private boolean disableConfig;
+
     private RepositoryInput() {
       id = "";
       url = "";
+      disableConfig = false;
     }
 
-    RepositoryInput(String id, String url) {
+    RepositoryInput(String id, String url, boolean disableConfig) {
       this.id = id;
       this.url = url;
+      this.disableConfig = disableConfig;
     }
 
     public String getId() {
@@ -415,6 +434,10 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
 
     public String getUrl() {
       return url;
+    }
+
+    public boolean getDisableConfig() {
+      return disableConfig;
     }
   }
 
@@ -454,6 +477,10 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
 
     private Stream<RepositoryInput> stream() {
       return inputs.stream();
+    }
+
+    public ArrayList<RepositoryInput> getInputs() {
+      return inputs;
     }
 
     @SuppressWarnings("NullableProblems")
@@ -498,7 +525,7 @@ public class CorrelationTemplatesRepositoryConfigFrame extends JDialog implement
 
     @Override
     public boolean isCellEditable(int row, int column) {
-      return row != 0 && super.isCellEditable(row, column);
+      return !this.inputs.get(row).disableConfig;
     }
 
     @Override

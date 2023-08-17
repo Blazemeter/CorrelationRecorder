@@ -1,9 +1,9 @@
 package com.blazemeter.jmeter.correlation;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
+import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
 import java.util.Arrays;
 import java.util.Collections;

@@ -215,7 +215,8 @@ public class RecordingExtraction implements AppearancesExtraction {
       String name = header.getName();
       String value = header.getValue();
       String[] parsedAuthValue = value.trim().split(" ");
-      if (!HTTPConstants.HEADER_AUTHORIZATION.equals(name) || parsedAuthValue.length < 2) {
+      if (!StringUtils.equalsIgnoreCase(HTTPConstants.HEADER_AUTHORIZATION, name)
+          || parsedAuthValue.length < 2) {
         return;
       }
 

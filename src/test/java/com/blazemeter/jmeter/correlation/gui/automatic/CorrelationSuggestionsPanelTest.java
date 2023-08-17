@@ -1,16 +1,11 @@
 package com.blazemeter.jmeter.correlation.gui.automatic;
 
 import static org.assertj.swing.fixture.Containers.showInFrame;
-
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.swing.fixture.FrameFixture;
 import org.junit.After;
@@ -31,7 +26,7 @@ public class CorrelationSuggestionsPanelTest {
 
   @Before
   public void setUp() throws Exception {
-    panel = new CorrelationSuggestionsPanel();
+    panel = new CorrelationSuggestionsPanel(null);
     frame = showInFrame(panel);
   }
 

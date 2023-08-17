@@ -3,16 +3,19 @@ package com.blazemeter.jmeter.correlation;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
+import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateVersions;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
+import com.blazemeter.jmeter.correlation.core.templates.Repository;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.blazemeter.jmeter.correlation.gui.BlazemeterLabsLogo;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
-import com.blazemeter.jmeter.correlation.gui.TestPlanTemplatesRepository;
 import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationWizard;
 import com.google.common.annotations.VisibleForTesting;
 import java.awt.BorderLayout;
@@ -20,11 +23,12 @@ import java.awt.Component;
 import java.awt.Container;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.JTabbedPane;
@@ -39,36 +43,36 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     CorrelationTemplatesRegistryHandler {
 
   public static Component mainParentGuiComponent;
-  protected static final String TEMPLATES_FOLDER_PATH = "/templates/";
-  protected static final String SIEBEL_CORRELATION_TEMPLATE = "siebel-1.0-template.json";
+
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationProxyControlGui.class);
-  private static final String CORRELATION_RECORDER_TEST_PLAN = "correlation-recorder.jmx";
-  private static final String CORRELATION_RECORDER_TEMPLATE_DESC = "correlation-recorder-template"
-      + "-description.xml";
-  private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "bzm - Correlation Recorder";
   private final RulesContainer rulesContainer;
   private CorrelationProxyControl model;
   private CorrelationHistory history;
   private CorrelationWizard wizard;
+
+  static {
+    LocalConfiguration.installDefaultFiles();
+  }
 
   public CorrelationProxyControlGui() {
     JTabbedPane siebelPane = findTabbedPane();
     rulesContainer = new RulesContainer(this, () -> modifyTestElement(model));
     Objects.requireNonNull(siebelPane).add("Correlation", rulesContainer);
     add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
-    installDefaultFiles();
-    history = new CorrelationHistory();
 
+    history = new CorrelationHistory();
     wizard = new CorrelationWizard();
     wizard.setHistory(history);
-    wizard.setVersionsSupplier(this::getTemplateVersions);
+    wizard.setRepositoriesSupplier(this::getRepositories);
     wizard.setAddRuleConsumer(rulesContainer.obtainRulesExporter());
     wizard.init();
+
     rulesContainer.setOnWizardDisplayMethod(() -> wizard.displayMethodSelection());
     rulesContainer.setOnSuggestionsDisplayMethod(() -> wizard.displaySuggestions());
     rulesContainer.setEnableCorrelationConsumer((enableCorrelation)
         -> model.enableCorrelation(enableCorrelation));
     mainParentGuiComponent = getParent();
+
   }
 
   @VisibleForTesting
@@ -88,49 +92,6 @@ public class CorrelationProxyControlGui extends ProxyControlGui
       }
     }
     return null;
-  }
-
-  private void installDefaultFiles() {
-    installCorrelationRecorderTemplateTestPlan();
-    installSiebelCorrelationTemplate();
-  }
-
-  private void installCorrelationRecorderTemplateTestPlan() {
-    TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(
-        Paths.get(getJMeterDirPath(), "bin", TEMPLATES_FOLDER_PATH).toAbsolutePath().toString()
-            + File.separator);
-
-    templateRepository.addCorrelationRecorderTemplate(CORRELATION_RECORDER_TEST_PLAN,
-        TEMPLATES_FOLDER_PATH,
-        TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEMPLATE_DESC,
-        CORRELATION_RECORDER_TEMPLATE_NAME);
-    LOG.info("bzm - Correlation Recorder Test Plan Template installed");
-  }
-
-  private String getJMeterDirPath() {
-    String siebelPluginPath = getClass().getProtectionDomain().getCodeSource().getLocation()
-        .getPath();
-
-    /*
-     * This is done to obtain and remove the initial `/` from the path. i.e: In
-     * Windows the path would be something like `/C:`, so we check if the char at
-     * position 3 is ':' and if so, we remove the initial '/'.
-     */
-    char aChar = siebelPluginPath.charAt(2);
-    if (aChar == ':') {
-      siebelPluginPath = siebelPluginPath.substring(1);
-    }
-    int index = siebelPluginPath.indexOf("/lib/ext/");
-    return siebelPluginPath.substring(0, index);
-  }
-
-  private void installSiebelCorrelationTemplate() {
-    TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(Paths
-        .get(getJMeterDirPath(), LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER)
-        .toAbsolutePath().toString() + File.separator);
-    templateRepository.addCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
-        LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
-    LOG.info("Siebel Correlation's Template installed");
   }
 
   @Override
@@ -163,7 +124,6 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   @Override
   public TestElement createTestElement() {
     CorrelationProxyControl model = new CorrelationProxyControl();
-    LOG.debug("creating/configuring model = {}", model);
     configure(model);
     return model;
   }
@@ -171,10 +131,13 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   @Override
   public void configure(TestElement el) {
     // Don't allow to update UI on recording, because add test element on the tree fire configure
-    LOG.debug("Configuring gui with {}", el);
     if (el instanceof CorrelationProxyControl) {
       CorrelationProxyControl correlationProxyControl = (CorrelationProxyControl) el;
       model = correlationProxyControl;
+      if (wizard != null) {
+        wizard.setRepositoriesConfiguration(model.getTemplateRepositoryConfig());
+      }
+
       CorrelationComponentsRegistry.getInstance().reset();
       rulesContainer.configure(correlationProxyControl);
       model.setOnStopRecordingMethod(() -> {
@@ -202,7 +165,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   }
 
   @Override
-  public List<TemplateVersion> getInstalledCorrelationTemplates() {
+  public List<Template> getInstalledCorrelationTemplates() {
     return model.getInstalledCorrelationTemplates();
   }
 
@@ -227,8 +190,15 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   }
 
   @Override
-  public List<TemplateVersion> getCorrelationTemplatesByRepositoryName(String name) {
-    return model.getCorrelationTemplatesByRepositoryName(name);
+  public Map<Template, TemplateProperties> getCorrelationTemplatesAndPropertiesByRepositoryName(
+      String name, boolean useLocal) {
+    return model.getCorrelationTemplatesAndPropertiesByRepositoryName(name, useLocal);
+  }
+
+  @Override
+  public Map<String, CorrelationTemplateVersions> getCorrelationTemplateVersionsByRepositoryName(
+      String name, boolean useLocal) {
+    return model.getCorrelationTemplateVersionsByRepositoryName(name, useLocal);
   }
 
   @Override
@@ -246,6 +216,16 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   @Override
   public String getRepositoryURL(String name) {
     return model.getRepositoryURL(name);
+  }
+
+  @Override
+  public RepositoryManager getRepositoryManager(String name) {
+    return model.getRepositoryManager(name);
+  }
+
+  @Override
+  public RepositoryManager getRepositoryManager(String name, String url) {
+    return model.getRepositoryManager(name, url);
   }
 
   @Override
@@ -302,8 +282,10 @@ public class CorrelationProxyControlGui extends ProxyControlGui
 
   @Override
   public boolean refreshRepositories(String localConfigurationRoute,
-                                     Consumer<Integer> setProgressConsumer) {
-    return model.refreshRepositories(localConfigurationRoute, setProgressConsumer);
+                                     Consumer<Integer> setProgressConsumer,
+                                     Consumer<String> setStatusConsumer) {
+    return model.refreshRepositories(localConfigurationRoute, setProgressConsumer,
+        setStatusConsumer);
   }
 
   @VisibleForTesting
@@ -316,10 +298,34 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     return model;
   }
 
-  public List<TemplateVersion> getTemplateVersions() {
-    List<TemplateVersion> rawTemplates = new ArrayList<>();
-    getCorrelationRepositories().forEach(repository -> rawTemplates
-        .addAll(getCorrelationTemplatesByRepositoryName(repository.getName())));
-    return rawTemplates;
+  public Map<String, Repository> getRepositories() {
+    Map<String, Repository> repositoryMap = new HashMap<>();
+    List<CorrelationTemplatesRepository> repositories = getCorrelationRepositories();
+
+    boolean useLocal = true; // Force to use the local storage cache
+    for (CorrelationTemplatesRepository repositoryEntry : repositories) {
+      String repositoryName = repositoryEntry.getName();
+      Repository repository = repositoryMap.get(repositoryName);
+      if (repository == null) {
+        repository = new Repository(repositoryName);
+        repositoryMap.put(repositoryName, repository);
+      }
+
+      Map<Template, TemplateProperties> templatesAndProperties =
+          getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, useLocal);
+      if (templatesAndProperties == null) {
+        LOG.warn("No templates found for repository " + repositoryName);
+        continue;
+      }
+
+      for (Map.Entry<Template, TemplateProperties> entry : templatesAndProperties.entrySet()) {
+        Template key = entry.getKey();
+        TemplateProperties value = entry.getValue();
+        repository.addTemplate(key, value);
+      }
+    }
+
+    return repositoryMap;
   }
+
 }
