@@ -8,14 +8,14 @@ import java.util.Objects;
 public class CorrelationTemplatesRepository {
 
   private transient String name;
-  private Map<String, CorrelationTemplateReference> templatesVersions = new HashMap<>();
+  private Map<String, CorrelationTemplateVersions> templatesVersions = new HashMap<>();
 
   //Constructor added to avoid issues with the serialization
   public CorrelationTemplatesRepository() {
   }
 
-  public CorrelationTemplatesRepository(String name,
-      Map<String, CorrelationTemplateReference> templatesVersions) {
+  public CorrelationTemplatesRepository(String name, Map<String, CorrelationTemplateVersions>
+                                            templatesVersions) {
     this.name = name;
     this.templatesVersions = templatesVersions;
   }
@@ -27,15 +27,15 @@ public class CorrelationTemplatesRepository {
         templatesVersions.get(name).addVersion(version);
       }
     } else {
-      templatesVersions.put(name, new CorrelationTemplateReference(version));
+      templatesVersions.put(name, new CorrelationTemplateVersions(version));
     }
   }
 
-  public Map<String, CorrelationTemplateReference> getTemplates() {
+  public Map<String, CorrelationTemplateVersions> getTemplates() {
     return templatesVersions;
   }
 
-  public void setTemplates(Map<String, CorrelationTemplateReference> templatesVersions) {
+  public void setTemplates(Map<String, CorrelationTemplateVersions> templatesVersions) {
     this.templatesVersions = templatesVersions;
   }
 

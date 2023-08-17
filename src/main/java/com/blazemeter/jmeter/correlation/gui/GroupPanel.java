@@ -51,7 +51,7 @@ public class GroupPanel extends JPanel implements ActionListener {
   private boolean groupEnabled;
 
   public GroupPanel(String title, boolean isGroupEnabled, Runnable onCollapseUpdate,
-      Runnable modelUpdate) {
+                    Runnable modelUpdate) {
     setLayout(new GridLayout());
     setName("groupPanel-" + System.currentTimeMillis());
     this.groupsSizesUpdate = onCollapseUpdate;
@@ -104,7 +104,7 @@ public class GroupPanel extends JPanel implements ActionListener {
   }
 
   private CollapsiblePanel buildCollapsiblePanel(String title, boolean isEnabled,
-      JComponent contentPanel) {
+                                                 JComponent contentPanel) {
     return new CollapsiblePanel.Builder()
         .withTitle(title)
         .withNamePrefix(getName())

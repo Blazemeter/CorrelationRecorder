@@ -33,8 +33,8 @@ public class CorrelationMethodPanel extends WizardStepPanel implements ActionLis
 
   private Checkbox correlateByRules;
 
-  public CorrelationMethodPanel() {
-    super();
+  public CorrelationMethodPanel(CorrelationWizard wizard) {
+    super(wizard);
     init();
   }
 
@@ -56,8 +56,8 @@ public class CorrelationMethodPanel extends WizardStepPanel implements ActionLis
     methodsPanel.setLayout(new GridLayout(0, 1));
     methodsPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
     CheckboxGroup methodGroup = new CheckboxGroup();
-    correlateByRules = new Checkbox("Existing correlation rules (recommended)",
-        methodGroup, true);
+    correlateByRules = new Checkbox("Existing Correlation Templates", methodGroup,
+        true);
     methodsPanel.add(correlateByRules);
     methodsPanel.add(new Checkbox("Automatic comparison and variable detection",
         methodGroup, false));

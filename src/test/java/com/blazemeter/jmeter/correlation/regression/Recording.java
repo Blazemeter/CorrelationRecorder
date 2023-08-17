@@ -30,7 +30,7 @@ public class Recording implements Closeable {
   private final JMeterTreeModel treeModel;
 
   public Recording(CorrelationProxyControl proxyControl,
-      JMeterTreeModel treeModel) {
+                   JMeterTreeModel treeModel) {
     this.proxyControl = proxyControl;
     this.treeModel = treeModel;
   }

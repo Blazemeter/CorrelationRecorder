@@ -1,11 +1,11 @@
 package com.blazemeter.jmeter.correlation;
 
-import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 
 public class CorrelationProxyControlBuilder {

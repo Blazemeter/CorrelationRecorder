@@ -4,22 +4,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class CorrelationTemplateReference {
+public class CorrelationTemplateVersions {
 
   private final List<String> versions = new ArrayList<>();
   private transient String name;
 
   //Constructor added to avoid issues with the serialization
-  public CorrelationTemplateReference() {
+  public CorrelationTemplateVersions() {
 
   }
 
-  public CorrelationTemplateReference(String version) {
+  public CorrelationTemplateVersions(String version) {
     this.versions.add(version);
   }
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getName() {
+    return name;
   }
 
   public List<String> getVersions() {
@@ -45,7 +49,7 @@ public class CorrelationTemplateReference {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CorrelationTemplateReference that = (CorrelationTemplateReference) o;
+    CorrelationTemplateVersions that = (CorrelationTemplateVersions) o;
     return Objects.equals(name, that.name) &&
         Objects.equals(versions, that.versions);
   }

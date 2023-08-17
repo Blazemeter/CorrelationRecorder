@@ -46,9 +46,9 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
    * Constructor that receives only strings to create the Correlation Extractor. Needed to create
    * from the values in the UI.
    *
-   * @param regex Regular Expression used to extract the value
+   * @param regex       Regular Expression used to extract the value
    * @param groupNumber Group Number from where the information will be extracted in the regex
-   * @param targetName Target Field where the extraction will be applied
+   * @param targetName  Target Field where the extraction will be applied
    */
   public SiebelRowCorrelationExtractor(String regex, String groupNumber, String targetName) {
     super(regex, Integer.parseInt(groupNumber), -1,
@@ -58,7 +58,7 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
   //Added to support backward compatibility with beta version
   @Deprecated
   public SiebelRowCorrelationExtractor(String regex, String groupNumber, String targetName,
-      String matchNumber) {
+                                       String matchNumber) {
     super(regex, Integer.parseInt(groupNumber), Integer.parseInt(matchNumber),
         ResultField.valueOf(targetName));
   }
@@ -70,7 +70,7 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
 
   @Override
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      JMeterVariables vars) {
+                      JMeterVariables vars) {
     super.process(sampler, children, result, vars);
     vars.remove(variableName);
     JSR223PostProcessor jsr223PostProcessor = buildArrayParserPostProcessor(result, vars);
@@ -80,7 +80,7 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
   }
 
   private JSR223PostProcessor buildArrayParserPostProcessor(SampleResult result,
-      JMeterVariables vars) {
+                                                            JMeterVariables vars) {
     StringBuilder script = new StringBuilder();
     JSR223PostProcessor jSR223PostProcessor = new JSR223PostProcessor();
     jSR223PostProcessor.setProperty(JSR223PostProcessor.GUI_CLASS, TestBeanGUI.class.getName());
@@ -145,7 +145,7 @@ public class SiebelRowCorrelationExtractor extends RegexCorrelationExtractor<Sie
   @Override
   public void setParams(List<String> params) {
     regex = !params.isEmpty() ? params.get(0) : REGEX_DEFAULT_VALUE;
-    setGroupNr(params.size() > 1 ? parseInteger(params.get(1), DEFAULT_MATCH_GROUP_NAME, 
+    setGroupNr(params.size() > 1 ? parseInteger(params.get(1), DEFAULT_MATCH_GROUP_NAME,
         DEFAULT_MATCH_GROUP) : DEFAULT_MATCH_GROUP);
     //This means it applies to all the matches
     matchNr = -1;

@@ -24,7 +24,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * Use this class to obtain certain Samplers and Results from a JMX and JTL files.
  * Specially useful when you want to simulate some scenarios without the need of
  * opening JMeter GUI and making the removals manually.
- *
+ * <p>
  * Just like the NonGuiAcr class, you require to have the path to the files and
  * where you want to output them.
  */

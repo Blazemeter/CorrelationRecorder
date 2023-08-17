@@ -100,7 +100,7 @@ public class CorrelationProxy extends Proxy {
     private final CorrelationProxyControl correlationProxyControl;
 
     private ProxyControlNotifierSocket(Socket clientSocket,
-        CorrelationProxyControl correlationProxyControl) {
+                                       CorrelationProxyControl correlationProxyControl) {
       this.clientSocket = clientSocket;
       this.correlationProxyControl = correlationProxyControl;
     }

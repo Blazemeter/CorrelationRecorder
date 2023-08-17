@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui.common;
 
 import com.blazemeter.jmeter.correlation.TestUtils;
-import com.blazemeter.jmeter.correlation.gui.common.HelperDialog;
 import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.parsers.ParserConfigurationException;
@@ -22,6 +21,7 @@ public class HelperDialogTest {
   public void setup() {
     helperDialog = new HelperDialog(new JPanel());
   }
+
   @Test
   public void shouldDisplayDefaultValueWhenCreated() throws IOException {
     assertTemplateInfo("/DefaultExtractorHelper.html");
@@ -48,7 +48,8 @@ public class HelperDialogTest {
 
   @Test
   public void shouldDisplayUpdatedDescriptionWhenUpdateDescription() throws IOException {
-    helperDialog.updateDialogContent(TestUtils.getFileContent("/RegexCorrelationExtractorDescription.html", getClass()));
+    helperDialog.updateDialogContent(
+        TestUtils.getFileContent("/RegexCorrelationExtractorDescription.html", getClass()));
     assertTemplateInfo("/RegexCorrelationExtractorFullDisplay.html");
   }
 }

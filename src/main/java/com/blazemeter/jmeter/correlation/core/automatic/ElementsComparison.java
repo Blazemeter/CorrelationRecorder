@@ -201,8 +201,8 @@ public class ElementsComparison {
   }
 
   private void addExtractorSuggestions(Map<String, String> valueToReferenceName,
-                                      CorrelationSuggestion suggestion, SampleResult result,
-                                      List<Appearances> appearances) {
+                                       CorrelationSuggestion suggestion, SampleResult result,
+                                       List<Appearances> appearances) {
     for (Appearances appearance : appearances) {
       String name = suggestion.getParamName();
       if (suggestion.getAppearances().size() > configuration.getMaxNumberOfAppearances()

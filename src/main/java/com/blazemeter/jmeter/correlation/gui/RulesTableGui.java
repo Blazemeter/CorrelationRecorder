@@ -26,7 +26,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
   private boolean groupEnabled = true;
 
   public RulesTableGui(Runnable buttonsValidation) {
-    super(buttonsValidation, new String[]{ENABLE_HEADER, VARIABLE_HEADER,
+    super(buttonsValidation, new String[] {ENABLE_HEADER, VARIABLE_HEADER,
         EXTRACTOR_HEADER, REPLACEMENT_HEADER});
     addTableModelListener(this::doTableResize);
     setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -44,7 +44,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
     return new DefaultTableCellRenderer() {
       @Override
       public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-          boolean hasFocus, int row, int column) {
+                                                     boolean hasFocus, int row, int column) {
         PlaceHolderTextField field = (PlaceHolderTextField) value;
         boolean displayPlaceHolder = field.getText().isEmpty();
         setValue(displayPlaceHolder ? field.getPlaceHolder() : field.getText());
@@ -159,7 +159,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
   }
 
   private void doColumnsResize(int isEnableWidth, int varColumnWidth, int extractorColumnWidth,
-      int replacementColumnWidth) {
+                               int replacementColumnWidth) {
     setColumnWidth(0, isEnableWidth);
     setColumnWidth(1, varColumnWidth);
     setColumnWidth(2, extractorColumnWidth);
@@ -176,7 +176,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-        boolean hasFocus, int row, int column) {
+                                                   boolean hasFocus, int row, int column) {
 
       CorrelationRulePartPanel rulePartPanel = (CorrelationRulePartPanel) value;
       Component component = rulePartPanel;
@@ -196,7 +196,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-        boolean hasFocus, int row, int column) {
+                                                   boolean hasFocus, int row, int column) {
       JCheckBox enableCheckBox = new JCheckBox();
       enableCheckBox.setSelected((Boolean) value);
       return enableCheckBox;
@@ -209,7 +209,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-        int row, int column) {
+                                                 int row, int column) {
       referenceVariable = (PlaceHolderTextField) value;
       return referenceVariable;
     }
@@ -226,7 +226,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-        int row, int column) {
+                                                 int row, int column) {
       selectorPanel = (CorrelationRulePartPanel) value;
       Color selectionBackground = SELECTED_BACKGROUND.apply(true);
       Color selectionForeground = SELECTED_FOREGROUND.apply(true);
@@ -250,7 +250,7 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-        int row, int column) {
+                                                 int row, int column) {
       enableCheckBox.addActionListener(e -> {
         //This code is to fire the table repaint when an action occurs in the checkbox, after the
         // event is fired it is needed to request focus in the checkbox because stopCellEditing

@@ -165,7 +165,7 @@ public class CustomExtensionsDialog extends JDialog implements ActionListener {
       if (isActive) {
         availableList.clearSelection();
         removeExtensionButton.setEnabled(!item.isActive());
-        removeExtensionButton.setToolTipText(!item.isActive() ? "Remove selected extension" 
+        removeExtensionButton.setToolTipText(!item.isActive() ? "Remove selected extension"
             : "The selected extension can't be removed since is being used.");
       } else {
         activeList.clearSelection();
@@ -208,9 +208,9 @@ public class CustomExtensionsDialog extends JDialog implements ActionListener {
 
     updateComboOptions.run();
   }
-  
+
   public void buildExtensions(Set<Class<? extends CorrelationRulePartTestElement>> usedExtensions,
-      RulePartType type) {
+                              RulePartType type) {
     this.type = type;
 
     setTitle("Additional " + type + "s");
@@ -259,7 +259,7 @@ public class CustomExtensionsDialog extends JDialog implements ActionListener {
 
     @Override
     public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-        boolean isSelected, boolean cellHasFocus) {
+                                                  boolean isSelected, boolean cellHasFocus) {
       super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
       ExtensionItem item = (ExtensionItem) value;

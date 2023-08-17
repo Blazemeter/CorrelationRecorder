@@ -41,13 +41,21 @@ module.exports = {
         link: '/guide/',
       },
       {
+        text: 'Templates',
+        link: '/guide/templates/',
+      },
+      {
         text: 'Custom Extensions',
         link: '/guide/custom-extensions/',
       },
       {
         text: 'Contributing',
         link: '/contributing/'
-      }
+      },
+      {
+        text: 'FAQ',
+        link: '/guide/troubleshooting.md',
+     }
     ],
     sidebar: {
       '/guide/': [

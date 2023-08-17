@@ -3,7 +3,6 @@ package com.blazemeter.jmeter.correlation.core.extractors;
 import static com.blazemeter.jmeter.correlation.TestUtils.getFileContent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
 import java.io.IOException;
@@ -146,6 +145,7 @@ public class RegexCorrelationExtractorTest {
     regex.setDefaultValue(REFERENCE_NAME + "_NOT_FOUND");
     regex.setRegex(responseRegex);
     regex.setUseField(fieldToCheck.getCode());
+    regex.setScopeAll();
     return regex;
   }
 
@@ -381,6 +381,7 @@ public class RegexCorrelationExtractorTest {
     regex.setDefaultValue(REFERENCE_NAME + "#" + varNr + "_NOT_FOUND");
     regex.setRegex(responseRegex);
     regex.setUseField(ResultField.BODY.getCode());
+    regex.setScopeAll();
     return regex;
   }
 

@@ -96,10 +96,16 @@ Select the **Existing correlation rules (recommended** method and press "Continu
 The next step is to select the Correlation Templates to use for the analysis. You can select one or more templates.
 If you select more than one, the plugin will use the union of the dynamic values found in all of them.
 
+By default, the latest version of a Template is selected, but you can change that by clicking on the field in the Version column.
+
 ![Select Correlation Templates](./assets/select-correlation-template.png)
 
-::: tip
-You can select which version of each Correlation Template to use. By default, the latest version is selected.
+::: warning
+
+If you have the BlazeMeter integration on, depending on your account type (Free or Enterprise), you might see some 
+Correlation Templates that are not available for you (they will have a lock icon next to them).
+
+If you want to know more about Enterprise Correlation Templates, please contact your BlazeMeter representative.
 :::
 
 4. Add the JTL file of the recording (if it isn't already loaded)

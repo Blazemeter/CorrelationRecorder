@@ -1,14 +1,12 @@
 package com.blazemeter.jmeter.correlation.gui;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement;
@@ -154,8 +152,9 @@ public class CorrelationComponentsRegistryTest {
   @Test
   public void shouldGetDefaultAllowedExtractorsWhenGetAllowedExtractors() {
     List<CorrelationRulePartTestElement<?>> expectedDefaultAllowedExtractors =
-        Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR, new RegexCorrelationExtractor<>(),
-                CorrelationComponentsRegistry.MORE_EXTRACTOR);
+        Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR,
+            new RegexCorrelationExtractor<>(),
+            CorrelationComponentsRegistry.MORE_EXTRACTOR);
     assertThat(expectedDefaultAllowedExtractors).isEqualTo(registry.buildActiveExtractorRulePart());
   }
 
@@ -164,7 +163,8 @@ public class CorrelationComponentsRegistryTest {
     List<CorrelationRulePartTestElement<?>> expectedDefaultAllowedReplacements = Arrays
         .asList(CorrelationComponentsRegistry.NONE_REPLACEMENT, REGEX_REPLACEMENT,
             CorrelationComponentsRegistry.MORE_REPLACEMENT);
-    assertThat(expectedDefaultAllowedReplacements).isEqualTo(registry.buildActiveReplacementRulePart());
+    assertThat(expectedDefaultAllowedReplacements).isEqualTo(
+        registry.buildActiveReplacementRulePart());
   }
 
   @Test

@@ -95,7 +95,7 @@ public class ResponseFilterPanel extends JPanel {
   private String buildLabelText(Set<String> removed) {
     String notificationText = removed.isEmpty() ? ""
         : "The following filters were repeated and removed: " + removed.stream().map(String::trim)
-            .collect(Collectors.joining(", ")) + ".";
+        .collect(Collectors.joining(", ")) + ".";
     return "<html> " + INSTRUCTIONS_TEXT + "<br>"
         + notificationText + "</html>";
   }

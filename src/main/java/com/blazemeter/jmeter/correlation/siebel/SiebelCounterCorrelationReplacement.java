@@ -44,7 +44,7 @@ public class SiebelCounterCorrelationReplacement extends
 
   @Override
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      JMeterVariables vars) {
+                      JMeterVariables vars) {
     if (regex.isEmpty()) {
       return;
     }

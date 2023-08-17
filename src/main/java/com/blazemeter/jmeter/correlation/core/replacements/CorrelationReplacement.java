@@ -94,14 +94,14 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    *
    * <p>Both the properties in the recorded sampler and its children will be processed
    *
-   * @param sampler recorded sampler containing the information of the request
+   * @param sampler  recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the condition is matched, components
-   * will be added to it to correlate the obtained values)
-   * @param result result containing information about request and associated response from server
-   * @param vars stored variables shared between requests during recording
+   *                 will be added to it to correlate the obtained values)
+   * @param result   result containing information about request and associated response from server
+   * @param vars     stored variables shared between requests during recording
    */
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      JMeterVariables vars) {
+                      JMeterVariables vars) {
     replaceTestElementProperties(sampler, vars);
     for (TestElement child : children) {
       if (child instanceof ConfigTestElement) {
@@ -119,7 +119,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * Replacement, the value will be replaced in the String as <code>${referenceVariableName}</code>,
    * as many times as the logic in the condition allows it.
    *
-   * @param el test element to check and match the properties
+   * @param el   test element to check and match the properties
    * @param vars stored variables from the recording
    */
   private void replaceTestElementProperties(TestElement el, JMeterVariables vars) {
@@ -191,7 +191,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * implemented.
    *
    * @param input property's string to check and replace
-   * @param vars stored variables shared between request during the recording
+   * @param vars  stored variables shared between request during the recording
    * @return the resultant input after been processed
    */
   protected abstract String replaceString(String input, JMeterVariables vars);

@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.siebel;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.junit.Before;

@@ -163,20 +163,23 @@
         "type": "com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement",
         "regex": "([^&\\\\n]+)"
       }
-    }, {
-      "referenceName" : "__time()",
-      "correlationExtractor" : null,
-      "correlationReplacement" : {
-        "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
-        "regex" : "SWETS"
+    },
+    {
+      "referenceName": "__time()",
+      "correlationExtractor": null,
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWETS"
       }
-    }, {
-      "referenceName" : "__time()",
-      "correlationExtractor" : null,
-      "correlationReplacement" : {
-        "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
-        "regex" : "SWETS"
+    },
+    {
+      "referenceName": "__time()",
+      "correlationExtractor": null,
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "SWETS"
       }
-    } ],
+    }
+  ],
   "repositoryId": "local"
 }

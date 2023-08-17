@@ -4,11 +4,14 @@ import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
+import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -48,12 +51,14 @@ public class Analysis {
    * This method will start the analysis with the given rulesGroups, using the JTL file provided.
    * Note that the shouldCorrelate param wont avoid the analysis to be executed, but rather
    * prevent the Correlation Rules to modify the Test Plan elements.
+   *
    * @param selectedTemplates List of templates to be used in the analysis
-   * @param tracePath Path to the JTL file
-   * @param shouldCorrelate Boolean indicating if the Correlation Rules should be applied
+   * @param tracePath         Path to the JTL file
+   * @param shouldCorrelate   Boolean indicating if the Correlation Rules should be applied
+   * @return
    */
-  public void run(List<TemplateVersion> selectedTemplates, String tracePath,
-                  boolean shouldCorrelate) {
+  public Map<Template, List<CorrelationSuggestion>> run(
+      List<Template> selectedTemplates, String tracePath, boolean shouldCorrelate) {
     setTracePath(tracePath);
     if (!shouldCorrelate) {
       disableCorrelation();
@@ -62,12 +67,19 @@ public class Analysis {
     }
 
     setResultsSupplier(() -> JMeterElementUtils.getCurrentSampleResults(this.tracePath));
-    AnalysisReporter.startCollecting();
-    for (TemplateVersion template : selectedTemplates) {
+
+    Map<Template, List<CorrelationSuggestion>> suggestions = new HashMap<>();
+    for (Template template : selectedTemplates) {
+      AnalysisReporter.startCollecting();
       startAnalysisWithGroupRules(template.getGroups());
+      AnalysisReporter.stopCollecting();
+      List<CorrelationSuggestion> correlationSuggestions =
+          AnalysisReporter.generateCorrelationSuggestions();
+      suggestions.put(template, correlationSuggestions);
     }
-    AnalysisReporter.stopCollecting();
+
     LOG.trace("Analysis finished!");
+    return suggestions;
   }
 
   private CorrelationProxyControl getProxyControl(JMeterTreeModel model) {

@@ -1,12 +1,10 @@
 package com.blazemeter.jmeter.correlation.gui.common;
 
 import static org.assertj.swing.fixture.Containers.showInFrame;
-
+import com.blazemeter.jmeter.commons.SwingUtils;
 import java.util.Collections;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-
-import com.blazemeter.jmeter.commons.SwingUtils;
 import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.fixture.JPanelFixture;
 import org.junit.After;

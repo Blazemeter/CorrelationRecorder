@@ -116,17 +116,17 @@ public class SiebelContext extends BaseCorrelationContext {
   public String toString() {
     return "SiebelContext{" + "bcis=" + (bcis.isEmpty() ? "{}"
         : bcis.keySet().stream()
-            .map(key -> key + "=" + bcis.get(key))
-            .collect(Collectors.joining(", ", "{", "}"))) +
+        .map(key -> key + "=" + bcis.get(key))
+        .collect(Collectors.joining(", ", "{", "}"))) +
         ", paramRowFields=" + (paramRowFields.isEmpty() ? "{}"
         : paramRowFields.keySet().stream()
-            .map(key -> key + "=" + paramRowFields.get(key))
-            .collect(Collectors.joining(", ", "{", "}"))) +
+        .map(key -> key + "=" + paramRowFields.get(key))
+        .collect(Collectors.joining(", ", "{", "}"))) +
         ", prefixId=" + prefixId +
         ", rowVars=" + (rowVars.isEmpty() ? "{}"
         : rowVars.keySet().stream()
-            .map(key -> key + "=" + rowVars.get(key))
-            .collect(Collectors.joining(",", "{", "}"))) +
+        .map(key -> key + "=" + rowVars.get(key))
+        .collect(Collectors.joining(",", "{", "}"))) +
         ", counter=" + counter +
         '}';
   }

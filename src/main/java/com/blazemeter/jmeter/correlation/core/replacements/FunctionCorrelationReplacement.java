@@ -31,7 +31,7 @@ public class FunctionCorrelationReplacement<T extends BaseCorrelationContext> ex
 
   @Override
   public String replaceWithRegex(String input, String regex, String variableName,
-      JMeterVariables vars) throws MalformedPatternException {
+                                 JMeterVariables vars) throws MalformedPatternException {
     return replaceWithRegexAndPredicate(input, regex, variableName, match -> true);
   }
 

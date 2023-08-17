@@ -3,28 +3,34 @@ package com.blazemeter.jmeter.correlation.gui.analysis;
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.analysis.Analysis;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
+import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
+import com.blazemeter.jmeter.correlation.core.templates.Repository;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import com.blazemeter.jmeter.correlation.core.templates.repository.Properties;
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
+import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationWizard;
 import com.blazemeter.jmeter.correlation.gui.automatic.WizardStepPanel;
+import com.blazemeter.jmeter.correlation.gui.common.TemplateVersionUtils;
+import com.blazemeter.jmeter.correlation.gui.templates.UpdateRepositoriesWorker;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
-import javax.swing.DefaultCellEditor;
+import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -32,12 +38,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
+import javax.swing.text.DefaultCaret;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,16 +56,15 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
   private static final String CANCEL = "cancel";
   private static final String RELOAD = "reload";
   private final Analysis analysis = new Analysis();
-  private JTable correlationRulesTable;
+  private TemplatesSelectionTable selectionTable;
   private JEditorPane informationPane;
   private JTextField traceFilePath;
-  private BiConsumer<List<TemplateVersion>, String> startNonCorrelatedAnalysis;
-  private Supplier<List<TemplateVersion>> templateVersionSupplier;
-  private Map<String, List<TemplateVersion>> correlationTemplates = new HashMap<>();
+  private BiConsumer<List<Template>, String> startNonCorrelatedAnalysis;
 
-  public CorrelationTemplatesSelectionPanel(Supplier<List<TemplateVersion>> versionsSupplier) {
-    super();
-    this.templateVersionSupplier = versionsSupplier;
+  private JButton continueButton;
+
+  public CorrelationTemplatesSelectionPanel(CorrelationWizard wizard) {
+    super(wizard);
     initPanel();
   }
 
@@ -81,11 +85,10 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     JSplitPane splitPane = new JSplitPane();
     splitPane.setLeftComponent(correlationRulesSelectionPanel);
     splitPane.setRightComponent(correlationRulesInformationPanel);
-    splitPane.setResizeWeight(0.4);
+    splitPane.setResizeWeight(0);
     splitPane.setName("splitPane");
-    splitPane.setDividerLocation(0.4);
     splitPane.setBorder(BorderFactory.createEmptyBorder());
-    splitPane.setDividerLocation(300);
+    splitPane.setDividerLocation(330);
 
     JPanel selectionPanel = new JPanel();
     selectionPanel.setLayout(new BorderLayout());
@@ -136,31 +139,12 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
   private JPanel buildCorrelationRulesSelectionPanel() {
     JPanel correlationRulesSelectionPanel = new JPanel();
     correlationRulesSelectionPanel.setName("templateSelectionPanel");
-    correlationRulesTable = new JTable();
-    correlationRulesTable.setPreferredScrollableViewportSize(new Dimension(500, 70));
-    correlationRulesTable.setModel(new DefaultTableModel(
-        new Object[][] {},
-        new String[] {"Select", "Name", "Version"}) {
+    selectionTable = new TemplatesSelectionTable();
+    selectionTable.addRowSelectionListener(displaySelectedTemplateInformation());
+    selectionTable.setPreferredScrollableViewportSize(new Dimension(500, 70));
+    selectionTable.setFillsViewportHeight(true);
 
-      Class[] types = new Class[] {
-          java.lang.Boolean.class, java.lang.String.class, java.lang.String.class};
-
-      boolean[] canEdit = new boolean[] {true, false, true};
-
-      public Class getColumnClass(int columnIndex) {
-        return types[columnIndex];
-      }
-
-      public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return canEdit[columnIndex];
-      }
-    });
-    correlationRulesTable.setFillsViewportHeight(true);
-    correlationRulesTable.getSelectionModel()
-        .addListSelectionListener(displaySelectedTemplateInformation());
-    TableColumn versionColumn = correlationRulesTable.getColumnModel().getColumn(2);
-    versionColumn.setCellEditor(new VersionCellEditor());
-    JScrollPane correlationRulesTableScrollPane = new JScrollPane(correlationRulesTable);
+    JScrollPane correlationRulesTableScrollPane = new JScrollPane(selectionTable);
 
     GroupLayout layout = new GroupLayout(correlationRulesSelectionPanel);
     correlationRulesSelectionPanel.setLayout(layout);
@@ -169,7 +153,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(correlationRulesTableScrollPane, GroupLayout.DEFAULT_SIZE, 300,
+                    .addComponent(correlationRulesTableScrollPane, GroupLayout.DEFAULT_SIZE, 400,
                         Short.MAX_VALUE))
                 .addContainerGap()));
 
@@ -178,7 +162,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(correlationRulesTableScrollPane, GroupLayout.DEFAULT_SIZE, 250,
+                .addComponent(correlationRulesTableScrollPane, GroupLayout.DEFAULT_SIZE, 200,
                     Short.MAX_VALUE)
                 .addContainerGap())
     );
@@ -186,96 +170,35 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     return correlationRulesSelectionPanel;
   }
 
-  private class VersionCellEditor extends DefaultCellEditor {
-
-    private JComboBox<String> comboBox;
-    private String selectedVersion;
-    private String selectedTemplate;
-
-    private VersionCellEditor() {
-      super(new JComboBox<>());
-      comboBox = (JComboBox<String>) getComponent();
-      comboBox.addActionListener(e -> {
-        selectedVersion = (String) comboBox.getSelectedItem();
-        correlationTemplates.get(selectedTemplate).stream()
-            .filter(templateVersion -> templateVersion.getVersion().equals(selectedVersion))
-            .findFirst()
-            .ifPresent(CorrelationTemplatesSelectionPanel.this::onTemplateVersionFocus);
-      });
-    }
-
-    @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-                                                 int row, int column) {
-      selectedTemplate = (String) table.getValueAt(row, 1);
-      comboBox.removeAllItems();
-      correlationTemplates.get(selectedTemplate)
-          .forEach(templateVersion -> comboBox.addItem(templateVersion.getVersion()));
-      return comboBox;
-    }
-
-    @Override
-    public Object getCellEditorValue() {
-      return selectedVersion;
-    }
-  }
-
   private ListSelectionListener displaySelectedTemplateInformation() {
-    return e -> {
-      TemplateVersion selectedVersion = getSelectedTemplateVersion();
-      if (selectedVersion == null) {
-        return;
-      }
-
-      onTemplateVersionFocus(selectedVersion);
-    };
+    return e -> onTemplateVersionFocus(selectionTable.getSelectedTemplateVersion());
   }
 
-  private TemplateVersion getSelectedTemplateVersion() {
-    int selectedRow = correlationRulesTable.getSelectedRow();
-    if (selectedRow == -1) {
-      return null;
-    }
-
-    return getSelectedVersionAt(selectedRow);
-  }
-
-  private TemplateVersion getSelectedVersionAt(int row) {
-    List<TemplateVersion> templateVersions = correlationTemplates
-        .get(correlationRulesTable.getValueAt(row, 1));
-    if (templateVersions == null) {
-      return null;
-    }
-
-    String version = (String) correlationRulesTable.getValueAt(row, 2);
-    TemplateVersion selectedVersion = templateVersions.get(templateVersions.size() - 1);
-    for (TemplateVersion templateVersion : templateVersions) {
-      if (version.equals(templateVersion.getVersion())) {
-        selectedVersion = templateVersion;
-        break;
-      }
-    }
-
-    return selectedVersion;
-  }
-
-  private void onTemplateVersionFocus(TemplateVersion focusedVersion) {
-    if (focusedVersion == null) {
-      LOG.warn("No TemplateVersion selected");
+  private void onTemplateVersionFocus(Template focusedVersion) {
+    if (focusedVersion == null || informationPane == null) {
       return;
     }
 
-    if (informationPane == null) {
-      return;
-    }
+    TemplateSelectionTableModel model = (TemplateSelectionTableModel) selectionTable.getModel();
+    boolean canUse = model.canUseTemplate(focusedVersion);
 
-    informationPane.setText(new StringBuilder()
-        .append("<html><body><h1>").append(focusedVersion.getId()).append("(")
-        .append(focusedVersion.getRepositoryId()).append(")").append("</h1>")
-        .append("<p>Correlation Template Name: <b>")
-        .append(focusedVersion.getDescription()).append("</b></p>")
-        .append("<p>Correlation Template Version: <b>")
-        .append(focusedVersion.getVersion()).append("</b></p>").toString());
+    informationPane.setText(
+        TemplateVersionUtils.getInformationAsHTLM(focusedVersion, false, canUse));
+    informationPane.setCaretPosition(0); // Scroll to the top
+  }
+
+  public void loadPanel() {
+    if (this.wizard.getRepositoriesConfiguration().getCorrelationRepositories().isEmpty()) {
+      reloadCorrelationTemplates();
+    } else {
+      this.loadCorrelationTemplates();
+    }
+  }
+
+  public void loadCorrelationTemplates() {
+    Map<String, Repository> repositoryMap = this.wizard.getRepositoriesSupplier().get();
+    selectionTable.setRepositories(repositoryMap);
+    selectionTable.selectFirstRow();
   }
 
   private JPanel buildCorrelationRulesInformationPanel() {
@@ -286,15 +209,13 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     informationPane.setEditable(false);
     informationPane.setContentType("text/html");
     informationPane.setText(
-        "<html><body><h1>Correlation Template Information</h1><p>"
-            + "Correlation Template Name: <b>Correlation Template 1</b></p><p>"
-            + "Correlation Template Version: <b>1.0</b></p><p>Correlation Template Description: "
-            + "<b>Correlation Template 1 Description</b></p></body></html>");
+        "<html><p>Select a Template on the list to see it's information</p></html>");
     informationPane.setPreferredSize(new Dimension(300, 250));
-    //informationPane.setBorder(BorderFactory.createEtchedBorder());
-    // Add an inside border to the information pane
-
     informationPane.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+    // Don't allow to automatic scroll the area
+    informationPane.setCaretPosition(0);
+    ((DefaultCaret) informationPane.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
     JScrollPane scrollPane = new JScrollPane(informationPane);
 
@@ -320,20 +241,23 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
   }
 
   private JPanel buildButtonsPanel() {
-    SwingUtils.ButtonBuilder builder = new SwingUtils.ButtonBuilder()
-        .withActionListener(this);
+    JPanel traceFilePanel = new JPanel();
+    BoxLayout boxLayout = new BoxLayout(traceFilePanel, BoxLayout.X_AXIS);
+    traceFilePanel.setLayout(boxLayout);
 
-    JPanel traceFilePanel = new JPanel(new FlowLayout());
     traceFilePanel.setBorder(BorderFactory.createTitledBorder("Select the .jtl file to use"));
     traceFilePath = new JTextField();
+
+    SwingUtils.ButtonBuilder builder = new SwingUtils.ButtonBuilder().withActionListener(this);
     traceFilePanel.add(traceFilePath);
     traceFilePanel.add(
         builder.withAction(BROWSE).withText("Browse").withName("templateBrowseButton").build());
     JButton cancelButton =
         builder.withAction(CANCEL).withText("Cancel").withName("templateCancelButton").build();
-    JButton continueButton =
+    continueButton =
         builder.withAction(CONTINUE).withText("Continue").withName("templateContinueButton")
             .build();
+    enableContinue(false);
 
     JPanel buttonPanel = new JPanel(new FlowLayout());
     buttonPanel.add(cancelButton);
@@ -356,15 +280,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
         validateAndContinue();
         break;
       case BROWSE:
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.setFileFilter(
-            new FileNameExtensionFilter("JTL Files", "jtl"));
-        int returnVal = fileChooser.showOpenDialog(this);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fileChooser.getSelectedFile();
-          traceFilePath.setText(file.getAbsolutePath());
-        }
+        browseForJtl();
         break;
       case RELOAD:
         this.reloadCorrelationTemplates();
@@ -374,8 +290,28 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     }
   }
 
+  private void reloadCorrelationTemplates() {
+    UpdateRepositoriesWorker worker = new UpdateRepositoriesWorker() {
+      @Override
+      protected Boolean doInBackground() {
+        return wizard.getRepositoriesConfiguration().refreshRepositories(
+            wizard.getRepositoriesConfiguration().getLocalRootFolder(), this::setProgress,
+            this::publish);
+      }
+    };
+
+    worker.addPropertyChangeListener(evt -> {
+      if (evt.getPropertyName().equals("state") && evt.getNewValue()
+          .equals(SwingWorker.StateValue.DONE)) {
+        loadCorrelationTemplates();
+      }
+    });
+
+    worker.execute();
+  }
+
   private void validateAndContinue() {
-    if (getSelectedTemplateVersions().isEmpty()) {
+    if (selectionTable.notSelectedTemplates()) {
       JOptionPane.showMessageDialog(this, "Please select a template version to continue",
           "No Template Selected", JOptionPane.ERROR_MESSAGE);
       return;
@@ -391,86 +327,100 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
   }
 
   private void onContinue() {
-    this.startNonCorrelatedAnalysis.accept(getSelectedTemplateVersions(), traceFilePath.getText());
+    Map<String, List<TemplateVersion>> repositoryGrouped
+        = selectionTable.getSelectedTemplateWithRepositoryMap();
+
+    List<Template> canUseTemplates = new ArrayList<>();
+    List<Template> cannotUseTemplates = new ArrayList<>();
+    for (Map.Entry<String, List<TemplateVersion>> entry : repositoryGrouped.entrySet()) {
+      String repositoryName = entry.getKey();
+      List<TemplateVersion> templates = entry.getValue();
+      CorrelationTemplatesRepositoriesConfiguration config
+          = this.wizard.getRepositoriesConfiguration();
+      RepositoryManager repManager = config.getRepositoryManager(repositoryName);
+
+      Map<Template, TemplateProperties> templatesAndProperties
+          = repManager.getTemplatesAndProperties(templates);
+
+      if (templatesAndProperties == null || templatesAndProperties.isEmpty()) {
+
+        templatesAndProperties = config
+            .getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, true);
+      }
+
+      for (Map.Entry<Template, TemplateProperties> templateEntry
+          : templatesAndProperties.entrySet()) {
+        TemplateProperties value = templateEntry.getValue();
+        Properties properties = new Properties();
+        properties.putAll(value);
+
+        if (properties.canUse()) {
+          canUseTemplates.add(templateEntry.getKey());
+        } else {
+          cannotUseTemplates.add(templateEntry.getKey());
+        }
+      }
+    }
+
+    if (!cannotUseTemplates.isEmpty()) {
+      JOptionPane.showMessageDialog(this,
+          "You don't have permission to use the following templates:\n"
+              + cannotUseTemplates.stream()
+              .map(RepositoryUtils::getTemplateInfo)
+              .collect(Collectors.joining("\n")),
+          "Cannot use templates", JOptionPane.ERROR_MESSAGE);
+    }
+
+    this.startNonCorrelatedAnalysis.accept(canUseTemplates, traceFilePath.getText());
   }
 
-  public void setStartNonCorrelatedAnalysis(BiConsumer<List<TemplateVersion>,
+  private void browseForJtl() {
+    JFileChooser fileChooser = new JFileChooser();
+    fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    fileChooser.setFileFilter(new FileNameExtensionFilter("JTL Files", "jtl"));
+    if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+      File file = fileChooser.getSelectedFile();
+      traceFilePath.setText(file.getAbsolutePath());
+      enableContinue(true);
+    }
+  }
+
+  private void enableContinue(boolean enable) {
+    continueButton.setEnabled(enable);
+    continueButton.setToolTipText(enable ? "" : "Analysis is enabled if a recording exists."
+        + "\n"
+        + "Make a recording or select a .jtl of a recording to be analyzed.");
+  }
+
+  public void setStartNonCorrelatedAnalysis(BiConsumer<List<Template>,
       String> nonCorrelatedAnalysis) {
     this.startNonCorrelatedAnalysis = nonCorrelatedAnalysis;
   }
 
-  public void reloadCorrelationTemplates() {
-    List<TemplateVersion> templateVersions = templateVersionSupplier.get();
-    correlationTemplates.clear();
-    for (TemplateVersion templateVersion : templateVersions) {
-      String templateId = templateVersion.getId() + " (" + templateVersion.getRepositoryId() + ")";
-
-      List<TemplateVersion> versions = correlationTemplates
-          .computeIfAbsent(templateId, k -> new ArrayList<>());
-      versions.add(templateVersion);
-    }
-
-    DefaultTableModel model = (DefaultTableModel) correlationRulesTable.getModel();
-    model.setRowCount(0);
-
-    correlationTemplates.forEach((id, versionList) -> {
-      String versionString = versionList.stream()
-          .map(TemplateVersion::getVersion)
-          .collect(Collectors.joining(", "));
-      model.addRow(new Object[] {true, id, versionString});
-    });
-  }
-
   public void setRecordingTrace() {
     String fileName = JMeterElementUtils.getRecordingResultFileName();
-    traceFilePath.setText(fileName != null && !fileName.isEmpty()
+    boolean fileExist = fileName != null && !fileName.isEmpty();
+    traceFilePath.setText(fileExist
         ? fileName : "Enter the path of the .jtl file to use");
+    enableContinue(fileExist);
   }
 
   @VisibleForTesting
   public void setRecordingTrace(String fileName) {
     traceFilePath.setText(fileName);
-  }
-
-  public void setTemplateVersionSupplier(Supplier<List<TemplateVersion>> templateVersionSupplier) {
-    this.templateVersionSupplier = templateVersionSupplier;
-  }
-
-  public List<TemplateVersion> getSelectedTemplateVersions() {
-    List<TemplateVersion> selectedTemplateVersions = new ArrayList<>();
-    for (int i = 0; i < correlationRulesTable.getRowCount(); i++) {
-      if (!isTemplateRowSelected(i)) {
-        continue;
-      }
-
-      TemplateVersion selectedVersion = getSelectedVersionAt(i);
-      if (selectedVersion == null) {
-        LOG.warn("No version selected for template {}", getTemplateNameAt(i));
-        continue;
-      }
-      selectedTemplateVersions.add(selectedVersion);
-    }
-    return selectedTemplateVersions;
-  }
-
-  private boolean isTemplateRowSelected(int row) {
-    return (boolean) correlationRulesTable.getValueAt(row, 0);
-  }
-
-  private String getTemplateNameAt(int row) {
-    return (String) correlationRulesTable.getValueAt(row, 1);
+    enableContinue(false);
   }
 
   public String getTraceFilePath() {
     return traceFilePath.getText();
   }
 
-  public void runNonCorrelatedAnalysis(List<TemplateVersion> templatesToAnalyse,
+  public void runNonCorrelatedAnalysis(List<Template> templatesToAnalyse,
                                        String recordingTrace) {
     analysis.run(templatesToAnalyse, recordingTrace, false);
   }
 
-  public void runCorrelatedAnalysis(List<TemplateVersion> templatesApply,
+  public void runCorrelatedAnalysis(List<Template> templatesApply,
                                     String recordingTrace) {
     analysis.run(templatesApply, recordingTrace, true);
   }

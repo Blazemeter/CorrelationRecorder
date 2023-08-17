@@ -1,8 +1,11 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public interface CorrelationTemplatesRepositoriesRegistryHandler {
@@ -15,7 +18,11 @@ public interface CorrelationTemplatesRepositoriesRegistryHandler {
 
   String getConfigurationRoute();
 
-  List<TemplateVersion> getCorrelationTemplatesByRepositoryName(String name);
+  Map<Template, TemplateProperties> getCorrelationTemplatesAndPropertiesByRepositoryName(
+      String name, boolean useLocal);
+
+  Map<String, CorrelationTemplateVersions> getCorrelationTemplateVersionsByRepositoryName(
+      String name, boolean useLocal);
 
   void installTemplate(String repositoryName, String id, String version)
       throws ConfigurationException;
@@ -24,6 +31,10 @@ public interface CorrelationTemplatesRepositoriesRegistryHandler {
       throws ConfigurationException;
 
   String getRepositoryURL(String name);
+
+  RepositoryManager getRepositoryManager(String name);
+
+  RepositoryManager getRepositoryManager(String name, String url);
 
   List<File> getConflictingInstalledDependencies(List<CorrelationTemplateDependency> dependencies);
 
@@ -38,5 +49,6 @@ public interface CorrelationTemplatesRepositoriesRegistryHandler {
   List<String> checkURL(String id, String url);
 
   boolean refreshRepositories(String localConfigurationRoute,
-      Consumer<Integer> setProgressConsumer);
+                              Consumer<Integer> setProgressConsumer,
+                              Consumer<String> setStatusConsumer);
 }

@@ -14,7 +14,7 @@ public class CorrelationRule {
   private boolean enabled;
 
   public CorrelationRule(String referenceName, CorrelationExtractor<?> correlationExtractor,
-      CorrelationReplacement<?> correlationReplacement) {
+                         CorrelationReplacement<?> correlationReplacement) {
     this.referenceName = referenceName;
     this.enabled = true;
     this.correlationExtractor = correlationExtractor;

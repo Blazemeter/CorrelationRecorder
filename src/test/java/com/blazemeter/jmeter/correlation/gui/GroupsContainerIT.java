@@ -2,7 +2,6 @@ package com.blazemeter.jmeter.correlation.gui;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
-
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.swing.fixture.FrameFixture;
@@ -89,7 +88,7 @@ public class GroupsContainerIT {
   @Test
   public void shouldAddGroupWhenAddPressed() {
     addGroup();
-    assertThat(table.contents()[0]).isNotEqualTo(new String[]{null, null, null});
+    assertThat(table.contents()[0]).isNotEqualTo(new String[] {null, null, null});
   }
 
   @Test

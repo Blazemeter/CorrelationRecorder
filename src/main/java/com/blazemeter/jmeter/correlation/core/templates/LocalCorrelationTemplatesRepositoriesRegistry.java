@@ -1,12 +1,14 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.LOCAL_REPOSITORY_NAME;
-import static com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration.REPOSITORY_NAME_SUFFIX;
-import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.JSON_FILE_EXTENSION;
+import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.PROPERTIES_FILE_SUFFIX;
 import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.SNAPSHOT_FILE_TYPE;
 import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.TEMPLATE_FILE_SUFFIX;
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.LOCAL_REPOSITORY_NAME;
+import static com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils.removeRepositoryNameFromFile;
 import static org.apache.commons.io.FileUtils.copyFile;
 
+import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
+import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,12 +28,12 @@ import org.slf4j.LoggerFactory;
 public class LocalCorrelationTemplatesRepositoriesRegistry implements
     CorrelationTemplatesRepositoriesRegistry {
 
-  public static final String REPOSITORY_FILE_SUFFIX = REPOSITORY_NAME_SUFFIX + JSON_FILE_EXTENSION;
+  public static final String SNAPSHOT_SUFFIX = "-snapshot";
+  public static final String SNAPSHOT_FILE_EXTENSION = "." + SNAPSHOT_FILE_TYPE;
+  public static final String SNAPSHOT_FILE_SUFFIX = SNAPSHOT_SUFFIX + SNAPSHOT_FILE_EXTENSION;
+
   private static final Logger LOG = LoggerFactory
       .getLogger(LocalCorrelationTemplatesRepositoriesRegistry.class);
-  private static final String SNAPSHOT_SUFFIX = "-snapshot";
-  private static final String SNAPSHOT_FILE_EXTENSION = "." + SNAPSHOT_FILE_TYPE;
-  public static final String SNAPSHOT_FILE_SUFFIX = SNAPSHOT_SUFFIX + SNAPSHOT_FILE_EXTENSION;
 
   protected LocalConfiguration configuration;
 
@@ -48,22 +50,23 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
       String installationFolderPath =
           Paths.get(
               configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderName
-          ).toAbsolutePath().toString() + File.separator;
+          ).toAbsolutePath() + File.separator;
 
       File repositoryFolder = new File(installationFolderPath);
       if (!repositoryFolder.exists() && repositoryFolder.mkdir()) {
         LOG.info("Created the folder for the repository {}", name);
         configuration.addRepository(name, url);
       }
-      String repositoryFilePath = installationFolderPath + name + REPOSITORY_FILE_SUFFIX;
+      String repositoryFilePath =
+          installationFolderPath + RepositoryUtils.getRepositoryFileName(name);
 
       copyFileFromPath(path, repositoryFilePath);
 
       String basePath = getBasePath(path);
-      Map<String, CorrelationTemplateReference> templatesReferences = readTemplatesReferences(
-          new File(installationFolderPath + name + REPOSITORY_FILE_SUFFIX));
+      Map<String, CorrelationTemplateVersions> templatesReferences = readTemplatesVersions(
+          new File(installationFolderPath + RepositoryUtils.getRepositoryFileName(name)));
 
-      for (Map.Entry<String, CorrelationTemplateReference> entry : templatesReferences.entrySet()) {
+      for (Map.Entry<String, CorrelationTemplateVersions> entry : templatesReferences.entrySet()) {
         for (String version : entry.getValue().getVersions()) {
           String templateFileName = entry.getKey() + "-" + version;
 
@@ -83,7 +86,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
   }
 
   private String getBasePath(String path) {
-    return Paths.get(path).getParent().toAbsolutePath().toString() + File.separator;
+    return Paths.get(path).getParent().toAbsolutePath() + File.separator;
   }
 
   private void copyFileFromPath(String source, String templateFileName) throws IOException {
@@ -101,29 +104,33 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
     repositoriesList.forEach(r -> {
       File repositoryFile = new File(
           Paths.get(
-              configuration.getCorrelationsTemplateInstallationFolder(),
-              (
-                  r.equals(LOCAL_REPOSITORY_NAME)
-                      ? ""
-                      : r + File.separator) + r
-                  + REPOSITORY_FILE_SUFFIX).toAbsolutePath().toString()
+                  configuration.getCorrelationsTemplateInstallationFolder(),
+                  (
+                      r.equals(LOCAL_REPOSITORY_NAME)
+                          ? ""
+                          : r + File.separator) + RepositoryUtils.getRepositoryFileName(r))
+              .toAbsolutePath().toString()
       );
-      String repoName = repositoryFile.getName().replace(REPOSITORY_FILE_SUFFIX, "");
-      try {
-        CorrelationTemplatesRepository loadedRepository =
-            new CorrelationTemplatesRepository(repoName,
-                readTemplatesReferences(repositoryFile));
+      String repoName = removeRepositoryNameFromFile(repositoryFile.getName());
+      if (repositoryFile.exists()) {
+        try {
+          CorrelationTemplatesRepository loadedRepository =
+              new CorrelationTemplatesRepository(repoName,
+                  readTemplatesVersions(repositoryFile));
 
-        correlationRepositoryList.add(loadedRepository);
-      } catch (IOException e) {
-        LOG.error("There was an issue trying to read the file {}.", repositoryFile.getName(), e);
+          correlationRepositoryList.add(loadedRepository);
+        } catch (IOException e) {
+          LOG.error("There was an issue trying to read the file {}.", repositoryFile.getName(), e);
+        }
+      } else {
+        LOG.warn("Repository file not found {}.", repositoryFile);
       }
     });
 
     return correlationRepositoryList;
   }
 
-  public Map<String, CorrelationTemplateReference> readTemplatesReferences(File source)
+  public Map<String, CorrelationTemplateVersions> readTemplatesVersions(File source)
       throws IOException {
     return configuration.readTemplatesReferences(source);
   }
@@ -144,12 +151,12 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
       File source = new File(
           Paths.get(
               configuration.getCorrelationsTemplateInstallationFolder(), repositoryFolderPath,
-              id + REPOSITORY_FILE_SUFFIX).toAbsolutePath().toString());
-      Map<String, CorrelationTemplateReference> templatesReferences = readTemplatesReferences(
+              RepositoryUtils.getRepositoryFileName(id)).toAbsolutePath().toString());
+      Map<String, CorrelationTemplateVersions> templatesReferences = readTemplatesVersions(
           source);
 
       return new CorrelationTemplatesRepository(
-          source.getName().replace(REPOSITORY_FILE_SUFFIX, ""),
+          removeRepositoryNameFromFile(source.getName()),
           templatesReferences);
     } catch (IOException e) {
       LOG.warn("There was and issue trying to get the templates from the repository.", e);
@@ -181,39 +188,107 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
     }
   }
 
-  public List<TemplateVersion> getCorrelationTemplatesByRepositoryId(String id) {
-    List<File> templates = Stream.of(Objects.requireNonNull((new File(
-        configuration.getCorrelationsTemplateInstallationFolder() + (
-            id.equals(LOCAL_REPOSITORY_NAME) ? "" : id)))
-        .listFiles()))
-        .filter(f -> f.getName().endsWith(TEMPLATE_FILE_SUFFIX))
-        .collect(Collectors.toList());
-
-    List<TemplateVersion> relatedTemplates = new ArrayList<>();
-    templates.forEach(t -> {
+  @Override
+  public Map<Template, TemplateProperties> getCorrelationTemplatesAndPropertiesByRepositoryId(
+      String id) {
+    List<File> templates = getTemplatesFilesByRepositoryId(id);
+    Map<Template, TemplateProperties> relatedTemplates = new HashMap<>();
+    templates.forEach(templateFile -> {
       try {
-        TemplateVersion template = configuration.readValue(t, TemplateVersion.class);
-
-        template.setRepositoryId(id);
-        template
-            .setInstalled(configuration.isInstalled(id, template.getId(), template.getVersion()));
-
-        relatedTemplates.add(template);
+        Template template = loadTemplateFromFile(id, templateFile);
+        relatedTemplates.put(template, loadTemplatePropertiesFromFile(templateFile));
       } catch (IOException e) {
-        LOG.warn("There was an issue trying to get the Template from {}.", t, e);
+        LOG.warn("There was an issue trying to get the Template from {}.", templateFile, e);
       }
     });
 
     return relatedTemplates;
   }
 
+  @Override
+  public Map<Template, TemplateProperties> getCorrelationTemplatesAndPropertiesByRepositoryId(
+      String id, List<TemplateVersion> filter) {
+    List<File> templatesFiles = getTemplatesFilesByRepositoryId(id);
+
+    Map<Template, TemplateProperties> relatedTemplates = new HashMap<>();
+    templatesFiles.forEach(file -> {
+      try {
+        Template template = loadTemplateFromFile(id, file);
+        filter.forEach(f -> {
+          if (template.getId().equals(f.getName())
+              && template.getVersion().equals(f.getVersion())) {
+            try {
+              relatedTemplates.put(template, loadTemplatePropertiesFromFile(file));
+            } catch (IOException e) {
+              LOG.warn("There was an issue trying to get the Template from {}.", file, e);
+            }
+          }
+        });
+      } catch (IOException e) {
+        LOG.warn("There was an issue trying to get the Template from {}.", file, e);
+      }
+    });
+    return relatedTemplates;
+  }
+
+  private Template loadTemplateFromFile(String repositoryId, File templateFile) throws IOException {
+    Template template = configuration.readValue(templateFile, Template.class);
+    template.setRepositoryId(repositoryId);
+    template.setInstalled(
+        configuration.isInstalled(repositoryId, template.getId(), template.getVersion()));
+    return template;
+  }
+
+  private List<File> getTemplatesFilesByRepositoryId(String id) {
+    return Stream.of(Objects.requireNonNull((new File(
+            configuration.getCorrelationsTemplateInstallationFolder() + (
+                id.equals(LOCAL_REPOSITORY_NAME) ? "" : id)))
+            .listFiles()))
+        .filter(f -> f.getName().endsWith(TEMPLATE_FILE_SUFFIX))
+        .collect(Collectors.toList());
+  }
+
+  private TemplateProperties loadTemplatePropertiesFromFile(File templateFile) throws IOException {
+    String propertiesFilepath =
+        templateFile.getAbsolutePath().replace(TEMPLATE_FILE_SUFFIX, PROPERTIES_FILE_SUFFIX);
+    TemplateProperties templateProperties = new TemplateProperties();
+    if (Files.notExists(Paths.get(propertiesFilepath))) {
+      LOG.warn("The properties file '{}' for the template '{}' was not found.",
+          propertiesFilepath, templateFile.getName());
+    } else {
+      templateProperties =
+          configuration.readValue(new File(propertiesFilepath), TemplateProperties.class);
+    }
+    return templateProperties;
+  }
+
+  @Override
+  public Map<String, CorrelationTemplateVersions> getCorrelationTemplateVersionsByRepositoryId(
+      String name) {
+    File repositoryFile = new File(
+        Paths.get(
+                configuration.getCorrelationsTemplateInstallationFolder(),
+                (
+                    name.equals(LOCAL_REPOSITORY_NAME)
+                        ? ""
+                        : name + File.separator) + RepositoryUtils.getRepositoryFileName(name))
+            .toAbsolutePath().toString()
+    );
+    try {
+      return readTemplatesVersions(repositoryFile);
+    } catch (IOException e) {
+      LOG.error("There was an issue trying to read the file {}.", repositoryFile.getName(), e);
+    }
+    return null;
+  }
+
   public boolean isLocalTemplateVersionSaved(String templateId, String templateVersion) {
     return Stream.of(Objects.requireNonNull((new File(
-        configuration.getCorrelationsTemplateInstallationFolder()))
-        .listFiles()))
+            configuration.getCorrelationsTemplateInstallationFolder()))
+            .listFiles()))
         .anyMatch(f -> f.getName().toLowerCase()
-            .startsWith(templateId.toLowerCase() + "-" + templateVersion.toLowerCase()) &&
-            f.getName().endsWith(TEMPLATE_FILE_SUFFIX));
+            .startsWith(templateId.toLowerCase() + "-" + templateVersion.toLowerCase())
+            && f.getName().endsWith(TEMPLATE_FILE_SUFFIX));
   }
 
   public void installTemplate(String repositoryName, String templateId, String templateVersion)
@@ -248,27 +323,27 @@ public class LocalCorrelationTemplatesRepositoriesRegistry implements
     manageTemplate(LocalConfiguration.UNINSTALL, repositoryName, templateId, templateVersion);
   }
 
-  String getRepositoryURL(String name) {
+  public String getRepositoryURL(String name) {
     return configuration.getRepositoryURL(name);
   }
 
   public void updateLocalRepository(String templateId, String templateVersion) {
     File localRepositoryFile = new File(
-        configuration.getCorrelationsTemplateInstallationFolder() + LOCAL_REPOSITORY_NAME
-            + REPOSITORY_FILE_SUFFIX);
+        configuration.getCorrelationsTemplateInstallationFolder()
+            + RepositoryUtils.getRepositoryFileName(LOCAL_REPOSITORY_NAME));
     try {
       CorrelationTemplatesRepository localRepository;
 
       if (!localRepositoryFile.exists()) {
         localRepositoryFile.createNewFile();
         localRepository = new CorrelationTemplatesRepository();
-        localRepository.setTemplates(new HashMap<String, CorrelationTemplateReference>() {
+        localRepository.setTemplates(new HashMap<String, CorrelationTemplateVersions>() {
         });
         configuration.writeValue(localRepositoryFile, localRepository.getTemplates());
         LOG.info("No local repository file found. Created a new one instead");
       } else {
         localRepository = new CorrelationTemplatesRepository("local",
-            readTemplatesReferences(localRepositoryFile));
+            readTemplatesVersions(localRepositoryFile));
       }
 
       localRepository.addTemplate(templateId, templateVersion);

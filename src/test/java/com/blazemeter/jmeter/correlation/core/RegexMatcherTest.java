@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.BeforeClass;
@@ -15,7 +14,8 @@ public class RegexMatcherTest {
           "Test First Group=789\", Test Second Group=10\"";
   private static final String INPUT_STRING_TWO = "Test First Group=123\", Test Second Group=456\"";
   private static final String REGEX_MATCHES = "Test First Group=(.*?)\", Test Second Group=(.*?)\"";
-  private static final String REGEX_DOES_NOT_MATCH = "Test Regex Does Not Match Group=(.*?)\", Test Second Group=(.*?)\"";
+  private static final String REGEX_DOES_NOT_MATCH =
+      "Test Regex Does Not Match Group=(.*?)\", Test Second Group=(.*?)\"";
   private static final int REGEX_GROUP = 1;
   private static final String EXPECTED_FIRST_MATCH = "123";
   private static final String EXPECTED_SECOND_MATCH = "789";

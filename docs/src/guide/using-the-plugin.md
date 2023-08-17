@@ -4,9 +4,16 @@ next: /guide/correlation-process.md
 prev: /guide/installation-guide.md
 ---
 
-# Using the Plugin
-In this section, you will learn how to use the Correlation Recorder plugin to identify dynamic parameters,
- create correlation rules, validate and test them, and apply them to your test scripts.
+# Usage
+In this page, we will explain the most common scenario when using the Correlation Recorder plugin, here you will:
+- Learn how to [identify dynamic parameters](/guide/using-the-plugin.html#identifying-dynamic-parameters) in your test scripts
+- Learn about Correlation Rules
+
+You might also be interested in other usages such as:
+
+- Storing your Rules in Correlation [Templates](/guide/correlation-templates.md)
+- Managing your Correlation [Repositories](/guide/correlation-repositories.md)
+
 
 ## Identifying dynamic parameters
 Either if you are new to the usage of JMeter or not, you will find that the Correlation Recorder plugin will help you
@@ -23,15 +30,24 @@ There are three ways to properly identify dynamic parameters in your test script
   scripts and automatically create correlations for them. Local Correlation Templates are also supported. 
 3. **Manually**: You can manually identify dynamic parameters in your test scripts, and manually correlating them.
 
-## Creating correlation rules
-As mentioned before, you can create your own rules to correlate dynamic parameters. This can be done in two ways:
+In this guide, we will focus on the first two methods, as they are the most effective ones.
+
+## Correlation Rules
+Correlation Rules are the core of the Correlation Recorder plugin. They are the ones that will help you to identify
+ dynamic parameters in your test scripts and correlate them.
+
+You can create your own Rules or use the ones created by BlazeMeter or your team. 
+
+You create them by yourself, there are two ways:
 
 1. By using the [Replay and Compare](/guide/after-recording.html#by-replay-and-compare) feature
 2. By creating the [Correlation Rules manually](/guide/correlation-rules.md)
 
-The first method is a more exploratory approach, where the plugin attempts to automatically detect the dynamic values from request that failed, while the second is more effective, as you should know exactly what you are trying to correlate. 
+The [Replay and Compare](/guide/after-recording.html#by-replay-and-compare) is a more exploratory approach, where the plugin attempts to automatically detect the dynamic values from request that failed, while [Correlation Rules manually](/guide/correlation-rules.md) is more effective, as you should know exactly what you are trying to correlate. 
 
-We recommend using the first method to identify potential dynamic values, their appearances in both responses and requests, and general rules to correlate then, and then fine tune those rules to properly correlate them.
+We recommend using [Replay and Compare](/guide/after-recording.html#by-replay-and-compare) to identify potential dynamic values, their appearances in both responses and requests, and general rules to correlate then, and then fine tune those rules to properly correlate them.
+
+If you are interested in using the Rules created by others, you can use the [Correlation Templates](/guide/correlation-templates.md) feature.
 
 ## Validating and testing the correlation rules
 
@@ -54,8 +70,8 @@ values detected from all the Correlation Templates you selected (not just the la
 Regardless of the method that was used for the creation of the Rules, the plugin will allow the appliance of
  those rules in two different ways:
 
-1. **After the recording is done** (recommended)
-2. **During the recording** (legacy)
+1. **[After the recording is done](/guide/using-the-plugin.html#applying-correlation-rules-after-the-recording-is-done)** (recommended)
+2. **[During the recording](/guide/using-the-plugin.html#during-the-recording-legacy)** (legacy)
 
 ### Applying correlation rules after the recording is done
 
@@ -99,10 +115,16 @@ Select the **Existing correlation rules (recommended** method and press "Continu
 The next step is to select the Correlation Templates to use for the analysis. You can select one or more templates.
 If you select more than one, the plugin will use the union of the dynamic values found in all of them.
 
+You can select which version of each Correlation Template to use. By default, the latest version is selected.
+
 ![Select Correlation Templates](./assets/select-correlation-template.png)
 
 ::: tip
-You can select which version of each Correlation Template to use. By default, the latest version is selected.
+
+Depending on your account type, you might see some Correlation Templates that are not available for you
+(they will have a lock icon next to them).
+
+If you want to know more about Enterprise Correlation Templates, please contact your BlazeMeter representative.
 :::
 
 4. Add the JTL file of the recording (if it isn't already loaded)

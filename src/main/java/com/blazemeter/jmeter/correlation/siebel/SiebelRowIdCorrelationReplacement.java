@@ -42,19 +42,19 @@ public class SiebelRowIdCorrelationReplacement extends RegexCorrelationReplaceme
    * SiebelContext}, followed by "_rowId". Works together with the {@link
    * com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor}.
    *
-   * <p>The method is overwritten because is necessary to alter the way inputs are made but not 
+   * <p>The method is overwritten because is necessary to alter the way inputs are made but not
    * how the Regular Expression is handled by the father class
    * {@link com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement}.
    *
-   * @param input the input against the condition will test and replacements will be applied
-   * @param regex the regular expression used to eval the input
+   * @param input        the input against the condition will test and replacements will be applied
+   * @param regex        the regular expression used to eval the input
    * @param variableName the variable name ignored in this case
-   * @param vars the stored values during the recording
+   * @param vars         the stored values during the recording
    * @return the resultant input. Will be the same if it doesn't meet the condition
    */
   @Override
   protected String replaceWithRegex(String input, String regex, String variableName,
-      JMeterVariables vars)
+                                    JMeterVariables vars)
       throws MalformedPatternException {
     for (Map.Entry<String, String> rowVar : context.getRowVars().entrySet()) {
       input = super.replaceWithRegex(input, regex, rowVar.getValue() + "_rowId", vars);

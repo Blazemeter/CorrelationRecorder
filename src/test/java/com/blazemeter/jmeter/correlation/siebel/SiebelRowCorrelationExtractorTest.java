@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.siebel;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import java.util.ArrayList;
@@ -122,6 +121,7 @@ public class SiebelRowCorrelationExtractorTest {
     regex.setDefaultValue(REFERENCE_NAME + "_NOT_FOUND");
     regex.setRegex(responseRegex);
     regex.setUseField(fieldToCheck.getCode());
+    regex.setScopeAll();
     return regex;
   }
 

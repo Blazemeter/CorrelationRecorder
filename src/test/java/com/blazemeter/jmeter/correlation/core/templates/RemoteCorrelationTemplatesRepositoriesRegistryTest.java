@@ -7,7 +7,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertTrue;
-
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.io.File;
@@ -98,10 +97,10 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
 
   private List<String> getGeneratedFilesNames() {
     return Arrays.stream(Objects.requireNonNull(
-        new File(Paths.get(
-            folder.getRoot().getAbsolutePath(), TEMPLATES_FOLDER, REPOSITORY_NAME).toAbsolutePath()
-            .toString())
-            .list()))
+            new File(Paths.get(
+                    folder.getRoot().getAbsolutePath(), TEMPLATES_FOLDER, REPOSITORY_NAME).toAbsolutePath()
+                .toString())
+                .list()))
         .filter(f -> f.toLowerCase().endsWith("repository.json") ||
             f.toLowerCase().endsWith("template.json"))
         .collect(Collectors.toList());

@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.core.analysis;
 
 import static com.blazemeter.jmeter.correlation.TestUtils.findTestFile;
-
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;

@@ -53,7 +53,7 @@ public class AnalysisReporterIT {
   @Before
   public void setup() throws IOException {
     engine = new CorrelationEngine();
-    panel = new CorrelationSuggestionsPanel();
+    panel = new CorrelationSuggestionsPanel(null);
     frame = showInFrame(panel);
     when(registry.getContext(SiebelContext.class)).thenReturn(new SiebelContext());
     when(registry.getContext(BaseCorrelationContext.class))
@@ -128,7 +128,8 @@ public class AnalysisReporterIT {
 
   private List<SampleResult> loadSampleResults() {
     return new ResultFileParser(new Configuration())
-        .loadFromFile(new File(getFilePath("/recordings/recordingTrace/recordingWithNonces.jtl")), true);
+        .loadFromFile(new File(getFilePath("/recordings/recordingTrace/recordingWithNonces.jtl")),
+            true);
   }
 
   private String getFilePath(String filename) {

@@ -37,8 +37,8 @@ public class RuleTableRow implements Serializable {
   private String oldRefVarName;
 
   public RuleTableRow(int index, Runnable update,
-      Consumer<CorrelationRulePartTestElement<?>> displayExtensionConsumer,
-      CorrelationComponentsRegistry registry) {
+                      Consumer<CorrelationRulePartTestElement<?>> displayExtensionConsumer,
+                      CorrelationComponentsRegistry registry) {
     //Needed for testing purposes
     String ruleNameId = "Rule-" + System.currentTimeMillis();
     setName(ruleNameId);
@@ -275,7 +275,7 @@ public class RuleTableRow implements Serializable {
     this.enabled = isEnable;
     updateChildrenEnableColors();
   }
-  
+
   public int getNeededHeight() {
     return Math.max(extractorPanel.getCellNeededHeight(),
         replacementPanel.getCellNeededHeight());

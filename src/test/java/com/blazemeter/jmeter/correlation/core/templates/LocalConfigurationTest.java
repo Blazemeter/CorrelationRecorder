@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
 import static com.blazemeter.jmeter.correlation.TestUtils.getFileContent;
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.CENTRAL_REPOSITORY_NAME;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -13,7 +14,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
-
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import java.io.File;
@@ -74,7 +74,8 @@ public class LocalConfigurationTest {
 
   @Before
   public void setUp() {
-    configuration = new LocalConfiguration(folder.getRoot().getPath());
+    configuration = new LocalConfiguration(folder.getRoot().getPath(), true);
+    configuration.setupRepositoryManagers();
     when(firstRepository.getName()).thenReturn(FIRST_REPO_NAME);
     when(secondRepository.getName()).thenReturn(SECOND_REPO_NAME);
     when(localRepository.getName()).thenReturn(LOCAL_REPOSITORY_NAME);
@@ -96,32 +97,32 @@ public class LocalConfigurationTest {
 
   @Test
   public void shouldReturnRepositoryNameWhenAdded() {
-    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID, localRepository.getName(),
-        firstRepository.getName()),
+    assertEquals(Arrays.asList(CENTRAL_REPOSITORY_NAME, localRepository.getName(),
+            firstRepository.getName()),
         configuration.getRepositoriesNames());
   }
 
   @Test
   public void shouldNotAddRepositoryWhenRepositoryAlreadyExists() {
     configuration.addRepository(firstRepository.getName(), firstRepositoryURL);
-    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID, localRepository.getName(),
-        firstRepository.getName()),
+    assertEquals(Arrays.asList(CENTRAL_REPOSITORY_NAME, localRepository.getName(),
+            firstRepository.getName()),
         configuration.getRepositoriesNames());
   }
 
   @Test
   public void shouldDeleteRepositoryWhenDeleteAddedRepository() {
     configuration.removeRepository(firstRepository.getName());
-    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID,
-        localRepository.getName()),
+    assertEquals(Arrays.asList(CENTRAL_REPOSITORY_NAME,
+            localRepository.getName()),
         configuration.getRepositoriesNames());
   }
 
   @Test
   public void shouldNotDeleteRepositoryWhenDeleteRepositoryNotAdded() {
     configuration.removeRepository(secondRepository.getName());
-    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID,
-        localRepository.getName(), firstRepository.getName()),
+    assertEquals(Arrays.asList(CENTRAL_REPOSITORY_NAME,
+            localRepository.getName(), firstRepository.getName()),
         configuration.getRepositoriesNames());
   }
 
@@ -174,9 +175,9 @@ public class LocalConfigurationTest {
   @Test
   public void shouldReturnListWithRepositoriesWhenGetRepositoriesNames() {
     configuration.addRepository(secondRepository.getName(), secondRepositoryURL);
-    assertEquals(Arrays.asList(LocalConfiguration.CENTRAL_REPOSITORY_ID,
-        localRepository.getName(), FIRST_REPO_NAME,
-        SECOND_REPO_NAME),
+    assertEquals(Arrays.asList(CENTRAL_REPOSITORY_NAME,
+            localRepository.getName(), FIRST_REPO_NAME,
+            SECOND_REPO_NAME),
         configuration.getRepositoriesNames());
   }
 
@@ -211,16 +212,16 @@ public class LocalConfigurationTest {
 
   private void prepareMockServer() throws IOException {
 
-      wireMockServer.start();
-      configureFor("localhost", wireMockServer.port());
-      String dummyContent = "";
-      try {
-        dummyContent = getFileContent("/" + DUMMY_FILE_VERSION_ONE, getClass());
-      } catch (Exception ex) {
-        ex.printStackTrace(System.err);
-      }
-      mockingResponse("/" + DUMMY_FILE_VERSION_ONE, HttpURLConnection.HTTP_OK,
-          dummyContent, "get");
+    wireMockServer.start();
+    configureFor("localhost", wireMockServer.port());
+    String dummyContent = "";
+    try {
+      dummyContent = getFileContent("/" + DUMMY_FILE_VERSION_ONE, getClass());
+    } catch (Exception ex) {
+      ex.printStackTrace(System.err);
+    }
+    mockingResponse("/" + DUMMY_FILE_VERSION_ONE, HttpURLConnection.HTTP_OK,
+        dummyContent, "get");
 
   }
 
@@ -255,7 +256,7 @@ public class LocalConfigurationTest {
 
   private List<String> getInstalledDependencies() {
     return Arrays.stream(Objects.requireNonNull(
-        new File(dependenciesFolder).list()))
+            new File(dependenciesFolder).list()))
         .filter(f -> f.toLowerCase().endsWith(JAR_SUFFIX))
         .collect(Collectors.toList());
   }
@@ -296,7 +297,7 @@ public class LocalConfigurationTest {
   }
 
   private File[] buildExpectedDependencies() {
-    return new File[]{new File(dependenciesFolder + DUMMY_FILE_VERSION_ONE)};
+    return new File[] {new File(dependenciesFolder + DUMMY_FILE_VERSION_ONE)};
   }
 
   @Test
@@ -369,7 +370,8 @@ public class LocalConfigurationTest {
     String repositoryURL = "file://C:/test/";
     List<String> errors = configuration.checkRepositoryURL(REPOSITORY_ID, repositoryURL);
     assertEquals(Collections.singletonList(
-        "- There was and error on the repository " + REPOSITORY_ID + "'s URL " + repositoryURL + ".\n"
+        "- There was and error on the repository " + REPOSITORY_ID + "'s URL " + repositoryURL +
+            ".\n"
             + "   Error: URL should lead to .json file"), errors);
   }
 }

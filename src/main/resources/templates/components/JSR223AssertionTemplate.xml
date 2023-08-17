@@ -1,8 +1,8 @@
 <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="%s" enabled="true">
-  <stringProp name="cacheKey">true</stringProp>
-  <stringProp name="filename"></stringProp>
-  <stringProp name="parameters"></stringProp>
-  <stringProp name="script">%s</stringProp>
-  <stringProp name="scriptLanguage">groovy</stringProp>
+    <stringProp name="cacheKey">true</stringProp>
+    <stringProp name="filename"></stringProp>
+    <stringProp name="parameters"></stringProp>
+    <stringProp name="script">%s</stringProp>
+    <stringProp name="scriptLanguage">groovy</stringProp>
 </JSR223Assertion>
 <hashTree/>

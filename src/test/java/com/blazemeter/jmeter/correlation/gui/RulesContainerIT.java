@@ -6,16 +6,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
+import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.RulesGroup;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
-import com.blazemeter.jmeter.correlation.gui.templates.CorrelationTemplateFrame;
-import com.blazemeter.jmeter.correlation.gui.templates.CorrelationTemplatesFrame;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.gui.templates.TemplateSaveFrame;
+import com.blazemeter.jmeter.correlation.gui.templates.TemplatesManagerFrame;
 import com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement;
 import java.awt.Color;
 import java.util.Arrays;
@@ -42,9 +41,9 @@ public class RulesContainerIT {
   @Mock
   private Runnable modelUpdate;
   @Mock
-  private CorrelationTemplateFrame templateFrame;
+  private TemplateSaveFrame templateFrame;
   @Mock
-  private CorrelationTemplatesFrame loadFrame;
+  private TemplatesManagerFrame loadFrame;
   private FrameFixture frame;
   private RulesContainer rulesContainer;
   private JTableFixture rulesTable;
@@ -89,7 +88,7 @@ public class RulesContainerIT {
 
   @Test
   public void shouldClearLastLoadedTemplateWhenClickClearButton() {
-    TemplateVersion template = Mockito.mock(TemplateVersion.class);
+    Template template = Mockito.mock(Template.class);
     rulesContainer.updateLoadedTemplate(template);
     clickClear();
     saveTemplate();
@@ -109,7 +108,7 @@ public class RulesContainerIT {
   }
 
   private void prepareRepositoryHandler(String correlationComponents, String responseFilters,
-      List<RulesGroup> groups) {
+                                        List<RulesGroup> groups) {
     when(model.getCorrelationComponents()).thenReturn(correlationComponents);
     when(model.getResponseFilter()).thenReturn(responseFilters);
     when(model.getGroups()).thenReturn(groups);

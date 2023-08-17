@@ -14,24 +14,24 @@ import org.mockito.junit.MockitoJUnitRunner;
  * This class is used to test the automatic correlation process.
  * The main idea is to use this to simulate the Automatic Correlation
  * process without the need of doing the Recording manually.
- *
+ * <p>
  * Basically the ACR process is divided in 2 steps:
  * 1. Generate suggestions
  * 2. Apply suggestions
- *
+ * <p>
  * If you want to test the Generation of Suggestions, the process needs the following files:
  * 1. The JTL file of the Recording
  * 2. The JTL file of the Replay
- *
+ * <p>
  * If you want to test the Application of Suggestions, you will additionally need:
  * 3. The JMX file of the Recording
- *
+ * <p>
  * One simple way to obtain these files is to use the generated files in the
  * Correlation History folder.
- *
+ * <p>
  * Both the JMX and the JTL of the Recording can be obtained from the "Original Recording" step.
  * The JTL of the Replay can be obtained from the "Failed Replay" step.
- *
+ * <p>
  * Note the JTL for the Replay is marked as "Failed", since we don't generate Suggestions for
  * successful replays.
  */
@@ -71,12 +71,13 @@ public class NonGuiAcr {
 
   //Just print the abridged info of the suggestions
   private String printSuggestionInfo(CorrelationSuggestion suggestion) {
-    return "- '" + suggestion.getParamName() + "'= 'Value (# usages)': '" + suggestion.getOriginalValue()
+    return "- '" + suggestion.getParamName() + "'= 'Value (# usages)': '" +
+        suggestion.getOriginalValue()
         + "'. Extracted from:  [" + suggestion.getObtainedFromString()
         + "]. Used on: [" + suggestion.getUsedOnString() + "]. " + System.lineSeparator();
   }
 
-  protected boolean hasNeededFiles(String ... files) {
+  protected boolean hasNeededFiles(String... files) {
     for (String file : files) {
       if (file == null) {
         return false;
@@ -131,7 +132,8 @@ public class NonGuiAcr {
       return;
     }
 
-    if (!hasNeededFiles(history.getOriginalRecordingTrace(), history.getLastReplayTraceFilepath())) {
+    if (!hasNeededFiles(history.getOriginalRecordingTrace(),
+        history.getLastReplayTraceFilepath())) {
       return;
     }
 

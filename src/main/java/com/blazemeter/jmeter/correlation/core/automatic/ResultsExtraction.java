@@ -25,6 +25,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.jmeter.protocol.http.control.Cookie;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.util.JMeterUtils;
 import org.json.JSONArray;
@@ -44,154 +45,19 @@ public class ResultsExtraction implements AppearancesExtraction {
       Arrays.asList("PHPSESSID", "JSESSIONID", "ASPSESSIONID",
           "connect.sid");
   private final JMeterElementUtils utils;
-  private Map<String, List<Appearances>> appearanceMap;
   private final Configuration configuration;
+  private Map<String, List<Appearances>> appearanceMap;
 
   public ResultsExtraction(Configuration configuration) {
     this.configuration = configuration;
     this.utils = new JMeterElementUtils(configuration);
   }
 
-  @Override
-  public Map<String, List<Appearances>> extractAppearanceMap(String filepath) {
-    appearanceMap = new HashMap<>();
-    List<SampleResult> results = new ResultFileParser(configuration)
-        .loadFromFile(new File(filepath), true);
-
-    extractAppearancesFromResults(results);
-    return appearanceMap;
-  }
-
-  public Map<String, List<Appearances>> extractAppearanceMap(List<SampleResult> results) {
-    appearanceMap = new HashMap<>();
-    extractAppearancesFromResults(results);
-    return appearanceMap;
-  }
-
-  private void extractAppearancesFromResults(List<SampleResult> results) {
-    RecordingExtraction samplersExtractor = new RecordingExtraction(configuration, appearanceMap);
-    for (SampleResult result : results) {
-      if (result instanceof HTTPSampleResult) {
-        HTTPSampleResult httpSampleResult = (HTTPSampleResult) result;
-        HTTPSamplerProxy sourceRequest = parseToHttpSampler(httpSampleResult);
-        samplersExtractor.extractParametersFromHttpSampler(sourceRequest);
-        extractParametersFromHeaderStrings(result.getResponseHeaders(), sourceRequest, "Response");
-        extractParametersFromHeaderStrings(httpSampleResult.getRequestHeaders(), sourceRequest,
-            "Request");
-      }
-    }
-  }
-
-  private void extractParametersFromHeaderStrings(String headerString,
-      HTTPSamplerProxy sourceRequest,
-      String headerSource) {
-    String[] headerLines = headerString.split("\\n", 0);
-    for (String headerLine : headerLines) {
-      if (headerLine.indexOf(":") > 0) {
-        String headerName = headerLine.substring(0, headerLine.indexOf(":"));
-        String headerValue = headerLine.substring(headerLine.indexOf(":") + 1).trim();
-        if (utils.canBeFiltered(headerName, headerValue)) {
-          continue;
-        }
-        if (equalsIgnoreCase(headerName, "Set-Cookie")) {
-          registerHeaderCookie(headerValue, sourceRequest, headerSource);
-          continue;
-        } else if (hasParameters(headerValue)) {
-          registerHeaderSubParameters(headerName, headerValue, sourceRequest, headerSource);
-          continue;
-        }
-        utils.addToMap(appearanceMap, headerName, headerValue, sourceRequest,
-            "Header " + headerSource + " (Fields)");
-      }
-    }
-  }
-
-  //Header's fields might contain parameters: name/value pairs with auxiliary information
-  //Source: https://datatracker.ietf.org/doc/html/rfc9110#section-5.6.6
-  private boolean hasParameters(String headerValue) {
-    return headerValue.contains(";") && headerValue.contains("=");
-  }
-
-  private void registerHeaderCookie(String headerValue, HTTPSamplerProxy sourceRequest,
-      String headerSource) {
-    String[] fields = headerValue.split(";");
-
-    String name = "";
-    String value = "";
-
-    // The first element is the key value
-    if (fields[0].contains("=")) {
-      String[] fieldValues = fields[0].split("=");
-      name = fieldValues[0].trim();
-      value = fieldValues.length > 1 ? fieldValues[1].trim() : "";
-    }
-    if (utils.canBeFiltered(name, value)) {
-      return;
-    }
-
-    // Set Path in the name if exist
-    Map<String, String> context = new HashMap<String, String>();
-    for (int i = 1; i < fields.length; i++) {
-      String field = fields[i];
-
-      if (containsIgnoreCase(field, "Path") || containsIgnoreCase(field, "Domain")) {
-        String[] fieldValues = field.split("=");
-        context.put(fieldValues[0].trim(), fieldValues.length > 1 ? fieldValues[1].trim() : "");
-      }
-    }
-    if (context.size() > 0) {
-      name += context.keySet().stream()
-          .map(key -> key + "=" + context.get(key))
-          .collect(Collectors.joining(", ", "[", "]"));
-    }
-    String source = "Header " + headerSource + " (Set-Cookie)";
-    // The value is saved decoded because the source is a header value
-    String decodedValue = JMeterElementUtils.decode(value);
-    utils.addToMap(appearanceMap, name, decodedValue, sourceRequest, source);
-
-    // And also encoded but with a post_fix
-    utils.addToMap(appearanceMap, name + "_encoded", value, sourceRequest, source);
-
-    if (containsIgnoreCase(name, "Authorization") && containsIgnoreCase(value, "OAuth")) {
-      // Register the value of the authorization
-      String authValue = decodedValue.replaceAll("(?i)\"OAuth\"", "").trim();
-      utils.addToMap(appearanceMap, name + "_auth", authValue,
-          sourceRequest, source);
-      String authValueEncoded = value.replaceAll("(?i)\"OAuth\"", "").trim();
-      utils.addToMap(appearanceMap, name + "_auth" + "_encoded", authValueEncoded,
-          sourceRequest, source);
-    }
-
-  }
-
-  private void registerHeaderSubParameters(String headerName, String headerValue,
-      HTTPSamplerProxy sourceRequest, String headerSource) {
-    String[] fields = headerValue.split(";");
-    for (int i = 0; i < fields.length; i++) {
-      String field = fields[i];
-      String name = headerName;
-      String value = field;
-
-      if (field.contains("=")) {
-        String[] fieldValues = field.split("=");
-        name = fieldValues[0];
-        value = fieldValues[1];
-      }
-
-      if (utils.canBeFiltered(name, value)) {
-        continue;
-      }
-
-      utils.addToMap(appearanceMap, name, value, sourceRequest,
-          "Header " + headerSource + " (Sub-Parameters)");
-    }
-  }
-
   /**
    * Convert string to cookie.
    *
    * @param cookieStr the cookie as a string
-   * @param url to extract domain and path for the cookie from
+   * @param url       to extract domain and path for the cookie from
    * @return list of cookies
    */
   public static List<Cookie> stringToCookie(String cookieStr, String url) {
@@ -289,7 +155,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private static List<Pair<String, String>> getParametersFromJsonBody(HTTPSampleResult httpResult,
-      ContentType contentType) {
+                                                                      ContentType contentType) {
     String body = httpResult.getQueryString();
 
     List<Pair<String, Object>> list = JMeterElementUtils.extractDataParametersFromJson(body);
@@ -399,5 +265,145 @@ public class ResultsExtraction implements AppearancesExtraction {
     }
 
     return ContentType.DEFAULT_TEXT;
+  }
+
+  @Override
+  public Map<String, List<Appearances>> extractAppearanceMap(String filepath) {
+    appearanceMap = new HashMap<>();
+    List<SampleResult> results = new ResultFileParser(configuration)
+        .loadFromFile(new File(filepath), true);
+
+    extractAppearancesFromResults(results);
+    return appearanceMap;
+  }
+
+  public Map<String, List<Appearances>> extractAppearanceMap(List<SampleResult> results) {
+    appearanceMap = new HashMap<>();
+    extractAppearancesFromResults(results);
+    return appearanceMap;
+  }
+
+  private void extractAppearancesFromResults(List<SampleResult> results) {
+    RecordingExtraction samplersExtractor = new RecordingExtraction(configuration, appearanceMap);
+    for (SampleResult result : results) {
+      if (result instanceof HTTPSampleResult) {
+        HTTPSampleResult httpSampleResult = (HTTPSampleResult) result;
+        HTTPSamplerProxy sourceRequest = parseToHttpSampler(httpSampleResult);
+        samplersExtractor.extractParametersFromHttpSampler(sourceRequest);
+        extractParametersFromHeaderStrings(result.getResponseHeaders(), sourceRequest, "Response");
+        extractParametersFromHeaderStrings(httpSampleResult.getRequestHeaders(), sourceRequest,
+            "Request");
+      }
+    }
+  }
+
+  private void extractParametersFromHeaderStrings(String headerString,
+                                                  HTTPSamplerProxy sourceRequest,
+                                                  String headerSource) {
+    String[] headerLines = headerString.split("\\n", 0);
+    for (String headerLine : headerLines) {
+      if (headerLine.indexOf(":") > 0) {
+        String headerName = headerLine.substring(0, headerLine.indexOf(":"));
+        String headerValue = headerLine.substring(headerLine.indexOf(":") + 1).trim();
+        if (utils.canBeFiltered(headerName, headerValue)) {
+          continue;
+        }
+        if (equalsIgnoreCase(headerName, "Set-Cookie")) {
+          registerHeaderCookie(headerValue, sourceRequest, headerSource);
+          continue;
+        } else if (hasParameters(headerValue)) {
+          registerHeaderSubParameters(headerName, headerValue, sourceRequest, headerSource);
+          continue;
+        } else if (equalsIgnoreCase(headerName, HTTPConstants.HEADER_AUTHORIZATION)) {
+          String token = headerValue.trim().split(" ")[1];
+          utils.addToMap(appearanceMap, headerName, token, sourceRequest,
+              "Header " + headerSource + " (Fields)");
+          continue;
+        }
+        utils.addToMap(appearanceMap, headerName, headerValue, sourceRequest,
+            "Header " + headerSource + " (Fields)");
+      }
+    }
+  }
+
+  //Header's fields might contain parameters: name/value pairs with auxiliary information
+  //Source: https://datatracker.ietf.org/doc/html/rfc9110#section-5.6.6
+  private boolean hasParameters(String headerValue) {
+    return headerValue.contains(";") && headerValue.contains("=");
+  }
+
+  private void registerHeaderCookie(String headerValue, HTTPSamplerProxy sourceRequest,
+                                    String headerSource) {
+    String[] fields = headerValue.split(";");
+
+    String name = "";
+    String value = "";
+
+    // The first element is the key value
+    if (fields[0].contains("=")) {
+      String[] fieldValues = fields[0].split("=");
+      name = fieldValues[0].trim();
+      value = fieldValues.length > 1 ? fieldValues[1].trim() : "";
+    }
+    if (utils.canBeFiltered(name, value)) {
+      return;
+    }
+
+    // Set Path in the name if exist
+    Map<String, String> context = new HashMap<String, String>();
+    for (int i = 1; i < fields.length; i++) {
+      String field = fields[i];
+
+      if (containsIgnoreCase(field, "Path") || containsIgnoreCase(field, "Domain")) {
+        String[] fieldValues = field.split("=");
+        context.put(fieldValues[0].trim(), fieldValues.length > 1 ? fieldValues[1].trim() : "");
+      }
+    }
+    if (context.size() > 0) {
+      name += context.keySet().stream()
+          .map(key -> key + "=" + context.get(key))
+          .collect(Collectors.joining(", ", "[", "]"));
+    }
+    String source = "Header " + headerSource + " (Set-Cookie)";
+    // The value is saved decoded because the source is a header value
+    String decodedValue = JMeterElementUtils.decode(value);
+    utils.addToMap(appearanceMap, name, decodedValue, sourceRequest, source);
+
+    // And also encoded but with a post_fix
+    utils.addToMap(appearanceMap, name + "_encoded", value, sourceRequest, source);
+
+    if (containsIgnoreCase(name, "Authorization") && containsIgnoreCase(value, "OAuth")) {
+      // Register the value of the authorization
+      String authValue = decodedValue.replaceAll("(?i)\"OAuth\"", "").trim();
+      utils.addToMap(appearanceMap, name + "_auth", authValue,
+          sourceRequest, source);
+      String authValueEncoded = value.replaceAll("(?i)\"OAuth\"", "").trim();
+      utils.addToMap(appearanceMap, name + "_auth" + "_encoded", authValueEncoded,
+          sourceRequest, source);
+    }
+
+  }
+
+  private void registerHeaderSubParameters(String headerName, String headerValue,
+                                           HTTPSamplerProxy sourceRequest, String headerSource) {
+    String[] fields = headerValue.split(";");
+    for (int i = 0; i < fields.length; i++) {
+      String field = fields[i];
+      String name = headerName;
+      String value = field;
+
+      if (field.contains("=")) {
+        String[] fieldValues = field.split("=");
+        name = fieldValues[0];
+        value = fieldValues[1];
+      }
+
+      if (utils.canBeFiltered(name, value)) {
+        continue;
+      }
+
+      utils.addToMap(appearanceMap, name, value, sourceRequest,
+          "Header " + headerSource + " (Sub-Parameters)");
+    }
   }
 }

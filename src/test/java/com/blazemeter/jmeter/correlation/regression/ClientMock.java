@@ -48,7 +48,8 @@ public class ClientMock extends RecordingJtlVisitor {
       String method = sample.getHTTPMethod();
       String url = "http://" + MOCKED_DOMAIN + localUrl;
       requestIndex++;
-      LOG.info("{}/{}: {} {} ...", requestIndex, label.substring(label.lastIndexOf('/') + 1), method, url);
+      LOG.info("{}/{}: {} {} ...", requestIndex, label.substring(label.lastIndexOf('/') + 1),
+          method, url);
       List<Header> headers = extractHeaders(sample);
       makeHttpRequest(method, url, headers, sample.getQueryString());
     } catch (IOException e) {
@@ -91,7 +92,7 @@ public class ClientMock extends RecordingJtlVisitor {
   // we read the response to avoid unexpected brokenPipe in proxy, and emulate better a client
   private void consumeResponse(HttpURLConnection connection) throws IOException {
     try (InputStreamReader in = new InputStreamReader(connection.getInputStream());
-        BufferedReader br = new BufferedReader(in)) {
+         BufferedReader br = new BufferedReader(in)) {
       while (br.readLine() != null) {
       }
     } catch (IOException e) {

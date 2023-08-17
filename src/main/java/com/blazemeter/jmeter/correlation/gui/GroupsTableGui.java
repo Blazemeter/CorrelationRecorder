@@ -16,7 +16,7 @@ public class GroupsTableGui extends NonStringValuedTableGui<GroupPanel> {
   protected static final String PROTOCOL_HEADER = "Correlation Rules Groups";
 
   public GroupsTableGui(Runnable buttonsValidation) {
-    super(buttonsValidation, new String[]{PROTOCOL_HEADER});
+    super(buttonsValidation, new String[] {PROTOCOL_HEADER});
     configureColumn(PROTOCOL_HEADER, new GroupPanelRenderer(), new GroupPanelEditor());
     getSelectionModel().addListSelectionListener(event -> this.updateActiveGroup());
   }
@@ -55,7 +55,7 @@ public class GroupsTableGui extends NonStringValuedTableGui<GroupPanel> {
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-        boolean hasFocus, int row, int column) {
+                                                   boolean hasFocus, int row, int column) {
       Component component;
       if (value instanceof JTextField) {
         component = (JTextField) value;
@@ -79,7 +79,7 @@ public class GroupsTableGui extends NonStringValuedTableGui<GroupPanel> {
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-        int row, int column) {
+                                                 int row, int column) {
       groupPanel = (GroupPanel) value;
       groupPanel.setBackground(SELECTED_BACKGROUND.apply(true));
       groupPanel.setForeground(SELECTED_FOREGROUND.apply(true));

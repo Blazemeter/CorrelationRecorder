@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
@@ -20,7 +19,7 @@ public class RulePartTypeTest {
     SiebelRowCorrelationExtractor extractor = new SiebelRowCorrelationExtractor();
     assertThat(RulePartType.fromComponent(extractor)).isEqualTo(RulePartType.EXTRACTOR);
   }
-  
+
   @Test
   public void shouldReturnExtractorTypeWhenFromComponentWithNoneExtractor() {
     assertThat(RulePartType.fromComponent(CorrelationComponentsRegistry.NONE_EXTRACTOR))

@@ -1,7 +1,6 @@
 package com.blazemeter.jmeter.correlation.core.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;

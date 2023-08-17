@@ -3,7 +3,6 @@ package com.blazemeter.jmeter.correlation.gui;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
@@ -47,7 +46,7 @@ public class RuleTableRowIT {
   private Consumer<CorrelationRulePartTestElement<?>> displayExtensions;
   @Mock
   private CorrelationComponentsRegistry registry;
-  
+
   private RuleTableRow rule;
   private FrameFixture frame;
 
@@ -66,8 +65,10 @@ public class RuleTableRowIT {
   }
 
   private void prepareRegistry() {
-    when(registry.buildActiveExtractorRulePart()).thenReturn(Arrays.asList(extractor, noneExtractor));
-    when(registry.buildActiveReplacementRulePart()).thenReturn(Arrays.asList(replacement, noneReplacement));
+    when(registry.buildActiveExtractorRulePart()).thenReturn(
+        Arrays.asList(extractor, noneExtractor));
+    when(registry.buildActiveReplacementRulePart()).thenReturn(
+        Arrays.asList(replacement, noneReplacement));
   }
 
   @After
@@ -185,14 +186,15 @@ public class RuleTableRowIT {
     }
 
     private void prepareRegistry() {
-      when(registry.buildActiveExtractorRulePart()).thenReturn(Arrays.asList(extractor, noneExtractor));
+      when(registry.buildActiveExtractorRulePart()).thenReturn(
+          Arrays.asList(extractor, noneExtractor));
       when(registry.buildActiveReplacementRulePart())
           .thenReturn(Arrays.asList(replacement, noneExtractor));
     }
 
     @Parameters
     public static Collection<Object[]> data() {
-      return Arrays.asList(new Object[][]{
+      return Arrays.asList(new Object[][] {
           {"var", "${__javaScript(${var})}", buildVariableFieldConsumer("1"),
               "${__javaScript(${var1})}"},
           {"id", "${__groovy(vars.get(\"id\"))}", buildVariableFieldConsumer("2"),
@@ -238,12 +240,13 @@ public class RuleTableRowIT {
     }
 
     private void selectRulePartComboItem(String comboType, CorrelationRulePartTestElement<?> item) {
-      frame.comboBox(ruleTableRow.getName() + "-Correlation" + comboType + "-comboBox").selectItem(item.getDisplayName());
+      frame.comboBox(ruleTableRow.getName() + "-Correlation" + comboType + "-comboBox")
+          .selectItem(item.getDisplayName());
       frame.target().pack();
     }
 
     private static JTextComponentFixture findReferenceVariableField(FrameFixture frame,
-        RuleTableRow rule) {
+                                                                    RuleTableRow rule) {
       return frame.textBox(rule.getName() + "-referenceVariable");
     }
 

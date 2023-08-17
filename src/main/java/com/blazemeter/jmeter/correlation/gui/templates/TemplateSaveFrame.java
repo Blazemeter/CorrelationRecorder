@@ -1,12 +1,13 @@
 package com.blazemeter.jmeter.correlation.gui.templates;
 
+import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.LOCAL_REPOSITORY_NAME;
+
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
-import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
-import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion.Builder;
+import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.gui.common.CollapsiblePanel;
 import com.blazemeter.jmeter.correlation.gui.common.PlaceHolderTextField;
 import com.helger.commons.annotation.VisibleForTesting;
@@ -53,9 +54,9 @@ import org.apache.jorphan.reflect.Functor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CorrelationTemplateFrame extends JDialog implements ActionListener {
+public class TemplateSaveFrame extends JDialog implements ActionListener {
 
-  private static final Logger LOG = LoggerFactory.getLogger(CorrelationTemplateFrame.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TemplateSaveFrame.class);
 
   private static final int FIELD_WIDTH = 350;
   private static final int LABEL_WIDTH = 70;
@@ -93,9 +94,10 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
 
   private CollapsiblePanel dependenciesCollapsiblePanel;
 
-  public CorrelationTemplateFrame(CorrelationTemplatesRegistryHandler templatesRegistry,
-      BufferedImage snapshot, Consumer<TemplateVersion> updateLastTemplateSupplier,
-      JPanel parent) {
+  public TemplateSaveFrame(CorrelationTemplatesRegistryHandler templatesRegistry,
+                           BufferedImage snapshot,
+                           Consumer<Template> updateLastTemplateSupplier,
+                           JPanel parent) {
     super((JFrame) SwingUtilities.getWindowAncestor(parent), true);
     setTitle("Correlation Template");
     setName("correlationTemplateFrame");
@@ -221,8 +223,8 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
         .addGroup(layout.createParallelGroup()
             .addComponent(urlLabel)
             .addGroup(layout.createSequentialGroup()
-                 .addComponent(templateUrlField, FIELD_HEIGHT, FIELD_HEIGHT, FIELD_HEIGHT)
-                 .addComponent(urlValidation)))
+                .addComponent(templateUrlField, FIELD_HEIGHT, FIELD_HEIGHT, FIELD_HEIGHT)
+                .addComponent(urlValidation)))
         .addGroup(layout.createParallelGroup()
             .addGroup(layout.createSequentialGroup()
                 .addComponent(descriptionLabel)
@@ -288,7 +290,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   }
 
   public void addFieldValidations(String id, JTextComponent field, JLabel errorDisplay,
-      Validation... validations) {
+                                  Validation... validations) {
     field.addFocusListener(new FocusAdapter() {
       @Override
       public void focusLost(FocusEvent e) {
@@ -306,7 +308,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   }
 
   private void updateComponentValidationStyle(JTextComponent field, JLabel errorDisplay,
-      boolean hasFailedValidation) {
+                                              boolean hasFailedValidation) {
     //JTextArea are contained in JScroll's JView point, need to get 2 parent levels
     (field instanceof JTextField ? field : (JScrollPane) field.getParent().getParent())
         .setBorder(hasFailedValidation ? ERROR_BORDER : DEFAULT_BORDER);
@@ -383,11 +385,11 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
   }
 
   private JScrollPane prepareDependenciesTable() {
-    dependencyModel = new ObjectTableModel(new String[]{"Name", "Version", "URL"},
+    dependencyModel = new ObjectTableModel(new String[] {"Name", "Version", "URL"},
         CorrelationTemplateDependency.class,
-        new Functor[]{new Functor("getName"), new Functor("getVersion"), new Functor("getUrl")},
-        new Functor[]{new Functor("setName"), new Functor("setVersion"), new Functor("setUrl")},
-        new Class[]{String.class, String.class, String.class});
+        new Functor[] {new Functor("getName"), new Functor("getVersion"), new Functor("getUrl")},
+        new Functor[] {new Functor("setName"), new Functor("setVersion"), new Functor("setUrl")},
+        new Class[] {String.class, String.class, String.class});
 
     dependenciesTable = new JTable(dependencyModel);
     dependenciesTable.setPreferredSize(new Dimension(300, 200));
@@ -453,11 +455,11 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
 
   private ActionListener createSaveTemplateActionListener(
       CorrelationTemplatesRegistryHandler templatesRegistry,
-      Consumer<TemplateVersion> updateLastTemplateConsumer) {
+      Consumer<Template> updateLastTemplateConsumer) {
     return e -> {
       //Left for the cases where the ID was changed after the version
       if (isVersionRepeatedLocally(templatesRegistry)) {
-        JOptionPane.showMessageDialog(CorrelationTemplateFrame.this,
+        JOptionPane.showMessageDialog(TemplateSaveFrame.this,
             "There is already a version " + getVersion() + " installed. Please change it before "
                 + "continue",
             "Save template error", JOptionPane.ERROR_MESSAGE);
@@ -503,20 +505,20 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
         }
 
         if (!allDependenciesComplete) {
-          JOptionPane.showMessageDialog(CorrelationTemplateFrame.this,
+          JOptionPane.showMessageDialog(TemplateSaveFrame.this,
               "There are incomplete dependencies. Fill or delete them before continue.");
           return;
         }
       }
 
       if (hasFailingURLs) {
-        JOptionPane.showMessageDialog(CorrelationTemplateFrame.this,
+        JOptionPane.showMessageDialog(TemplateSaveFrame.this,
             "There are some issues with some dependency's URLs, please fix then before continue"
                 + ".\nCheck the logs for more information.");
         return;
       }
 
-      if (hasRepeatedDependencies && JOptionPane.showConfirmDialog(CorrelationTemplateFrame.this,
+      if (hasRepeatedDependencies && JOptionPane.showConfirmDialog(TemplateSaveFrame.this,
           "There are dependencies that are repeated. Want to overwrite them?",
           "Saving Correlation Template",
           JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.NO_OPTION) {
@@ -530,7 +532,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
           .withUrl(getUrl())
           .withDescription(templateDescriptionField.getText())
           .withSnapshot(templateSnapshot)
-          .withRepositoryId(LocalConfiguration.LOCAL_REPOSITORY_NAME)
+          .withRepositoryId(LOCAL_REPOSITORY_NAME)
           .withChanges(templateChangesField.getText())
           .withDependencies(dependenciesList);
 
@@ -539,7 +541,7 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
         updateLastTemplateConsumer.accept(savingTemplateBuilder.build());
       } catch (IOException | ConfigurationException ex) {
         JOptionPane
-            .showMessageDialog(CorrelationTemplateFrame.this,
+            .showMessageDialog(TemplateSaveFrame.this,
                 "Error while trying to save template", "Save template error",
                 JOptionPane.ERROR_MESSAGE);
         LOG.error("Error while trying to convert rules into json file {}", getTemplateID(), ex);
@@ -666,11 +668,11 @@ public class CorrelationTemplateFrame extends JDialog implements ActionListener 
     dependencies.forEach(d -> dependencyModel.addRow(d));
   }
 
-  public void setLoadedTemplates(Set<TemplateVersion> loadedTemplates) {
+  public void setLoadedTemplates(Set<Template> loadedTemplates) {
     clear();
     //If we have more than 1 loaded template, we don't set this fields
     if (loadedTemplates.size() == 1) {
-      TemplateVersion loadedTemplate = loadedTemplates.iterator().next();
+      Template loadedTemplate = loadedTemplates.iterator().next();
       templateIdField.setText(loadedTemplate.getId());
       templateAuthorField.setText(loadedTemplate.getAuthor());
       templateUrlField.setText(loadedTemplate.getUrl());

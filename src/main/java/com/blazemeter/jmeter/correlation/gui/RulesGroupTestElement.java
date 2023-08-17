@@ -16,7 +16,7 @@ public class RulesGroupTestElement extends ConfigTestElement implements Serializ
   }
 
   public RulesGroupTestElement(String id, boolean enable,
-      CorrelationRulesTestElement correlationRulesTestElement) {
+                               CorrelationRulesTestElement correlationRulesTestElement) {
     setProperty(new StringProperty(CORRELATION_GROUP_ID, id));
     setProperty(new TestElementProperty(CORRELATION_GROUP_RULES, correlationRulesTestElement));
     setEnabled(enable);

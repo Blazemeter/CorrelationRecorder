@@ -19,12 +19,12 @@ public class CorrelationTemplatesRepositoryConfiguration {
     this.url = url;
   }
 
-  void installTemplate(String templateName, String templateVersion) {
+  public void installTemplate(String templateName, String templateVersion) {
     installedTemplates.put(templateName, templateVersion);
   }
 
-  public void uninstallTemplate(String templateId) {
-    installedTemplates.remove(templateId);
+  public void uninstallTemplate(String templateName) {
+    installedTemplates.remove(templateName);
   }
 
   public boolean isInstalled(String templateName, String templateVersion) {

@@ -32,7 +32,7 @@ public class FileTemplateAssert extends AbstractAssert<FileTemplateAssert, Path>
   public FileTemplateAssert matches(Path templatePath) throws IOException {
     List<Delta<String>> diffs = diff
         .diff(actual, StandardCharsets.UTF_8, templatePath, StandardCharsets.UTF_8).stream()
-        .filter( d -> !isDiffMatching(d))
+        .filter(d -> !isDiffMatching(d))
         .collect(Collectors.toList());
     if (!diffs.isEmpty()) {
       throw failures.failure(this.info,
@@ -71,7 +71,8 @@ public class FileTemplateAssert extends AbstractAssert<FileTemplateAssert, Path>
   }
 
   private boolean isDiffMatching(Delta<String> d) {
-    return getTemplatePattern(buildChunkString(d.getOriginal())).matcher(buildChunkString(d.getRevised())).matches();
+    return getTemplatePattern(buildChunkString(d.getOriginal())).matcher(
+        buildChunkString(d.getRevised())).matches();
   }
 
   private String buildChunkString(Chunk<String> original) {

@@ -59,7 +59,7 @@ public class SiebelRowParamsCorrelationReplacement extends
 
   @Override
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      JMeterVariables vars) {
+                      JMeterVariables vars) {
     String rowId = new RegexMatcher(regex, 1).findMatch(result.getSamplerData(), 1);
     rowVarPrefix = context.getRowVars().get(rowId);
     super.process(sampler, children, result, vars);
@@ -75,15 +75,15 @@ public class SiebelRowParamsCorrelationReplacement extends
    * <p>Works together with the
    * {@link com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor}
    *
-   * @param input the input against the condition will test and replacements will be applied
-   * @param regex the regular expression used to eval the input
+   * @param input        the input against the condition will test and replacements will be applied
+   * @param regex        the regular expression used to eval the input
    * @param variableName the variable name ignored in this case
-   * @param vars the stored values during the recording
+   * @param vars         the stored values during the recording
    * @return the resultant input. Will be the same if it doesn't meet the condition
    */
   @Override
   protected String replaceWithRegex(String input, String regex, String variableName,
-      JMeterVariables vars)
+                                    JMeterVariables vars)
       throws MalformedPatternException {
     for (Map.Entry<String, Field> entry : context.getParamRowFields().entrySet()) {
       /*
