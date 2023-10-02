@@ -10,6 +10,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayReport;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayWorker;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
+import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.Repository;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.gui.analysis.CorrelationTemplatesSelectionPanel;
@@ -56,6 +57,8 @@ public class CorrelationWizard extends JDialog {
   private Consumer<List<CorrelationRule>> exportRulesConsumer;
 
   private CorrelationTemplatesRepositoriesConfiguration repositoriesConfiguration;
+
+  private LocalConfiguration configuration;
 
   public CorrelationWizard() {
     super();
@@ -458,5 +461,14 @@ public class CorrelationWizard extends JDialog {
 
   public Supplier<Map<String, Repository>> getRepositoriesSupplier() {
     return repositoriesSupplier;
+  }
+
+  public LocalConfiguration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(
+      LocalConfiguration configuration) {
+    this.configuration = configuration;
   }
 }

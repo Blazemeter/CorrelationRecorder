@@ -20,10 +20,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,7 +53,7 @@ public class RulesContainer extends JPanel implements ActionListener {
   private final CorrelationTemplatesRegistryHandler templatesRegistryHandler;
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
   private final Runnable modelUpdater;
-  private final Set<Template> loadedTemplates;
+  private final List<Template> loadedTemplates;
   private final GroupsContainer groupsContainer;
   private final ResponseFilterPanel responseFilterPanel;
   private TemplateSaveFrame templateFrame;
@@ -73,7 +71,7 @@ public class RulesContainer extends JPanel implements ActionListener {
     templatesRegistryHandler = correlationTemplatesRegistryHandler;
     repositoriesRegistryHandler =
         (CorrelationTemplatesRepositoriesRegistryHandler) correlationTemplatesRegistryHandler;
-    loadedTemplates = new HashSet<>();
+    loadedTemplates = new ArrayList<>();
     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     add(makeTemplateButtonPanel());
     groupsContainer = new GroupsContainer(modelUpdater);
@@ -156,6 +154,7 @@ public class RulesContainer extends JPanel implements ActionListener {
       case SAVE:
         if (templateFrame == null) {
           templateFrame = new TemplateSaveFrame(templatesRegistryHandler,
+              repositoriesRegistryHandler,
               getSnapshotBufferedImage(), this::updateLoadedTemplate, this);
         }
         displaySaveTemplateFrame();
@@ -192,17 +191,15 @@ public class RulesContainer extends JPanel implements ActionListener {
      * If we don't force the update the of the Model
      * with the info in the RulesContainer,
      * the rules "stored" in the Model won't reset
-     * and will be appended on LoadTemplate
+     * and will be appended on LoadTemplateLoadTemplate
      * */
     modelUpdater.run();
   }
 
   private void displaySaveTemplateFrame() {
-    templateFrame.clear();
     if (!loadedTemplates.isEmpty()) {
-      templateFrame.setLoadedTemplates(loadedTemplates);
+      templateFrame.setLoadedTemplates(loadedTemplates.get(loadedTemplates.size() - 1));
     }
-    templateFrame.setTemplateSnapshot(getSnapshotBufferedImage());
     templateFrame.showFrame();
   }
 
@@ -280,10 +277,7 @@ public class RulesContainer extends JPanel implements ActionListener {
   }
 
   public void updateLoadedTemplate(Template template) {
-    if (loadedTemplates.add(template)) {
-      LOG.debug("Updated loaded templates. New Total={}. 'Last Template' = {}. ",
-          loadedTemplates.size(), template);
-    }
+    loadedTemplates.add(template);
   }
 
   @Override

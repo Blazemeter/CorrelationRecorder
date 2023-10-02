@@ -294,9 +294,8 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     UpdateRepositoriesWorker worker = new UpdateRepositoriesWorker() {
       @Override
       protected Boolean doInBackground() {
-        return wizard.getRepositoriesConfiguration().refreshRepositories(
-            wizard.getRepositoriesConfiguration().getLocalRootFolder(), this::setProgress,
-            this::publish);
+        return wizard.getConfiguration().refreshRepositories("",
+            this::setProgress, this::publish);
       }
     };
 

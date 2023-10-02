@@ -6,6 +6,7 @@ import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
@@ -150,7 +151,7 @@ public class CorrelationProxyControlTest {
     model.onSaveTemplate(BASE_TEMPLATE_BUILDER);
 
     //Its been called once since only save the CorrelationTemplate once after building it
-    verify(correlationComponentsRegistry, only()).save(prepareExpectedTemplate(groups));
+    verify(localConfiguration, only()).saveTemplate(prepareExpectedTemplate(groups));
   }
 
   private List<CorrelationRule> prepareRulesWithoutCorrelationExtractors() {
@@ -173,8 +174,8 @@ public class CorrelationProxyControlTest {
     model.setCorrelationGroups(groups);
     model.onSaveTemplate(BASE_TEMPLATE_BUILDER);
 
-    //Its been called once since only save the CorrelationTemplate once after building it
-    verify(correlationComponentsRegistry, only()).save(prepareExpectedTemplate(groups));
+    //It's been called once since only save the CorrelationTemplate once after building it
+    verify(localConfiguration, only()).saveTemplate(prepareExpectedTemplate(groups));
   }
 
   private List<RulesGroup> prepareGroupOfRulesWithoutCorrelationReplacements() {
@@ -189,7 +190,7 @@ public class CorrelationProxyControlTest {
 
   @Test
   public void shouldAppendLoadedTemplateWhenOnLoadTemplate() throws IOException {
-    when(correlationComponentsRegistry.findByID(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION))
+    when(localConfiguration.findById(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION))
         .thenReturn(Optional.of(testTemplate));
 
     when(testTemplate.getResponseFilters())
@@ -243,7 +244,7 @@ public class CorrelationProxyControlTest {
 
   @Test
   public void shouldRemoveRepeatedElementsWhenWhenOnLoadTemplate() throws IOException {
-    when(correlationComponentsRegistry.findByID(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION))
+    when(localConfiguration.findById(LOCAL_REPOSITORY_ID, TEMPLATE_ID, TEMPLATE_VERSION))
         .thenReturn(Optional.of(testTemplate));
 
     when(testTemplate.getResponseFilters()).thenReturn(

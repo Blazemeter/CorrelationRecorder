@@ -25,11 +25,6 @@ public class RemoteFolderRepository extends FileRepository {
   private String name;
   private String url;
 
-  public RemoteFolderRepository(String name, String url) {
-    this.name = name;
-    this.url = url;
-  }
-
   @Override
   public void init() {
     super.init();
@@ -109,8 +104,33 @@ public class RemoteFolderRepository extends FileRepository {
   }
 
   @Override
+  public void upload(Template template) throws IOException {
+    throw new UnsupportedOperationException("Upload is not supported for remote repositories");
+  }
+
+  @Override
+  public void setDisplayName(String displayName) {
+    // Left empty intentionally for development purposes
+  }
+
+  @Override
+  public String getDisplayName() {
+    return null;
+  }
+
+  @Override
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public void setEndPoint(String endPoint) {
+    this.url = endPoint;
   }
 
   @Override

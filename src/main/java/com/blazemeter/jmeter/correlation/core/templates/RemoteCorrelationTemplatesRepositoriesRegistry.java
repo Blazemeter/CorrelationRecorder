@@ -1,8 +1,5 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.PROPERTIES_FILE_SUFFIX;
-import static com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry.TEMPLATE_FILE_SUFFIX;
-
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -48,21 +45,23 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
       String baseURL = getBaseURL(url);
 
       for (Map.Entry<String, CorrelationTemplateVersions> templateReference
-          : readTemplatesVersions(new File(repositoryFilePath)).entrySet()) {
+          : configuration.readTemplatesVersions(new File(repositoryFilePath)).entrySet()) {
         for (String templateVersion : templateReference.getValue().getVersions()) {
-          String templateWithVersionName = templateReference.getKey() + "-" + templateVersion;
-
-          String templateFileName = templateWithVersionName + TEMPLATE_FILE_SUFFIX;
+          String templateName = templateReference.getKey();
+          String templateFileName =
+              configuration.getTemplateFilename(templateName, templateVersion);
           saveFileFromURL(baseURL + encodeSpecialCharacters(templateFileName),
               Paths.get(installationFolderPath, templateFileName).toAbsolutePath().toString());
 
-          String snapshotFileName = templateWithVersionName + SNAPSHOT_FILE_SUFFIX;
+          String snapshotFileName = configuration
+              .getTemplateSnapshotFilename(templateName, templateVersion);
           if (canDownload(baseURL + snapshotFileName)) {
             saveFileFromURL(baseURL + encodeSpecialCharacters(snapshotFileName),
                 Paths.get(installationFolderPath, snapshotFileName).toAbsolutePath().toString());
           }
 
-          String propertiesFileName = templateWithVersionName + PROPERTIES_FILE_SUFFIX;
+          String propertiesFileName = configuration
+              .getTemplatePropertiesFilename(templateName, templateVersion);
           File propertiesFile = Paths.get(installationFolderPath, propertiesFileName).toFile();
           configuration.writeValue(propertiesFile, new TemplateProperties());
         }
@@ -73,6 +72,18 @@ public class RemoteCorrelationTemplatesRepositoriesRegistry extends
           "Content does not conform to JSON syntax. Please enter a URL that points to a "
               + "valid JSON.", e);
     }
+  }
+
+  /**
+   * Uploads a template into the repository.
+   *
+   * @param name     name of the repository
+   * @param template template to upload
+   * @throws IOException if there is an error uploading the template
+   */
+  @Override
+  public void upload(String name, Template template) throws IOException {
+    // Left empty for custom implementations to override
   }
 
   private void saveFileFromURL(String fileURL, String fileFullPath) throws IOException {

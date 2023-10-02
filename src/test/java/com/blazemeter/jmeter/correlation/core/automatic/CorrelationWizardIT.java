@@ -4,9 +4,7 @@ import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateVersions;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoryConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
-import com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRepositoriesRegistry;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationWizard;
 import java.awt.Dimension;
@@ -68,12 +66,6 @@ public class CorrelationWizardIT {
     String path = "/Users/abstracta/testing/jmeter-siebel-plugin/jmeters/apache-jmeter-5.5/";
     LocalConfiguration configuration = new LocalConfiguration(path, true);
     configuration.setupRepositoryManagers();
-
-    LocalCorrelationTemplatesRepositoriesRegistry local =
-        new LocalCorrelationTemplatesRepositoriesRegistry(configuration);
-    List<CorrelationTemplatesRepository> repositories1 = local.getRepositories();
-
-
     /*
     *
     *     LocalConfiguration localConfiguration = new LocalConfiguration(folder.getRoot().getPath(), true);
@@ -86,14 +78,11 @@ public class CorrelationWizardIT {
     prepareExpectedLocalRepository();
     * */
 
-    List<CorrelationTemplatesRepositoryConfiguration> repositories =
-        configuration.getRepositories();
-
-
-    for (CorrelationTemplatesRepositoryConfiguration repository : repositories) {
+    List<CorrelationTemplatesRepository> repositories = configuration.getRepositories();
+    for (CorrelationTemplatesRepository repository : repositories) {
+      System.out.println(repository.getName());
       RepositoryManager manager = configuration.getRepositoryManager(repository.getName());
-      Map<String, CorrelationTemplateVersions> templateVersions = manager.getTemplateVersions();
-      System.out.println(templateVersions);
+      Map<String, CorrelationTemplateVersions> versions = manager.getTemplateVersions();
     }
 
     history = new CorrelationHistory();

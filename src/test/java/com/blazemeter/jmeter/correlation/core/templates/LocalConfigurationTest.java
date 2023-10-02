@@ -39,7 +39,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class LocalConfigurationTest {
 
-  private static final String LOCAL_REPOSITORY_NAME = "local";
   private static final String VERSION_ONE = "1.0";
   private static final String DUMMY_FILE_VERSION_ONE = "dummy-1.0.jar";
   private static final String SIEBEL_REPO_NAME = "siebel";
@@ -68,12 +67,44 @@ public class LocalConfigurationTest {
   private CorrelationTemplatesRepositoryConfiguration repositoryWithInstalledTemplates;
   @Mock
   private CorrelationTemplatesRepositoryConfiguration localRepositoryConfiguration;
+  @Mock
+  private CorrelationTemplatesRepository expectedSiebelRepository;
+  @Mock
+  private CorrelationTemplatesRepository expectedCentralRepository;
   private final WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
   private LocalConfiguration configuration;
   private String dependenciesFolder;
+  private static final String TEMPLATE_FILE_SUFFIX = "template.json";
+
+  private static final String REPOSITORY_FILE_SUFFIX = "repository.json";
+
+  private static final String LOCAL_REPOSITORY_NAME = "local";
+  private static final String LOCAL_REPOSITORY_DISPLAY_NAME = "Local";
+
+  private static final String CENTRAL_REPOSITORY_NAME = "central";
+  private static final String CENTRAL_REPOSITORY_DISPLAY_NAME = "GitHub's Central";
+
+  private static final String SIEBEL_TEMPLATE_REFERENCE_NAME = "siebel";
+  private static final String WORDPRESS_TEMPLATE_REFERENCE_NAME = "wordpress";
+  private static final String TEMPLATE_VERSION_TWO = "1.1";
+  private static final String TEMPLATE_VERSION_ONE = "1.0";
+
+  private static final String TEMPLATE_VERSION_THREE = "0.1-alpha";
+
+  private static final String CORRELATION_TEMPLATES_REPOSITORY_NAME =
+      "CorrelationTemplatesRepository";
+
+  private static final String SIEBEL_TEMPLATE_VERSION_TWO_NAME =
+      SIEBEL_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_TWO + "-" + TEMPLATE_FILE_SUFFIX;
+  private static final String SIEBEL_TEMPLATE_VERSION_ONE_NAME =
+      SIEBEL_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
+
+  private static final String WORDPRESS_TEMPLATE_VERSION_ONE_NAME =
+      WORDPRESS_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
 
   @Before
   public void setUp() {
+    LocalConfiguration.installDefaultFiles(folder.getRoot().getPath());
     configuration = new LocalConfiguration(folder.getRoot().getPath(), true);
     configuration.setupRepositoryManagers();
     when(firstRepository.getName()).thenReturn(FIRST_REPO_NAME);
@@ -81,6 +112,7 @@ public class LocalConfigurationTest {
     when(localRepository.getName()).thenReturn(LOCAL_REPOSITORY_NAME);
     configuration.addRepository(firstRepository.getName(), firstRepositoryURL);
     dependenciesFolder = folder.getRoot().getAbsolutePath() + "/lib/";
+    prepareExpectedLocalRepository();
   }
 
   @After
@@ -88,6 +120,20 @@ public class LocalConfigurationTest {
     if (wireMockServer.isRunning()) {
       wireMockServer.stop();
     }
+  }
+  private void prepareExpectedLocalRepository() {
+    when(expectedSiebelRepository.getValues()).thenReturn(
+        CORRELATION_TEMPLATES_REPOSITORY_NAME + "{name='" + LOCAL_REPOSITORY_NAME
+            + "', displayName='" + LOCAL_REPOSITORY_DISPLAY_NAME
+            + "', templatesVersions={" + SIEBEL_TEMPLATE_REFERENCE_NAME +
+            "=CorrelationTemplateVersions {versions=[" + TEMPLATE_VERSION_ONE + "]}}}");
+
+    when(expectedCentralRepository.getValues()).thenReturn(
+        CORRELATION_TEMPLATES_REPOSITORY_NAME + "{name='" + CENTRAL_REPOSITORY_NAME
+            + "', displayName='" + CENTRAL_REPOSITORY_DISPLAY_NAME
+            + "', templatesVersions={" + WORDPRESS_TEMPLATE_REFERENCE_NAME +
+            "=CorrelationTemplateVersions {versions=[" + TEMPLATE_VERSION_THREE + "]}}}");
+
   }
 
   public void configureWireMockServer() {
@@ -374,4 +420,24 @@ public class LocalConfigurationTest {
             ".\n"
             + "   Error: URL should lead to .json file"), errors);
   }
+
+  @Test
+  public void shouldReturnLocalCorrelationTemplatesRepositoriesWhenGetRepositories() {
+    assertEquals(getRepositoriesNames(prepareExpectedLocalRepositories()),
+        getRepositoriesNames(configuration.getRepositories()));
+  }
+
+  private List<String> getRepositoriesNames(List<CorrelationTemplatesRepository> repositories) {
+    return repositories.stream().map(CorrelationTemplatesRepository::getValues)
+        .collect(Collectors.toList());
+  }
+
+  private List<CorrelationTemplatesRepository> prepareExpectedLocalRepositories() {
+    List<CorrelationTemplatesRepository> expectedLocalRepositories = new ArrayList<>();
+    expectedLocalRepositories.add(expectedCentralRepository);
+    expectedLocalRepositories.add(expectedSiebelRepository);
+
+    return expectedLocalRepositories;
+  }
+
 }

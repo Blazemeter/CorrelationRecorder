@@ -13,20 +13,10 @@ public interface CorrelationTemplatesRepositoriesRegistry {
 
   CorrelationTemplatesRepository find(String id);
 
-  List<CorrelationTemplatesRepository> getRepositories();
-
   Map<String, CorrelationTemplateVersions> getCorrelationTemplateVersionsByRepositoryId(
       String name);
 
-  void installTemplate(String repositoryName, String templateName, String version)
-      throws ConfigurationException;
-
-  void uninstallTemplate(String repositoryName, String name, String version)
-      throws ConfigurationException;
-
   String getRepositoryURL(String name);
-
-  void updateLocalRepository(String templateId, String templateVersion);
 
   boolean isLocalTemplateVersionSaved(String templateId, String templateVersion);
 
@@ -34,4 +24,6 @@ public interface CorrelationTemplatesRepositoriesRegistry {
 
   Map<Template, TemplateProperties> getCorrelationTemplatesAndPropertiesByRepositoryId(
       String name, List<TemplateVersion> filter);
+
+  void upload(String name, Template template) throws IOException;
 }

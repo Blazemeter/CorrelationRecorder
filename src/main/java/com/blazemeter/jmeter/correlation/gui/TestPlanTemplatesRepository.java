@@ -26,12 +26,22 @@ public class TestPlanTemplatesRepository {
   private String rootFolder;
 
   public TestPlanTemplatesRepository(String rootFolder) {
+    try {
+      Files.createDirectories(Paths.get(rootFolder));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     this.rootFolder = rootFolder;
   }
 
   @VisibleForTesting
   public void setRootFolder(String rootFolder) {
     this.rootFolder = rootFolder;
+    try {
+      Files.createDirectories(Paths.get(rootFolder));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void addCorrelationRecorderTemplate(String templateFileName, String templatesFolderPath,

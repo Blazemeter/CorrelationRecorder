@@ -10,6 +10,7 @@ import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.core.templates.repository.PluggableRepository;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RemoteRepository;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,11 @@ public class CentralRepository extends RemoteRepository implements PluggableRepo
   @Override
   public String getName() {
     return CENTRAL_REPOSITORY_NAME;
+  }
+
+  @Override
+  public void setEndPoint(String endPoint) {
+    // Not allowed
   }
 
   @Override
@@ -62,6 +68,21 @@ public class CentralRepository extends RemoteRepository implements PluggableRepo
   @Override
   public Map<Template, TemplateProperties> getTemplatesAndProperties(List<TemplateVersion> filter) {
     return new HashMap<>();
+  }
+
+  @Override
+  public void upload(Template template) throws IOException {
+    // Left empty intentionally for development purposes
+  }
+
+  @Override
+  public void setDisplayName(String displayName) {
+    // Left empty intentionally for development purposes
+  }
+
+  @Override
+  public String getDisplayName() {
+    return CENTRAL_REPOSITORY_NAME;
   }
 
   private static Map<String, String> getDefaultProperties() {
