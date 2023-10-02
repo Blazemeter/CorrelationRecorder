@@ -5,13 +5,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * This class represents a Repository with all the Templates associated to it.
+ * For example, if we have a repository called "Local" with templates for "WordPress" and
+ * "Joomla", this class will have name="Local" and templates=[WordPress, Joomla], also
+ * each template will have a list of versions associated to them.
+ */
 public class CorrelationTemplatesRepository {
 
   private transient String name;
+  private String displayName;
   private Map<String, CorrelationTemplateVersions> templatesVersions = new HashMap<>();
 
   //Constructor added to avoid issues with the serialization
   public CorrelationTemplatesRepository() {
+  }
+
+  public CorrelationTemplatesRepository(String name) {
+    this.name = name;
   }
 
   public CorrelationTemplatesRepository(String name, Map<String, CorrelationTemplateVersions>
@@ -27,8 +38,14 @@ public class CorrelationTemplatesRepository {
         templatesVersions.get(name).addVersion(version);
       }
     } else {
-      templatesVersions.put(name, new CorrelationTemplateVersions(version));
+      CorrelationTemplateVersions value = new CorrelationTemplateVersions(version);
+      value.setRepositoryDisplayName(displayName);
+      templatesVersions.put(name, value);
     }
+  }
+
+  public void addTemplate(String name, CorrelationTemplateVersions versions) {
+    templatesVersions.put(name, versions);
   }
 
   public Map<String, CorrelationTemplateVersions> getTemplates() {
@@ -47,10 +64,19 @@ public class CorrelationTemplatesRepository {
     this.name = name;
   }
 
+  public String getDisplayName() {
+    return displayName;
+  }
+
+  public void setDisplayName(String displayName) {
+    this.displayName = displayName;
+  }
+
   @Override
   public String toString() {
     return "CorrelationTemplatesRepository{" +
         "name='" + name + '\'' +
+        ", displayName='" + displayName + "'" +
         ", templatesVersions=" + templatesVersions +
         '}';
   }

@@ -103,8 +103,8 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
   private JButton loadTemplate;
   private JButton refreshButton;
   private RepositoriesConfigFrame configFrame;
-
   private Map<Template, TemplateProperties> templatesProperties = new HashMap<>();
+  private Map<String, String> repositoryIdToName = new HashMap<>();
 
   public TemplatesManagerFrame(CorrelationTemplatesRegistryHandler templatesRegistryHandler,
                                CorrelationTemplatesRepositoriesRegistryHandler
@@ -217,7 +217,7 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
         if (renderer instanceof JLabel && value instanceof TemplateManagerDisplay) {
           TemplateManagerDisplay templateManagerDisplay = (TemplateManagerDisplay) value;
           JLabel templateLabel = (JLabel) renderer;
-          templateLabel.setText(StringUtils.capitalize(templateManagerDisplay.getId()));
+          templateLabel.setText(templateManagerDisplay.getId());
         }
         return renderer;
       }
@@ -311,13 +311,15 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
   private void updateTemplatesList(boolean useLocal) {
     Map<Template, TemplateProperties> rawTemplates = new HashMap<>();
 
-    for (CorrelationTemplatesRepository repository
-        : repositoriesRegistryHandler.getCorrelationRepositories()) {
+    List<CorrelationTemplatesRepository> repositories =
+        repositoriesRegistryHandler.getCorrelationRepositories();
+
+    for (CorrelationTemplatesRepository repository : repositories) {
+      repositoryIdToName.put(repository.getName(), repository.getDisplayName());
       Map<Template, TemplateProperties> templatesAndProperties =
           repositoriesRegistryHandler
               .getCorrelationTemplatesAndPropertiesByRepositoryName(
                   repository.getName(), useLocal);
-
       rawTemplates.putAll(templatesAndProperties);
     }
 
@@ -346,7 +348,7 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
 
     Map<String, TemplateManagerDisplay> groupedTemplates = new HashMap<>();
     relatedTemplates.forEach(template -> {
-      String templateKey = template.getId() + " (" + template.getRepositoryId() + ")";
+      String templateKey = generateTemplateDisplayName(template);
       if (!groupedTemplates.containsKey(templateKey)) {
         groupedTemplates.put(templateKey,
             new TemplateManagerDisplay(templateKey, template.isInstalled()));
@@ -363,6 +365,10 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
     }
 
     return groupedTemplatesModel;
+  }
+
+  private String generateTemplateDisplayName(Template template) {
+    return template.getId() + " (" + repositoryIdToName.get(template.getRepositoryId()) + ")";
   }
 
   private void cacheImage(Template template) {

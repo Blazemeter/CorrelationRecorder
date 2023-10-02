@@ -5,6 +5,7 @@ import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepo
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,8 @@ public interface RepositoryRegistry {
   void setName(String name);
 
   String getName();
+
+  void setEndPoint(String endPoint);
 
   String getEndPoint();
 
@@ -46,4 +49,11 @@ public interface RepositoryRegistry {
   Map<Template, TemplateProperties> getTemplatesAndProperties();
 
   Map<Template, TemplateProperties> getTemplatesAndProperties(List<TemplateVersion> filter);
+
+  void upload(Template template) throws IOException;
+
+  void setDisplayName(String displayName);
+
+  String getDisplayName();
+
 }

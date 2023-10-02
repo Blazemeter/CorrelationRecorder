@@ -25,11 +25,6 @@ public class RemoteUrlRepository extends RemoteRepository {
   private String name;
   private String url;
 
-  public RemoteUrlRepository(String name, String url) {
-    this.name = name;
-    this.url = url;
-  }
-
   @Override
   public void init() {
     super.init();
@@ -122,6 +117,21 @@ public class RemoteUrlRepository extends RemoteRepository {
   }
 
   @Override
+  public void upload(Template template) throws IOException {
+    // Left empty intentionally for development purposes
+  }
+
+  @Override
+  public void setDisplayName(String displayName) {
+    // Left empty intentionally for development purposes
+  }
+
+  @Override
+  public String getDisplayName() {
+    return null;
+  }
+
+  @Override
   public void setName(String name) {
     this.name = name;
   }
@@ -129,6 +139,11 @@ public class RemoteUrlRepository extends RemoteRepository {
   @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public void setEndPoint(String endPoint) {
+    this.url = endPoint;
   }
 
   @Override

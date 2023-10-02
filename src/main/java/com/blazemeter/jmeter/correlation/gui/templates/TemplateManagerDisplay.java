@@ -10,6 +10,8 @@ public class TemplateManagerDisplay {
   private String id;
   private boolean hasInstalled;
 
+  private String repositoryName = "N/A";
+
   public TemplateManagerDisplay(String id, boolean hasInstalled) {
     this.id = id;
     this.hasInstalled = hasInstalled;
@@ -38,5 +40,13 @@ public class TemplateManagerDisplay {
 
   public List<Template> getVersions() {
     return versions;
+  }
+
+  public String getRepositoryName() {
+    return repositoryName;
+  }
+
+  public void setRepositoryName(String repositoryName) {
+    this.repositoryName = repositoryName;
   }
 }

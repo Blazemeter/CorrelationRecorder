@@ -91,6 +91,10 @@ public class Template {
     return version;
   }
 
+  public void setVersion(String version) {
+    this.version = version;
+  }
+
   public BufferedImage getSnapshot() {
     return snapshot;
   }

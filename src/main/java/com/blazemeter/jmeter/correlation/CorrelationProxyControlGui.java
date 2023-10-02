@@ -51,7 +51,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   private CorrelationWizard wizard;
 
   static {
-    LocalConfiguration.installDefaultFiles();
+    LocalConfiguration.installDefaultFiles(JMeterUtils.getJMeterBinDir());
   }
 
   public CorrelationProxyControlGui() {

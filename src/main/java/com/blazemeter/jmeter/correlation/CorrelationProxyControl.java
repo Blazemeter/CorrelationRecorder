@@ -18,13 +18,11 @@ import com.blazemeter.jmeter.correlation.core.proxy.ReflectionUtils;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateVersions;
-import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistry;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
-import com.blazemeter.jmeter.correlation.core.templates.LocalCorrelationTemplatesRegistry;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
@@ -115,7 +113,6 @@ public class CorrelationProxyControl extends ProxyControl implements
   private transient CorrelationTemplatesRepositoriesConfiguration templateRepositoryConfig;
   private transient LocalConfiguration localConfiguration;
   private transient CorrelationEngine correlationEngine;
-  private transient CorrelationTemplatesRegistry correlationTemplatesRegistry;
   private JMeterTreeNode target = null;
   private List<SampleResult> samples = new ArrayList<>();
   private Method putSamplesIntoModel;
@@ -136,7 +133,6 @@ public class CorrelationProxyControl extends ProxyControl implements
     correlationEngine = new CorrelationEngine();
     componentsRegistry = CorrelationComponentsRegistry.getInstance();
     localConfiguration = new LocalConfiguration(JMeterUtils.getJMeterBinDir());
-    correlationTemplatesRegistry = new LocalCorrelationTemplatesRegistry(localConfiguration);
     templateRepositoryConfig =
         new CorrelationTemplatesRepositoriesConfiguration(localConfiguration);
     setName(RECORDER_NAME);
@@ -147,14 +143,12 @@ public class CorrelationProxyControl extends ProxyControl implements
       CorrelationComponentsRegistry componentsRegistry,
       CorrelationTemplatesRepositoriesConfiguration templateRepositoryConfig,
       LocalConfiguration localConfiguration,
-      CorrelationEngine correlationEngine,
-      CorrelationTemplatesRegistry correlationTemplatesRegistry) {
+      CorrelationEngine correlationEngine) {
     this.componentsRegistry = componentsRegistry;
     this.templateRepositoryConfig =
         templateRepositoryConfig;
     this.localConfiguration = localConfiguration;
     this.correlationEngine = correlationEngine;
-    this.correlationTemplatesRegistry = correlationTemplatesRegistry;
   }
 
   public CorrelationTemplatesRepositoriesConfiguration getTemplateRepositoryConfig() {
@@ -519,9 +513,7 @@ public class CorrelationProxyControl extends ProxyControl implements
         .withResponseFilters(getResponseFilter())
         .build();
 
-    correlationTemplatesRegistry.save(template);
-    updateLocalRepository(template);
-    installTemplate(template.getRepositoryId(), template.getId(), template.getVersion());
+    localConfiguration.saveTemplate(template);
   }
 
   public List<RulesGroup> getGroups() {
@@ -578,16 +570,12 @@ public class CorrelationProxyControl extends ProxyControl implements
     setProperty(RESPONSE_FILTER, responseFilter);
   }
 
-  private void updateLocalRepository(Template template) {
-    templateRepositoryConfig
-        .updateLocalRepository(template.getId(), template.getVersion());
-  }
-
   @Override
   public void onLoadTemplate(String repositoryOwner, String id, String templateVersion)
       throws IOException {
-    Optional<Template> correlationTemplate = correlationTemplatesRegistry
-        .findByID(repositoryOwner, id, templateVersion);
+
+    Optional<Template> correlationTemplate = localConfiguration
+        .findById(repositoryOwner, id, templateVersion);
     if (correlationTemplate.isPresent()) {
       Template template = correlationTemplate.get();
 
@@ -658,24 +646,12 @@ public class CorrelationProxyControl extends ProxyControl implements
     return cleaned.stream().map(String::trim).collect(Collectors.joining(","));
   }
 
-  private List<CorrelationRule> appendCorrelationRules(List<CorrelationRule> actualRules,
-                                                       List<CorrelationRule> loadedRules) {
-    if (loadedRules.isEmpty()) {
-      return actualRules;
-    }
-
-    LinkedHashSet<CorrelationRule> actualRulesSet = new LinkedHashSet<>(actualRules);
-    actualRulesSet.addAll(loadedRules);
-
-    return new ArrayList<>(actualRulesSet);
-  }
-
   public String getContentTypeInclude() {
     return getPropertyAsString(RESPONSE_FILTER);
   }
 
   public List<Template> getInstalledCorrelationTemplates() {
-    return correlationTemplatesRegistry.getInstalledTemplates();
+    return localConfiguration.getInstalledTemplates();
   }
 
   public void update(String correlationComponents, List<RulesGroup> groups, String responseFilter,
@@ -688,7 +664,7 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public void saveRepository(String id, String url) throws IOException {
-    templateRepositoryConfig.save(id, url);
+    templateRepositoryConfig.saveRepository(id, url);
   }
 
   @Override
@@ -723,13 +699,13 @@ public class CorrelationProxyControl extends ProxyControl implements
   @Override
   public void installTemplate(String repositoryName, String id, String version)
       throws ConfigurationException {
-    templateRepositoryConfig.installTemplate(repositoryName, id, version);
+    localConfiguration.installTemplate(repositoryName, id, version);
   }
 
   @Override
   public void uninstallTemplate(String repositoryName, String id, String version)
       throws ConfigurationException {
-    templateRepositoryConfig.uninstallTemplate(repositoryName, id, version);
+    localConfiguration.uninstallTemplate(repositoryName, id, version);
   }
 
   @Override
@@ -739,12 +715,12 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public RepositoryManager getRepositoryManager(String name) {
-    return templateRepositoryConfig.getRepositoryManager(name);
+    return localConfiguration.getRepositoryManager(name);
   }
 
   @Override
   public RepositoryManager getRepositoryManager(String name, String url) {
-    return templateRepositoryConfig.getRepositoryManager(name, url);
+    return localConfiguration.getRepositoryManager(name, url);
   }
 
   @Override
@@ -784,8 +760,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   public boolean refreshRepositories(String localConfigurationRoute,
                                      Consumer<Integer> setProgressConsumer,
                                      Consumer<String> setStatusConsumer) {
-    return templateRepositoryConfig
-        .refreshRepositories(localConfigurationRoute, setProgressConsumer, setStatusConsumer);
+    return localConfiguration.refreshRepositories(localConfigurationRoute, setProgressConsumer,
+        setStatusConsumer);
   }
 
   @Override
@@ -852,7 +828,6 @@ public class CorrelationProxyControl extends ProxyControl implements
     correlationEngine = new CorrelationEngine();
     componentsRegistry = CorrelationComponentsRegistry.getInstance();
     localConfiguration = new LocalConfiguration(getTemplateDirectoryPath());
-    correlationTemplatesRegistry = new LocalCorrelationTemplatesRegistry(localConfiguration);
     templateRepositoryConfig =
         new CorrelationTemplatesRepositoriesConfiguration(localConfiguration);
     setName(RECORDER_NAME);

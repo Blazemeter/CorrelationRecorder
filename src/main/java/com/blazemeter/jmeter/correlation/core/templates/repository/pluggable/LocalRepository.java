@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.core.templates.repository.pluggable;
 
 import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.LOCAL_REPOSITORY_NAME;
 
+import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateVersions;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
@@ -30,6 +31,11 @@ public class LocalRepository extends FileRepository implements PluggableReposito
   }
 
   @Override
+  public void setEndPoint(String endPoint) {
+    // Not allowed
+  }
+
+  @Override
   public void setup() {
     File localRepositoryFile = getRepositoryFile();
     try {
@@ -39,8 +45,10 @@ public class LocalRepository extends FileRepository implements PluggableReposito
         this.getConfig()
             .writeValue(localRepositoryFile, new HashMap<String, CorrelationTemplateVersions>() {
               {
-                put(SIEBEL_TEMPLATE_NAME,
-                    new CorrelationTemplateVersions(DEFAULT_SIEBEL_TEMPLATE_VERSION));
+                CorrelationTemplateVersions value =
+                    new CorrelationTemplateVersions(DEFAULT_SIEBEL_TEMPLATE_VERSION);
+                value.setRepositoryDisplayName(LOCAL_REPOSITORY_NAME);
+                put(SIEBEL_TEMPLATE_NAME, value);
               }
             });
         LOG.info("Saved local repository file");
@@ -79,13 +87,6 @@ public class LocalRepository extends FileRepository implements PluggableReposito
     return null;
   }
 
-  private static Map<String, String> getDefaultProperties() {
-    Map<String, String> props = new HashMap<>();
-    props.put(RepositoryGeneralConst.TEMPLATE_PROPERTY_DISALLOW_TO_USE, "false");
-    props.put(RepositoryGeneralConst.TEMPLATE_PROPERTY_NOT_ALLOW_EXPORT, "false");
-    return props;
-  }
-
   @Override
   public Map<Template, TemplateProperties> getTemplatesAndProperties() {
     return null;
@@ -96,16 +97,34 @@ public class LocalRepository extends FileRepository implements PluggableReposito
     return null;
   }
 
+  @Override
+  public void upload(Template template) throws IOException {
+    // Left empty intentionally for development purposes
+  }
+
+  @Override
+  public String getDisplayName() {
+    return LOCAL_REPOSITORY_NAME;
+  }
+
+  @Override
+  public void setDisplayName(String displayName) {
+    // Left empty intentionally for development purposes
+  }
+
   private boolean isSiebelInstalled() {
     return this.getConfig().isInstalled(getName(), SIEBEL_TEMPLATE_NAME);
   }
 
   private void installSiebel() {
-    this.getConfig().getRepositories().stream()
-        .filter(r -> r.getName().equals(getName()))
-        .findFirst().get()
-        .installTemplate(
-            LocalRepository.SIEBEL_TEMPLATE_NAME, LocalRepository.DEFAULT_SIEBEL_TEMPLATE_VERSION);
+    if (!isSiebelInstalled()) {
+      try {
+        this.getConfig().installTemplate(RepositoryGeneralConst.LOCAL_REPOSITORY_NAME,
+            SIEBEL_TEMPLATE_NAME, DEFAULT_SIEBEL_TEMPLATE_VERSION);
+      } catch (ConfigurationException e) {
+        LOG.error("Error installing Siebel template", e);
+      }
+    }
     this.getConfig().saveLocalConfiguration();
   }
 

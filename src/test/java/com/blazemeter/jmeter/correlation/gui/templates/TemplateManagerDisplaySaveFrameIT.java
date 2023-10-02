@@ -12,13 +12,12 @@ import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegi
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import java.awt.Container;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 import javax.swing.JPanel;
 import org.assertj.swing.fixture.FrameFixture;
@@ -56,14 +55,16 @@ public class TemplateManagerDisplaySaveFrameIT {
   private CorrelationTemplateDependency thirdDependency;
   @Mock
   private Consumer<Template> lastTemplateHandler;
+  @Mock
+  private BufferedImage snapshot;
   private TemplateSaveFrame templateSaveFrame;
-  private Set<Template> lastLoadedTemplates;
+  private List<Template> lastLoadedTemplates;
 
   @Before
   public void setup() {
     templateSaveFrame = new TemplateSaveFrame(templatesRegistry, null,
-        lastTemplateHandler, new JPanel());
-    lastLoadedTemplates = new HashSet<>(Collections.singletonList(registeredTemplate));
+        snapshot, lastTemplateHandler, new JPanel());
+    lastLoadedTemplates = Collections.singletonList(registeredTemplate);
     Container contentPane = templateSaveFrame.getContentPane();
     frame = showInFrame(contentPane);
   }
@@ -145,8 +146,12 @@ public class TemplateManagerDisplaySaveFrameIT {
   @Test
   public void shouldShowTemplateIDWhenSetLoadedTemplatesWithOneLoadedTemplate() {
     prepareRegisteredTemplate();
-    templateSaveFrame.setLoadedTemplates(lastLoadedTemplates);
+    templateSaveFrame.setLoadedTemplates(getLastLoadedTemplate());
     assertThat(findTemplateIdField().text()).isEqualTo(TEMPLATE_ID);
+  }
+
+  private Template getLastLoadedTemplate() {
+    return lastLoadedTemplates.get(lastLoadedTemplates.size() - 1);
   }
 
   private void prepareRegisteredTemplate() {
@@ -161,14 +166,14 @@ public class TemplateManagerDisplaySaveFrameIT {
   @Test
   public void shouldSetupVersionFieldWhenSetLoadTemplatesWithOneLoadedTemplate() {
     prepareRegisteredTemplate();
-    templateSaveFrame.setLoadedTemplates(lastLoadedTemplates);
+    templateSaveFrame.setLoadedTemplates(getLastLoadedTemplate());
     assertThat(findTemplateVersionField().text()).isEqualTo(TEMPLATE_VERSION);
   }
 
   @Test
   public void shouldSetupDescriptionFieldWhenSetLoadTemplatesWithOneLoadedTemplate() {
     prepareRegisteredTemplate();
-    templateSaveFrame.setLoadedTemplates(lastLoadedTemplates);
+    templateSaveFrame.setLoadedTemplates(getLastLoadedTemplate());
     assertThat(findTemplateDescriptionField().text()).isEqualTo(TEMPLATE_DESCRIPTION);
   }
 
@@ -176,7 +181,7 @@ public class TemplateManagerDisplaySaveFrameIT {
   public void shouldShowTemplateIDEmptyWhenSetLoadedTemplatesWithMultipleLoadedTemplate() {
     prepareRegisteredTemplate();
     lastLoadedTemplates.add(lastLoadedTemplate);
-    templateSaveFrame.setLoadedTemplates(lastLoadedTemplates);
+    templateSaveFrame.setLoadedTemplates(getLastLoadedTemplate());
     assertThat(findTemplateIdField().text()).isEmpty();
   }
 
@@ -184,7 +189,7 @@ public class TemplateManagerDisplaySaveFrameIT {
   public void shouldShowTemplateDescriptionEmptyWhenSetLoadedTemplatesWithMultipleLoadedTemplate() {
     prepareRegisteredTemplate();
     lastLoadedTemplates.add(lastLoadedTemplate);
-    templateSaveFrame.setLoadedTemplates(lastLoadedTemplates);
+    templateSaveFrame.setLoadedTemplates(getLastLoadedTemplate());
     assertThat(findTemplateDescriptionField().text()).isEmpty();
   }
 
@@ -207,29 +212,6 @@ public class TemplateManagerDisplaySaveFrameIT {
 
   private JButtonFixture findDependencyAddButton() {
     return frame.button("addButton");
-  }
-
-  @Test
-  public void shouldAddDependencyWhenAddPressed() {
-    openAdvancedSectionPanel();
-    findDependencyAddButton().click();
-    assertThat(templateSaveFrame.getDependencies()).isNotEmpty();
-  }
-
-  @Test
-  public void shouldClearRulesWhenClearPressed() {
-    openAdvancedSectionPanel();
-    findDependencyAddButton().click();
-    frame.button("clearButton").click();
-    assertThat(templateSaveFrame.getDependencies()).isEmpty();
-  }
-
-  @Test
-  public void shouldSetDependenciesWhenSetDependencies() {
-    List<CorrelationTemplateDependency> dependencies = buildExpectedDependencies();
-    templateSaveFrame.setDependencies(dependencies);
-    assertThat(templateSaveFrame.getDependencies().size()).isEqualTo(
-        dependencies.size());
   }
 
   private List<CorrelationTemplateDependency> buildExpectedDependencies() {
@@ -285,17 +267,6 @@ public class TemplateManagerDisplaySaveFrameIT {
     requireMessage(
         "There are some issues with some dependency's URLs, please fix then before continue.\n"
             + "Check the logs for more information.");
-  }
-
-  @Test
-  public void shouldLoadMultipleDependenciesWhenLoadWithMultipleLoadedTemplates() {
-    prepareDependencies();
-    prepareRegisteredTemplate();
-    when(lastLoadedTemplate.getDependencies())
-        .thenReturn(Collections.singletonList(thirdDependency));
-    lastLoadedTemplates.add(lastLoadedTemplate);
-    templateSaveFrame.setLoadedTemplates(lastLoadedTemplates);
-    assertThat(templateSaveFrame.getDependencies().size()).isEqualTo(3);
   }
 
   @Test
@@ -392,5 +363,16 @@ public class TemplateManagerDisplaySaveFrameIT {
     fillFields();
     findSaveButton().focus();
     assertThat(findSaveButton().isEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldLoadMultipleDependenciesWhenLoadWithMultipleLoadedTemplates() {
+    prepareDependencies();
+    prepareRegisteredTemplate();
+    when(lastLoadedTemplate.getDependencies())
+        .thenReturn(Collections.singletonList(thirdDependency));
+    lastLoadedTemplates.add(lastLoadedTemplate);
+    templateSaveFrame.setLoadedTemplates(getLastLoadedTemplate());
+    assertThat(templateSaveFrame.getDependenciesTable().getDependencies().size()).isEqualTo(3);
   }
 }

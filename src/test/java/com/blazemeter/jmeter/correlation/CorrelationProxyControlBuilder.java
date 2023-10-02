@@ -63,8 +63,9 @@ public class CorrelationProxyControlBuilder {
     repositoriesRegistry = repositoriesRegistry != null ?
         repositoriesRegistry
         : new CorrelationTemplatesRepositoriesConfiguration(configuration);
-    CorrelationProxyControl model = new CorrelationProxyControl(registry, repositoriesRegistry,
-        configuration, engine, templatesRegistry);
+
+    CorrelationProxyControl model =
+        new CorrelationProxyControl(registry, repositoriesRegistry, configuration, engine);
     model.setName("bzm - Correlation Recorder");
 
     if (target != null) {

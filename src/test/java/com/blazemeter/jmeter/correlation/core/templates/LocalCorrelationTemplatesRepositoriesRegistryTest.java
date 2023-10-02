@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core.templates;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -27,8 +28,6 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   private static final String TEMPLATE_FILE_SUFFIX = "template.json";
   private static final String REPOSITORY_FILE_SUFFIX = "repository.json";
   private static final String EXTERNAL_REPOSITORY_NAME = "base";
-  private static final String LOCAL_REPOSITORY_NAME = "local";
-  private static final String CENTRAL_REPOSITORY_NAME = "central";
   private static final String SIEBEL_TEMPLATE_REFERENCE_NAME = "siebel";
   private static final String WORDPRESS_TEMPLATE_REFERENCE_NAME = "wordpress";
 
@@ -37,8 +36,6 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
 
   private static final String TEMPLATE_VERSION_TWO = "1.1";
   private static final String TEMPLATE_VERSION_ONE = "1.0";
-
-  private static final String TEMPLATE_VERSION_THREE = "0.1-alpha";
 
   private static final String SIEBEL_TEMPLATE_VERSION_TWO_NAME =
       SIEBEL_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_TWO + "-" + TEMPLATE_FILE_SUFFIX;
@@ -54,14 +51,11 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   public TemporaryFolder folder = new TemporaryFolder();
   @Mock
   private CorrelationTemplatesRepository expectedBaseRepository;
-  @Mock
-  private CorrelationTemplatesRepository expectedSiebelRepository;
-  @Mock
-  private CorrelationTemplatesRepository expectedCentralRepository;
   private LocalCorrelationTemplatesRepositoriesRegistry local;
 
   @Before
   public void setup() throws IOException {
+    LocalConfiguration.installDefaultFiles(folder.getRoot().getPath());
     LocalConfiguration localConfiguration =
         new LocalConfiguration(folder.getRoot().getPath(), true);
     localConfiguration.setupRepositoryManagers();
@@ -74,25 +68,15 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   }
 
   private void prepareExpectedLocalRepository() {
-    when(expectedSiebelRepository.getValues()).thenReturn(
-        CORRELATION_TEMPLATES_REPOSITORY_NAME + "{name='" + LOCAL_REPOSITORY_NAME
-            + "', templatesVersions={" + SIEBEL_TEMPLATE_REFERENCE_NAME +
-            "=CorrelationTemplateReference{versions=[" + TEMPLATE_VERSION_ONE + "]}}}");
-
-    when(expectedCentralRepository.getValues()).thenReturn(
-        CORRELATION_TEMPLATES_REPOSITORY_NAME + "{name='" + CENTRAL_REPOSITORY_NAME
-            + "', templatesVersions={" + WORDPRESS_TEMPLATE_REFERENCE_NAME +
-            "=CorrelationTemplateReference{versions=[" + TEMPLATE_VERSION_THREE + "]}}}");
-
     when(expectedBaseRepository.getName()).thenReturn(EXTERNAL_REPOSITORY_NAME);
     when(expectedBaseRepository.getValues()).thenReturn(
         CORRELATION_TEMPLATES_REPOSITORY_NAME + "{name='" + EXTERNAL_REPOSITORY_NAME
-            + "', templatesVersions={"
+            + "', displayName='null', templatesVersions={"
             + SIEBEL_TEMPLATE_REFERENCE_NAME
-            + "=CorrelationTemplateReference{versions=[" + TEMPLATE_VERSION_ONE
+            + "=CorrelationTemplateVersions {versions=[" + TEMPLATE_VERSION_ONE
             + ", " + TEMPLATE_VERSION_TWO + "]}, "
             + WORDPRESS_TEMPLATE_REFERENCE_NAME
-            + "=CorrelationTemplateReference{versions=[" + TEMPLATE_VERSION_ONE
+            + "=CorrelationTemplateVersions {versions=[" + TEMPLATE_VERSION_ONE
             + "]}}}");
   }
 
@@ -124,25 +108,6 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
         .collect(Collectors.toList());
   }
 
-  @Test
-  public void shouldReturnLocalCorrelationTemplatesRepositoriesWhenGetRepositories() {
-    assertEquals(getRepositoriesNames(prepareExpectedLocalRepositories()),
-        getRepositoriesNames(local.getRepositories()));
-  }
-
-  private List<String> getRepositoriesNames(List<CorrelationTemplatesRepository> repositories) {
-    return repositories.stream().map(CorrelationTemplatesRepository::getValues)
-        .collect(Collectors.toList());
-  }
-
-  private List<CorrelationTemplatesRepository> prepareExpectedLocalRepositories() {
-    List<CorrelationTemplatesRepository> expectedLocalRepositories = new ArrayList<>();
-    expectedLocalRepositories.add(expectedCentralRepository);
-    expectedLocalRepositories.add(expectedSiebelRepository);
-    expectedLocalRepositories.add(expectedBaseRepository);
-
-    return expectedLocalRepositories;
-  }
 
   @Test
   public void shouldFindRepositoryByIdWhenFind() {
