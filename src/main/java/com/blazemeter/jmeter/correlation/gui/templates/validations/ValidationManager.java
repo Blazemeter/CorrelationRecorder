@@ -17,11 +17,14 @@ public class ValidationManager {
 
   private final Set<Component> interactedFields = new HashSet<>();
   private final Map<Component, ComponentValidation<?>> validations = new HashMap<>();
+  private final Map<Integer, Set<Component>> groups = new HashMap<>();
   private JButton saveButton;
   private Runnable afterValidation;
 
-  public <T extends JTextComponent> void register(T component, JLabel errorLabel,
+  public <T extends JTextComponent> void register(int group, T component, JLabel errorLabel,
                                                   List<Condition> validationRules) {
+
+    addComponentToGroup(group, component);
     ComponentValidation<T> validation =
         new BaseValidation<>(component, errorLabel, validationRules);
     validations.put(component, validation);
@@ -44,7 +47,9 @@ public class ValidationManager {
     });
   }
 
-  public void register(JComboBox<?> comboBox, JLabel errorLabel, List<Condition> validationRules) {
+  public void register(int group, JComboBox<?> comboBox, JLabel errorLabel,
+                       List<Condition> validationRules) {
+    addComponentToGroup(group, comboBox);
     JTextComponent editor = (JTextComponent) comboBox.getEditor().getEditorComponent();
     ComponentValidation<JTextComponent> validation =
         new BaseValidation<>(editor, errorLabel, validationRules);
@@ -67,6 +72,11 @@ public class ValidationManager {
     });
   }
 
+  private void addComponentToGroup(int group, Component component) {
+    groups.putIfAbsent(group, new HashSet<>());
+    groups.get(group).add(component);
+  }
+
   private void triggerAfterValidation() {
     if (afterValidation != null) {
       afterValidation.run();
@@ -74,6 +84,9 @@ public class ValidationManager {
   }
 
   private void updateSaveButtonState() {
+    if (saveButton == null) {
+      return;
+    }
     boolean valid = isValid();
     boolean allValid = true;
     for (ComponentValidation<?> compValidation : validations.values()) {
@@ -88,26 +101,55 @@ public class ValidationManager {
   }
 
   public boolean isValid() {
-    for (ComponentValidation<?> validation : validations.values()) {
-      validation.updateValidationStates();
-      if (!validation.isValid()) {
+    for (int group : groups.keySet()) {
+      if (!isValid(group)) {
         return false;
       }
     }
     return true;
   }
 
-  public boolean validateAll() {
-    for (ComponentValidation<?> validation : validations.values()) {
-      validation.applyFormat();
+  public boolean isValid(int group) {
+    if (!groups.containsKey(group)) {
+      return false;
     }
-
-    for (ComponentValidation<?> validation : validations.values()) {
-      if (!validation.isValid()) {
+    Set<Component> componentsGroup = groups.get(group);
+    for (Map.Entry<Component, ComponentValidation<?>> entry : validations.entrySet()) {
+      if (!componentsGroup.contains(entry.getKey())) {
+        continue;
+      }
+      entry.getValue().updateValidationStates();
+      if (!entry.getValue().isValid()) {
         return false;
       }
     }
     return true;
+  }
+
+  public boolean isErrorVisible(int group) {
+    if (!groups.containsKey(group)) {
+      return false;
+    }
+    Set<Component> componentsGroup = groups.get(group);
+    for (Map.Entry<Component, ComponentValidation<?>> entry : validations.entrySet()) {
+      if (!componentsGroup.contains(entry.getKey())) {
+        continue;
+      }
+      if (entry.getValue().getErrorVisible()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean validateAll() {
+    for (ComponentValidation<?> validation : validations.values()) {
+      validation.updateValidationStates();
+      validation.applyFormat();
+    }
+    updateSaveButtonState();
+    triggerAfterValidation();
+    return isValid();
   }
 
   public JButton getSaveButton() {
@@ -125,7 +167,9 @@ public class ValidationManager {
   public void resetAll() {
     validations.values().forEach(ComponentValidation::reset);
     interactedFields.clear();
-    saveButton.setEnabled(false);
+    if (saveButton != null) {
+      saveButton.setEnabled(false);
+    }
   }
 }
 

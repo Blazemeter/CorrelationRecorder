@@ -7,8 +7,8 @@ import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,6 @@ public class Analysis {
   private CorrelationProxyControl proxyControl;
   private List<RulesGroup> rulesGroups;
   private String tracePath;
-
   private Supplier<List<JMeterTreeNode>> nodesSupplier;
   private Supplier<List<SampleResult>> resultsSupplier;
   private Supplier<List<HTTPSamplerProxy>> samplersSupplier;
@@ -57,8 +56,8 @@ public class Analysis {
    * @param shouldCorrelate   Boolean indicating if the Correlation Rules should be applied
    * @return
    */
-  public Map<Template, List<CorrelationSuggestion>> run(
-      List<Template> selectedTemplates, String tracePath, boolean shouldCorrelate) {
+  public Map<Template, List<CorrelationSuggestion>> run(List<Template> selectedTemplates,
+                                                        String tracePath, boolean shouldCorrelate) {
     setTracePath(tracePath);
     if (!shouldCorrelate) {
       disableCorrelation();
@@ -78,8 +77,44 @@ public class Analysis {
       suggestions.put(template, correlationSuggestions);
     }
 
+    enableCorrelation();
     LOG.trace("Analysis finished!");
     return suggestions;
+  }
+
+  public Map<Template, List<CorrelationSuggestion>> run() {
+    List<Template> selectedTemplates = new ArrayList<>(); // populate this list as needed
+    String tracePath = ""; // set the trace path as needed
+    return run(selectedTemplates, tracePath, true);
+  }
+
+  private static void run(List<SampleResult> sampleResults,
+                          List<JMeterTreeNode> samplerNodes,
+                          CorrelationEngine engine,
+                          List<HTTPSamplerProxy> samplers) {
+
+    for (int i = 0; i < sampleResults.size(); i++) {
+      List<TestElement> children = new ArrayList<>();
+      JMeterTreeNode node = samplerNodes.get(i);
+      int initialChildCount = node.getChildCount();
+      for (int j = 0; j < initialChildCount; j++) {
+        children.add((TestElement) ((JMeterTreeNode) node.getChildAt(j)).getUserObject());
+      }
+      engine.process(samplers.get(i), children, sampleResults.get(i), "");
+      if (initialChildCount == children.size()) {
+        continue;
+      }
+      JMeterTreeModel model = getCurrentJMeterTreeModel();
+      for (int j = initialChildCount; j < children.size(); j++) {
+        TestElement child = children.get(j);
+        try {
+          model.addComponent(child, node);
+        } catch (IllegalUserActionException e) {
+          LOG.error("Error while adding the child '{}' to the element '{}'",
+              child.getName(), node.getName(), e);
+        }
+      }
+    }
   }
 
   private CorrelationProxyControl getProxyControl(JMeterTreeModel model) {
@@ -116,44 +151,28 @@ public class Analysis {
     }
 
     this.rulesGroups = rulesGroups;
-    proxyControl = getProxyControl(GuiPackage.getInstance().getTreeModel());
+    proxyControl = getProxyControl(getCurrentJMeterTreeModel());
     updateRefVariable();
 
     CorrelationEngine engine = new CorrelationEngine();
-    engine.setCorrelationRules(this.rulesGroups, proxyControl.getCorrelationComponentsRegistry());
+    /*
+    * Question: Do I really need the proxyControl or just the CorrelationComponentsRegistry?
+    * */
+    CorrelationComponentsRegistry componentsRegistry =
+        proxyControl.getCorrelationComponentsRegistry();
+    engine.setCorrelationRules(this.rulesGroups, componentsRegistry);
     engine.setEnabled(true);
     engine.reset();
 
     List<HTTPSamplerProxy> samplers = samplersSupplier.get();
-    report.accept("Samplers: " + samplers.size());
     List<SampleResult> sampleResults = resultsSupplier.get();
-    report.accept("Sample Results: " + sampleResults.size());
     List<JMeterTreeNode> samplerNodes = nodesSupplier.get();
-    report.accept("Sampler Nodes: " + samplerNodes.size());
-    for (int i = 0; i < sampleResults.size(); i++) {
-      List<TestElement> children = new ArrayList<>();
-      JMeterTreeNode node = samplerNodes.get(i);
-      int initialChildCount = node.getChildCount();
-      for (int j = 0; j < initialChildCount; j++) {
-        children.add((TestElement) ((JMeterTreeNode) node.getChildAt(j)).getUserObject());
-      }
-      engine.process(samplers.get(i), children, sampleResults.get(i), "");
-      if (initialChildCount == children.size()) {
-        continue;
-      }
-      report.accept("Node '" + node.getName() + "' has been modified. Adding the new children. "
-          + "Initial children: " + initialChildCount + ", new children: " + children.size() + ".");
-      JMeterTreeModel model = GuiPackage.getInstance().getTreeModel();
-      for (int j = initialChildCount; j < children.size(); j++) {
-        TestElement child = children.get(j);
-        try {
-          model.addComponent(child, node);
-        } catch (IllegalUserActionException e) {
-          LOG.error("Error while adding the child '{}' to the element '{}'",
-              child.getName(), node.getName(), e);
-        }
-      }
-    }
+
+    run(sampleResults, samplerNodes, engine, samplers);
+  }
+
+  private static JMeterTreeModel getCurrentJMeterTreeModel() {
+    return GuiPackage.getInstance().getTreeModel();
   }
 
   //This method updates the variable name (called Ref Name for rules) in every part of the
@@ -173,15 +192,6 @@ public class Analysis {
         rule.getCorrelationReplacement().setVariableName(referenceName);
       }
     }
-  }
-
-  private List<RulesGroup> getLoadedRulesGroups() {
-    List<RulesGroup> groups = proxyControl.getGroups();
-    if (groups == null || groups.isEmpty()) {
-      LOG.error("No rules found. Please, add some rules to the Test Plan.");
-      return Collections.emptyList();
-    }
-    return groups;
   }
 
   public void setNodesSupplier(Supplier<List<JMeterTreeNode>> nodesSupplier) {

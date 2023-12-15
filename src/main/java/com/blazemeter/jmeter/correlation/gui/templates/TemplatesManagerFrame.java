@@ -290,7 +290,8 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
     templateID.setText(StringUtils.capitalize(selectedTemplate.getId()));
     templateID.repaint();
     templateInfoPane.validate();
-    templateInfoPane.setText(getInformationAsHTLM(selectedTemplate, true, true));
+    templateInfoPane.setText(getInformationAsHTLM(selectedTemplate, true, true, repositoryIdToName
+        .get(selectedTemplate.getRepositoryId())));
     templateInfoPane.setCaretPosition(0);
     templateInfoPane.repaint();
     cacheImage(selectedTemplate);
@@ -332,10 +333,11 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
     availableModel = new DefaultListModel<>();
 
     for (int i = 0; i < unifiedTemplates.getSize(); i++) {
-      if (unifiedTemplates.get(i).hasInstalledVersion()) {
-        installedModel.addElement(unifiedTemplates.get(i));
+      TemplateManagerDisplay templateDisplay = unifiedTemplates.get(i);
+      if (templateDisplay.hasInstalledVersion()) {
+        installedModel.addElement(templateDisplay);
       } else {
-        availableModel.addElement(unifiedTemplates.get(i));
+        availableModel.addElement(templateDisplay);
       }
     }
 

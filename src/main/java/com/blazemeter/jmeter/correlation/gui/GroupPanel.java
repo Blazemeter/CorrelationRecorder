@@ -12,14 +12,13 @@ import com.blazemeter.jmeter.correlation.gui.common.CollapsiblePanel;
 import com.blazemeter.jmeter.correlation.gui.common.NonStringValuedTableGui;
 import com.blazemeter.jmeter.correlation.gui.common.RulePartType;
 import com.helger.commons.annotation.VisibleForTesting;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +28,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 
 public class GroupPanel extends JPanel implements ActionListener {
 
@@ -58,7 +56,11 @@ public class GroupPanel extends JPanel implements ActionListener {
     this.modelUpdate = modelUpdate;
     initializeRulesTable();
     this.groupEnabled = isGroupEnabled;
-    this.container = buildCollapsiblePanel(title, isGroupEnabled, new JScrollPane(table));
+    JPanel tablePanel = new JPanel();
+    tablePanel.setLayout(new BorderLayout());
+    tablePanel.add(table.getTableHeader(), BorderLayout.NORTH);
+    tablePanel.add(table, BorderLayout.CENTER);
+    this.container = buildCollapsiblePanel(title, isGroupEnabled, tablePanel);
     add(container);
     checkButtonsStatus();
   }
@@ -167,14 +169,6 @@ public class GroupPanel extends JPanel implements ActionListener {
     table = SwingUtils.createComponent(getName() + "-rulesTableGui-" + System.currentTimeMillis(),
         new RulesTableGui(this::checkButtonsStatus), MAIN_CONTAINER_DEFAULT_DIMENSION);
     table.getSelectionModel().addListSelectionListener(e -> checkButtonsStatus());
-    JScrollPane scrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-        JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-    scrollPane.addComponentListener(new ComponentAdapter() {
-      @Override
-      public void componentResized(ComponentEvent e) {
-        table.doTableResize();
-      }
-    });
   }
 
   private void checkButtonsStatus() {

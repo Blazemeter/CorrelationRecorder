@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.blazemeter.jmeter.correlation.TestUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -60,8 +62,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
         new LocalConfiguration(folder.getRoot().getPath(), true);
     localConfiguration.setupRepositoryManagers();
     local = new LocalCorrelationTemplatesRepositoriesRegistry(localConfiguration);
-    String localRepository = Paths.get(new File(getClass().getResource("/").getFile()).toPath().
-        toAbsolutePath().toString(), BASE_REPOSITORY_NAME).toAbsolutePath().toString();
+    String localRepository = Paths.get(TestUtils.getCleanPath(this.getClass()), BASE_REPOSITORY_NAME).toAbsolutePath().toString();
 
     local.save(EXTERNAL_REPOSITORY_NAME, localRepository);
     prepareExpectedLocalRepository();

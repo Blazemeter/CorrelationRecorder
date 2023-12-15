@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -32,6 +33,9 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreeNode;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
@@ -45,7 +49,6 @@ import org.apache.jmeter.extractor.RegexExtractor;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
-import org.apache.jmeter.processor.PostProcessor;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
@@ -54,6 +57,7 @@ import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.reporters.ResultCollector;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.save.SaveService;
+import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
@@ -65,6 +69,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This class is responsible for the creation of the JMeter test plan.
@@ -81,14 +88,6 @@ public class JMeterElementUtils {
 
   public JMeterElementUtils(Configuration configuration) {
     this.configuration = configuration;
-  }
-
-  public static List<HTTPSamplerBase> getHttpSamplers(HashTree testPlanTree) {
-    List<TestElement> samplers = new LinkedList<>();
-    extractHttpSamplers(testPlanTree, samplers);
-    return samplers.stream()
-        .map(HTTPSamplerBase.class::cast)
-        .collect(Collectors.toList());
   }
 
   public static void extractHttpSamplers(HashTree tree, List<TestElement> samplerList) {
@@ -134,10 +133,6 @@ public class JMeterElementUtils {
     }
 
     return null;
-  }
-
-  public static JMeterTreeNode getNodeOf(TestElement element) {
-    return getTreeModel().getNodeOf(element);
   }
 
   public static String saveTestPlanSnapshot() {
@@ -198,6 +193,26 @@ public class JMeterElementUtils {
     return model;
   }
 
+  public static List<SampleResult> getSampleResults(String filePath) {
+    File file = new File(filePath);
+    if (!file.exists()) {
+      LOG.warn("File {} does not exist", filePath);
+      return new ArrayList<>();
+    }
+
+    return new ResultFileParser().loadFromFile(file, false);
+  }
+
+  public static List<SampleResult> getSampleResultsFiltered(String filePath) {
+    File file = new File(filePath);
+    if (!file.exists()) {
+      LOG.warn("File {} does not exist", filePath);
+      return new ArrayList<>();
+    }
+
+    return new ResultFileParser().loadFromFile(file, true);
+  }
+
   private boolean isIgnoredParameter(String key) {
     return configuration.getIgnoredParameters().contains(key.toLowerCase().trim());
   }
@@ -217,6 +232,31 @@ public class JMeterElementUtils {
       }
     }
     return true;
+  }
+
+  public static boolean isXml(String xml) {
+    String usedValue = JMeterElementUtils.removeBomIfExistFromContent(xml);
+
+    SAXParserFactory factory = SAXParserFactory.newInstance();
+    SAXParser saxParser = null;
+    try {
+      saxParser = factory.newSAXParser();
+      InputSource is = new InputSource(new StringReader(usedValue));
+      saxParser.parse(is, new DefaultHandler());
+    } catch (ParserConfigurationException | SAXException | IOException e) {
+      return false;
+    }
+    return true;
+  }
+
+  public static String removeBomIfExistFromContent(String xmlContent) {
+    String usedValue = xmlContent;
+    int indexOf = xmlContent.indexOf("<");
+    if (indexOf > 0) {
+      // Remove the BOM if present
+      usedValue = xmlContent.substring(indexOf);
+    }
+    return usedValue;
   }
 
   public static boolean isJsonObject(String value) {
@@ -323,7 +363,7 @@ public class JMeterElementUtils {
           continue;
         }
 
-        addToMap(parameterMap, key, valueString, sampler, "JSON");
+        addToMap(parameterMap, key, valueString, sampler, Sources.REQUEST_BODY_JSON);
         continue;
       }
 
@@ -333,29 +373,48 @@ public class JMeterElementUtils {
       } else if (value instanceof JSONArray) {
         extractParametersFromJsonArray(json.getJSONArray(key), parameterMap, sampler,
             level + 1, key);
+      } else if (value instanceof Integer || value instanceof Double || value instanceof Long
+          || value instanceof Float) {
+        addToMap(parameterMap, key, value.toString(), sampler, Sources.REQUEST_BODY_JSON_NUMERIC);
+      } else if (value == JSONObject.NULL) {
+        LOG.warn("Null value detected: " + key);
+        continue;
+      } else if (value instanceof Boolean) {
+        if (configuration.shouldIgnoreBooleanValues()) {
+          continue;
+        }
+
+        addToMap(parameterMap, key, value.toString(), sampler, Sources.REQUEST_BODY_JSON);
       } else {
-        String stringValue = json.getString(key);
+        String stringValue;
+        try {
+          stringValue = json.getString(key);
+        } catch (JSONException e) {
+          LOG.warn("Error parsing JSON: " + value, e);
+          continue;
+        }
+
         if (isJson(stringValue)) {
           // If the value is a JSON, we need to parse it recursively
           JSONObject jsonObject;
           try {
             jsonObject = new JSONObject(stringValue);
           } catch (JSONException e) {
-            LOG.trace("Error parsing JSON: " + stringValue, e);
+            LOG.warn("Error parsing JSON: " + stringValue, e);
             continue;
           }
 
           extractParametersFromJson(jsonObject, parameterMap, sampler, level + 1);
         } else {
-          addToMap(parameterMap, key, stringValue, sampler, "JSON");
+          addToMap(parameterMap, key, stringValue, sampler, Sources.REQUEST_BODY_JSON);
         }
       }
     }
   }
 
-  private void extractParametersFromJsonArray(JSONArray array, Map<String,
+  public void extractParametersFromJsonArray(JSONArray array, Map<String,
       List<Appearances>> parameterMap, TestElement sampler,
-                                              int level, String key) {
+                                             int level, String key) {
     for (int i = 0; i < array.length(); i++) {
       Object item = array.get(i);
       if (item instanceof JSONObject) {
@@ -370,7 +429,7 @@ public class JMeterElementUtils {
         if (configuration.shouldIgnoreBooleanValues()) {
           continue;
         }
-        addToMap(parameterMap, key, item.toString(), sampler, "JSON Array");
+        addToMap(parameterMap, key, item.toString(), sampler, Sources.REQUEST_BODY_JSON);
       } else if (item instanceof String) {
         String value = (String) item;
         if (value.isEmpty()) {
@@ -382,7 +441,7 @@ public class JMeterElementUtils {
             || Boolean.FALSE.toString().equalsIgnoreCase(value))) {
           continue;
         }
-        addToMap(parameterMap, key, item.toString(), sampler, "JSON Array");
+        addToMap(parameterMap, key, item.toString(), sampler, Sources.REQUEST_BODY_JSON);
       }
     }
   }
@@ -432,10 +491,7 @@ public class JMeterElementUtils {
   protected void addToMap(Map<String, List<Appearances>> parametersMap, String key,
                           String value, TestElement sampler, String source) {
     // if the value length is smaller than the minimum length, we don't add it to the map
-    if (value.length() < configuration.getMinLength()) {
-      System.out.println("Is ignorable parameter '" + key + "' with value '" + value +
-          "'. Reason: value length (" + value.length() + ") is smaller than the minimum length (" +
-          configuration.getMinLength() + "). Source:" + source);
+    if (value.length() <= configuration.getMinLength()) {
       return;
     }
 
@@ -450,33 +506,32 @@ public class JMeterElementUtils {
     }
 
     for (Appearances appearances : appearancesList) {
-      if (appearances.getValue().equals(value)) {
-        // We need to be careful here: if the value appears more than once,
-        // we need to add it, so we can
-        // generate multivalued extractors
-        Optional<TestElement> isRepeated = appearances.getList().stream()
-            .filter(app -> app.getName().equals(sampler.getName()))
-            .findFirst();
+      if (!appearances.getValue().equals(value)) {
+        continue;
+      }
 
-        if (isRepeated.isPresent()) {
-          LOG.debug(
-              "Value detected is already added, excluded: " + value + " key:" + key + " source:" +
-                  source);
-          return;
-        }
+      // We need to be careful here: if the value appears more than once,
+      // we need to add it, so we can
+      // generate multivalued extractors
+      List<TestElement> usages = appearances.getList();
+      Optional<TestElement> isRepeated = usages.stream()
+          .filter(app -> app.getName().equals(sampler.getName()))
+          .findFirst();
 
-        // If the value and the source are the same, but the sampler is different, we add it to the
-        if (appearances.getSource().equals(source)) {
-          appearances.getList().add(sampler);
-          return;
-        }
+      if (isRepeated.isPresent()) {
+        return;
+      }
+
+      // If the value and the source are the same, but the sampler is different, we add it to the
+      if (appearances.getSource().equals(source)) {
+        usages.add(sampler);
+        return;
       }
     }
 
     appearancesList.add(appearance);
     parametersMap.put(cleanedKey, appearancesList);
     LOG.debug("Value detected:" + value + " key:" + key + " source:" + source);
-
   }
 
   /**
@@ -520,7 +575,8 @@ public class JMeterElementUtils {
    * @param postProcessor the PostProcessor to add.
    * @param model         the JMeter's tree model.
    */
-  public static void addPostProcessorToNode(JMeterTreeNode destNode, PostProcessor postProcessor,
+  public static void addPostProcessorToNode(JMeterTreeNode destNode,
+                                            AbstractTestElement postProcessor,
                                             JMeterTreeModel model) {
     JMeterTreeNode postProcessorNode = new JMeterTreeNode();
     postProcessorNode.setUserObject(postProcessor);
@@ -535,7 +591,7 @@ public class JMeterElementUtils {
   }
 
   public static boolean isNonGui() {
-    return GuiPackage.getInstance() == null;
+    return isNotRunningWithGui();
   }
 
   public static boolean isExtractorRepeated(JMeterTreeNode node, String name) {
@@ -552,9 +608,19 @@ public class JMeterElementUtils {
   }
 
   public static void refreshJMeter() {
+    if (isNotRunningWithGui()) {
+      return;
+    }
     GuiPackage.getInstance().getMainFrame().repaint();
   }
 
+  /**
+   * Loads a JMeter test plan from a given file path.
+   *
+   * @param path The file path of the JMeter test plan to load.
+   * @return A HashTree representing the structure of the loaded JMeter test plan.
+   *         If an error occurs during loading, this method will return null.
+   */
   public static HashTree getTestPlan(String path) {
     HashTree hashTree = new HashTree();
     try {
@@ -575,6 +641,11 @@ public class JMeterElementUtils {
     FileManagementUtils.makeRecordingFolder();
     FileManagementUtils.makeReplayResultsFolder();
     FileManagementUtils.makeHistoryFolder();
+
+    if (isNotRunningWithGui()) {
+      return;
+    }
+
     JMeterTreeNode recorderNode = getTreeModel().getNodeOf(proxy);
     if (recorderNode == null) {
       LOG.warn("Couldn't find the node of the proxy");
@@ -594,6 +665,10 @@ public class JMeterElementUtils {
         }
       }
     }
+  }
+
+  public static boolean isNotRunningWithGui() {
+    return GuiPackage.getInstance() == null;
   }
 
   public static boolean areEquivalent(JMeterTreeNode request, SampleResult result) {
@@ -718,7 +793,7 @@ public class JMeterElementUtils {
     try {
       replayingTests.join();
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      LOG.error("Error while replaying the test plan", e);
     }
     return collector;
   }
@@ -931,6 +1006,10 @@ public class JMeterElementUtils {
   }
 
   public static List<JMeterTreeNode> getCurrentSamplerNodes() {
+    if (isNotRunningWithGui()) {
+
+      return new ArrayList<>();
+    }
     return GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerProxy.class);
   }
 
@@ -1002,5 +1081,41 @@ public class JMeterElementUtils {
 
   private static List<JMeterTreeNode> getCorrelationProxyControllers(JMeterTreeModel treeModel) {
     return treeModel.getNodesOfType(CorrelationProxyControl.class);
+  }
+
+  /*
+  * Reminder: This method is not properly working (or at least the generated nodes
+  *  are not properly working)
+  * */
+  public static List<JMeterTreeNode> getSamplerNodes(HashTree testPlan) {
+    /*
+    Reminder: We commented this code because we have the theory that
+     the issue we are having where the Extractors are not being added
+     is related to this "new model" that we are creating here.
+      JMeterTreeModel model = new JMeterTreeModel(new Object());
+      JMeterTreeNode root = (JMeterTreeNode) model.getRoot();
+      model.addSubTree(testPlan, root);
+
+      // Hack to resolve ModuleControllers in non GUI mode
+      SearchByClass<ReplaceableController>
+          search = new SearchByClass<>(ReplaceableController.class);
+      testPlan.traverse(search);
+      Collection<ReplaceableController> results = search.getSearchResults();
+      for (ReplaceableController replaceableController : results) {
+        replaceableController.resolveReplacementSubTree(root);
+      }
+      */
+    JMeterTreeModel model = getCurrentJMeterTreeModel();
+    return model.getNodesOfType(HTTPSamplerProxy.class);
+  }
+
+  public static JMeterTreeModel getCurrentJMeterTreeModel() {
+    JMeterTreeModel model;
+    if (!JMeterElementUtils.isNotRunningWithGui()) {
+      model = GuiPackage.getInstance().getTreeModel();
+    } else {
+      model = new JMeterTreeModel();
+    }
+    return model;
   }
 }

@@ -188,6 +188,6 @@ This is important, in most of the cases, to properly show the name of the Extens
 
 Review these links for a further understanding of correlating concepts and examples:
 
-* [Siebel's Custom Extension explained](customizing/siebel_extension_explanations.md): an explanation of Siebel CRM’s Custom Extension.
-* [Extensions and useful methods in the Flow](customizing/the_flow_explanation.md): detailed explanation of how correlation works.
+* [Siebel's Custom Extension explained](siebel_extension_explanations.md): an explanation of Siebel CRM’s Custom Extension.
+* [Extensions and useful methods in the Flow](the_flow_explanation.md): detailed explanation of how correlation works.
 * [Examples](https://github.com/Blazemeter/CorrelationRecorder/tree/master/examples): basic structure for a Correlation Extension.

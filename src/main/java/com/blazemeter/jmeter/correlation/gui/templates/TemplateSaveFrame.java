@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.gui.templates;
 
 import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneralConst.LOCAL_REPOSITORY_NAME;
+import static com.blazemeter.jmeter.correlation.gui.templates.validations.BaseValidation.INVALID_COLOR;
 
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
@@ -117,6 +118,11 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
   private ValidationManager manager = new ValidationManager();
   private Template loadedTemplate;
 
+  private Border defaultTabBorder = BorderFactory.createMatteBorder(
+      0, 0, 2, 0, new Color(0x0, true));
+  private Border invalidTabBorder = BorderFactory.createMatteBorder(
+      0, 0, 2, 0, INVALID_COLOR);
+
   public TemplateSaveFrame(CorrelationTemplatesRegistryHandler templatesRegistry,
                            CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistry,
                            BufferedImage snapshot, Consumer<Template> updateLastTemplateSupplier,
@@ -131,8 +137,8 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
 
     buildMainPanel();
     setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+    setMinimumSize(new Dimension(800, 500));
     dependenciesTable.setTemplatesRegistry(templatesRegistry);
-    saveButton.setEnabled(false);
     getRootPane().registerKeyboardAction(e -> closeDialog(),
         KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
         JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -168,6 +174,9 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     tabbedPane.setName("tabbedPane");
     tabbedPane.addTab("Version Information", createCommonEditableFieldsPanel());
     tabbedPane.addTab("Template Information", createTemplateDescriptionPanel());
+
+    tabbedPane.setTabComponentAt(0, new JLabel("Version Information"));
+    tabbedPane.setTabComponentAt(1, new JLabel("Template Information"));
 
     JPanel buttonPanel = new JPanel();
     buttonPanel.setName("buttonPanel");
@@ -213,6 +222,7 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     JLabel templateLabel = makeLabel("Template *:");
     JLabel versionLabel = makeLabel("Version:");
     JLabel proposedLabel = makeLabel("New Version *:");
+    proposedLabel.setMinimumSize(new Dimension(80, 20));
     JLabel changesLabel = makeLabel("Changes *:");
 
     JPanel fieldsPanel = new JPanel();
@@ -297,6 +307,7 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     repositoriesComboBox.setRenderer(new RepositoryCellRender());
 
     protocolsComboBox = new PlaceHolderComboBox();
+    protocolsComboBox.setName("protocolsComboBox");
     protocolsComboBox.setPreferredSize(new Dimension(300, FIELD_HEIGHT));
 
     existingVersionsComboBox = createComboBox("templateVersionComboBox");
@@ -315,7 +326,8 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
       CorrelationTemplatesRepository selectedRepo =
           (CorrelationTemplatesRepository) repositoriesComboBox.getSelectedItem();
       if (selectedRepo != null) {
-        protocolsComboBox.setTemplates(new ArrayList<>(selectedRepo.getTemplates().values()));
+        Map<String, CorrelationTemplateVersions> templates = selectedRepo.getTemplates();
+        protocolsComboBox.setTemplates(new ArrayList<>(templates.values()));
       } else {
         protocolsComboBox.resetToDefault();
       }
@@ -371,11 +383,16 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     repositoriesComboBox.removeAllItems();
     repositoriesMap.forEach((key, value) -> repositoriesComboBox.addItem(value));
 
-    if (loadedTemplate == null) {
+    if (shouldStoreLocally()) {
       selectLocalRepository();
     } else {
       loadDataFromTemplate();
     }
+  }
+
+  private boolean shouldStoreLocally() {
+    // Store locally if the template is not loaded or the source repository doesn't exist
+    return loadedTemplate == null || repositoriesMap.get(loadedTemplate.getRepositoryId()) == null;
   }
 
   private void loadDataFromTemplate() {
@@ -534,7 +551,7 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     JLabel label = makeLabel("");
     label.setName(labelName);
     label.setVisible(true);
-    label.setForeground(Color.RED);
+    label.setForeground(INVALID_COLOR);
     return label;
   }
 
@@ -549,15 +566,27 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     List<Condition> versionConditions = Arrays.asList(emptyCondition, uniqueVersionCondition);
 
     JTextField protocolTextField = getProtocolsContentField();
-    manager.register(protocolTextField, protocolValidation, nonEmptyCondition);
-    manager.register(newVersionTextField, versionValidation, versionConditions);
-    manager.register(changesTextArea, changesValidation, nonEmptyCondition);
-    manager.register(descriptionTextArea, descriptionValidation, nonEmptyCondition);
-    manager.register(authorTextField, authorValidation, nonEmptyCondition);
-    manager.register(urlTextField, urlValidation, nonEmptyCondition);
+    manager.register(0, protocolTextField, protocolValidation, nonEmptyCondition);
+    manager.register(0, newVersionTextField, versionValidation, versionConditions);
+    manager.register(0, changesTextArea, changesValidation, nonEmptyCondition);
+    manager.register(1, descriptionTextArea, descriptionValidation, nonEmptyCondition);
+    manager.register(1, authorTextField, authorValidation, nonEmptyCondition);
+    manager.register(1, urlTextField, urlValidation, nonEmptyCondition);
 
-    manager.setSaveButton(saveButton);
-    manager.setAfterValidation(this::refreshWindow);
+    manager.setAfterValidation(this::afterValidation);
+  }
+
+  private void setTabValid(int tab, boolean tabIsValid) {
+    Component compTab = tabbedPane.getTabComponentAt(tab);
+    if (compTab instanceof JComponent) {
+      ((JComponent) compTab).setBorder(tabIsValid ? defaultTabBorder : invalidTabBorder);
+    }
+  }
+
+  public void afterValidation() {
+    setTabValid(tabbedPane.getSelectedIndex(),
+        !manager.isErrorVisible(tabbedPane.getSelectedIndex()));
+    this.refreshWindow();
   }
 
   public void refreshWindow() {
@@ -589,7 +618,6 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     boolean formIsInvalid = Stream.of(protocolValidation, versionValidation, authorValidation,
             urlValidation, descriptionValidation, changesValidation)
         .anyMatch(validation -> validation.isVisible());
-    saveButton.setEnabled(!formIsInvalid);
     saveButton.setToolTipText(formIsInvalid ? "Please correct the issues in red before proceed"
         : "");
   }
@@ -629,8 +657,17 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
   }
 
   public void showFrame() {
+    showFrame(false);
+  }
+
+  @VisibleForTesting
+  public void showFrame(boolean isNonGui) {
     clear();
     loadFormData();
+    if (isNonGui) {
+      return;
+    }
+
     pack();
     ComponentUtil.centerComponentInWindow(this);
     setVisible(true);
@@ -660,7 +697,6 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     clearField(authorTextField);
     clearField(urlTextField);
     dependenciesTable.clear();
-    saveButton.setEnabled(false);
   }
 
   public void selectLocalRepository() {
@@ -674,6 +710,9 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
   }
 
   private void clearStyles() {
+    for (int tab = 0; tab < tabbedPane.getTabCount(); tab++) {
+      setTabValid(tab, true);
+    }
     resetRepositoryDependantFields();
     updateComponentValidationStyle(authorTextField, authorValidation, false);
     updateComponentValidationStyle(urlTextField, urlValidation, false);
@@ -698,13 +737,14 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
     dependenciesTable.setDependencies(dependencies);
   }
 
-  public void setLoadedTemplates(Template loadedTemplate) {
+  public void updateLastLoadedTemplate(Template loadedTemplate) {
     this.loadedTemplate = loadedTemplate;
+    this.setDependencies(loadedTemplate.getDependencies());
   }
 
   public void setProtocol(String protocol) {
     boolean protocolFound = false;
-    for (int i = 0; i < protocolsComboBox.getItemCount(); i++) {
+    for (int i = 0; i <  protocolsComboBox.getItemCount(); i++) {
       CorrelationTemplateVersions template = protocolsComboBox.getItemAt(i);
       if (template.getName().equals(protocol)) {
         protocolsComboBox.setSelectedIndex(i);
@@ -759,8 +799,10 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
         return false;
       }
     }
-
-    return true;
+    for (int tab = 0; tab < tabbedPane.getTabCount(); tab++) {
+      setTabValid(tab, manager.isValid(tab));
+    }
+    return manager.validateAll();
   }
 
   private void saveTemplate() {
@@ -784,7 +826,6 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
       responseMessage = "Error while trying to save template: " + ex.getMessage();
       wasSuccessful = false;
       LOG.error("Error while saving your template. Message: {}.", ex.getMessage());
-      return;
     }
 
     JOptionPane.showMessageDialog(TemplateSaveFrame.this,
@@ -809,7 +850,10 @@ public class TemplateSaveFrame extends JDialog implements ActionListener {
           super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
       CorrelationTemplatesRepository repository = (CorrelationTemplatesRepository) value;
       if (repository != null) {
-        setText(repository.getDisplayName());
+        int cellMaxChars = 40;
+        String text = repository.getDisplayName();
+        text = text.length() < cellMaxChars ? text : text.substring(0, cellMaxChars - 3) + "...";
+        setText(text);
       } else {
         setText("None");
       }

@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
@@ -18,7 +19,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import us.abstracta.jmeter.javadsl.core.engines.JmeterEnvironment;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AnalysisReporterTest extends AnalysisTest {
@@ -29,8 +29,8 @@ public class AnalysisReporterTest extends AnalysisTest {
 
   @Before
   public void setup() throws IOException {
+    JMeterTestUtils.setupUpdatedJMeter();
     engine = new CorrelationEngine();
-    JmeterEnvironment jmeterEnvironment = new JmeterEnvironment();
     AnalysisReporter.startCollecting();
   }
 

@@ -33,6 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -41,7 +42,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -83,7 +86,7 @@ public class LocalConfiguration {
 
   //Constructor added to avoid issues with the serialization
   public LocalConfiguration() {
-
+    setJsonConfigurations();
   }
 
   public LocalConfiguration(String jmeterRootFolder, boolean initStatic) {
@@ -110,6 +113,7 @@ public class LocalConfiguration {
     LOG.info("Installing default files");
     installCorrelationRecorderTemplateTestPlan(rootFolder);
     installSiebelCorrelationTemplate(rootFolder);
+    addBlazeMeterProperties(rootFolder);
   }
 
   private static void installCorrelationRecorderTemplateTestPlan(String rootFolder) {
@@ -132,6 +136,25 @@ public class LocalConfiguration {
     templateRepository.addCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
         LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
     LOG.info("Siebel Correlation's Template installed");
+  }
+
+  private static void addBlazeMeterProperties(String rootFolder) {
+    File propertiesFile = new File(Paths.get(rootFolder, "correlation.properties")
+        .toAbsolutePath().toString());
+    if (!propertiesFile.exists()) {
+      try {
+        FileUtils.copyURLToFile(Objects.requireNonNull(
+                LocalConfiguration.class.getResource("/configurations/correlation.properties")),
+            propertiesFile);
+        LOG.info("correlation.properties file installed");
+      } catch (IOException e) {
+        LOG.error("There was a problem trying to create the correlation.properties file. ", e);
+      }
+    }
+
+    Properties blazemeterProperties = JMeterUtils.loadProperties(propertiesFile.getAbsolutePath());
+    JMeterUtils.getJMeterProperties().putAll(blazemeterProperties);
+    LOG.info("correlation.properties file loaded");
   }
 
   private HashMap<String, String> loadRepositoriesManagers() {
@@ -202,9 +225,10 @@ public class LocalConfiguration {
     findPaths.addAll(Arrays.asList(JMeterUtils.getSearchPaths()));
     // WA for no correct jmeter env initialization like junit tests
     if (isJUnitTest()) {
-      findPaths.add(new File(
-          this.getClass().getProtectionDomain().getCodeSource().getLocation()
-              .getFile()).getAbsolutePath());
+      findPaths.add(new File(URLDecoder.decode(this.getClass()
+              .getProtectionDomain().getCodeSource()
+              .getLocation().getFile(), "UTF-8"))
+              .getAbsolutePath());
     }
     String[] findPathsArr = new String[findPaths.size()];
     findPathsArr = findPaths.toArray(findPathsArr);
@@ -396,7 +420,15 @@ public class LocalConfiguration {
   }
 
   public void addRepository(String name, String url) {
-    if (repositories.stream().noneMatch(r -> r.getName().equals(name))) {
+    Optional<CorrelationTemplatesRepositoryConfiguration> existingRepository =
+        repositories.stream().filter(i -> i.getName().equals(name)).findFirst();
+    if (existingRepository.isPresent()) {
+      CorrelationTemplatesRepositoryConfiguration repository = existingRepository.get();
+      if (!repository.getUrl().equals(url)) {
+        repository.setUrl(url);
+        saveLocalConfiguration();
+      }
+    } else {
       repositories.add(new CorrelationTemplatesRepositoryConfiguration(name, url));
       saveLocalConfiguration();
     }
@@ -763,12 +795,12 @@ public class LocalConfiguration {
   public void saveTemplate(Template template) throws IOException, ConfigurationException {
     if (isCloudStored(template)) {
       triggerCloudUpload(template);
-    } else {
-      writeFile(template);
-      saveSnapshot(template);
-      updateLocalRepository(template);
-      installTemplate(template.getRepositoryId(), template.getId(), template.getVersion());
     }
+
+    writeFile(template);
+    saveSnapshot(template);
+    updateLocalRepository(template);
+    installTemplate(template.getRepositoryId(), template.getId(), template.getVersion());
   }
 
   private void writeFile(Template template) throws IOException {
@@ -791,29 +823,25 @@ public class LocalConfiguration {
   }
 
   private void updateLocalRepository(Template template) {
-    updateLocalRepository(template.getId(), template.getVersion());
-  }
+    String repositoryId = template.getRepositoryId();
+    File repositoryFile = getRepositoryFile(repositoryId);
 
-  public void updateLocalRepository(String templateId, String templateVersion) {
-    File localRepositoryFile = getRepositoryFile(LOCAL_REPOSITORY_NAME);
     try {
-      CorrelationTemplatesRepository localRepository;
+      CorrelationTemplatesRepository repository;
 
-      if (!localRepositoryFile.exists()) {
-        localRepositoryFile.createNewFile();
-        localRepository = new CorrelationTemplatesRepository();
-        localRepository.setTemplates(new HashMap<String, CorrelationTemplateVersions>() {
-        });
-        writeValue(localRepositoryFile, localRepository.getTemplates());
-        LOG.info("No local repository file found. Created a new one instead");
+      if (!repositoryFile.exists()) {
+        repositoryFile.createNewFile();
+        repository = new CorrelationTemplatesRepository();
+        writeValue(repositoryFile, repository.getTemplates());
+        LOG.info("No repository file found for {}. Created a new one instead", repositoryId);
       } else {
-        localRepository = new CorrelationTemplatesRepository("local",
-            readTemplatesVersions(localRepositoryFile));
+        repository = new CorrelationTemplatesRepository(repositoryId,
+            readTemplatesVersions(repositoryFile));
       }
 
-      localRepository.addTemplate(templateId, templateVersion);
-      writeValue(localRepositoryFile, localRepository.getTemplates());
-      addRepository(LOCAL_REPOSITORY_NAME, localRepositoryFile.getAbsolutePath());
+      repository.addTemplate(template.getId(), template.getVersion());
+      writeValue(repositoryFile, repository.getTemplates());
+      addRepository(repositoryId, repositoryFile.getAbsolutePath());
     } catch (IOException e) {
       LOG.warn("There was a problem trying to update the local repository file.", e);
     }

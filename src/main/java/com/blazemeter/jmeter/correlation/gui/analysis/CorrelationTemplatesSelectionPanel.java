@@ -60,7 +60,6 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
   private JEditorPane informationPane;
   private JTextField traceFilePath;
   private BiConsumer<List<Template>, String> startNonCorrelatedAnalysis;
-
   private JButton continueButton;
 
   public CorrelationTemplatesSelectionPanel(CorrelationWizard wizard) {
@@ -182,8 +181,9 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     TemplateSelectionTableModel model = (TemplateSelectionTableModel) selectionTable.getModel();
     boolean canUse = model.canUseTemplate(focusedVersion);
 
-    informationPane.setText(
-        TemplateVersionUtils.getInformationAsHTLM(focusedVersion, false, canUse));
+    informationPane.setText(TemplateVersionUtils
+        .getInformationAsHTLM(focusedVersion, false, canUse,
+        model.getRepositoryDisplayName(focusedVersion.getRepositoryId())));
     informationPane.setCaretPosition(0); // Scroll to the top
   }
 
@@ -294,7 +294,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     UpdateRepositoriesWorker worker = new UpdateRepositoriesWorker() {
       @Override
       protected Boolean doInBackground() {
-        return wizard.getConfiguration().refreshRepositories("",
+        return wizard.getRepositoriesConfiguration().getLocalConfig().refreshRepositories("",
             this::setProgress, this::publish);
       }
     };
@@ -414,11 +414,13 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     return traceFilePath.getText();
   }
 
+  //Reminder: this is the place where the "Analysis by Template" is called.
   public void runNonCorrelatedAnalysis(List<Template> templatesToAnalyse,
                                        String recordingTrace) {
     analysis.run(templatesToAnalyse, recordingTrace, false);
   }
 
+  //Reminder: this is the "Apply Suggestions" for Analysis.
   public void runCorrelatedAnalysis(List<Template> templatesApply,
                                     String recordingTrace) {
     analysis.run(templatesApply, recordingTrace, true);

@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.core.automatic;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
@@ -38,34 +39,74 @@ public class ResultFileParser {
       ResultCollector collector = new ResultCollector();
       collector.setFilename(file.getAbsolutePath());
       JMeterElementUtils utils = new JMeterElementUtils(configuration);
-      collector.setListener(new Visualizer() {
-        public void add(SampleResult sample) {
-          if (shouldFilter && utils.canBeFiltered(() -> sample)) {
-            return;
-          }
+      CustomVisualizer visualizer = getVisualizer(shouldFilter, utils, results);
+      configuration.isDebugModeEnabled().ifPresent(visualizer::setDebugEnabled);
 
-          HTTPSampleResult httpSampleResult = (HTTPSampleResult) sample;
-          SampleResult[] subResults = httpSampleResult.getSubResults();
-          if (subResults.length > 0) {
-            for (SampleResult subResult : subResults) {
-              results.add(subResult);
-            }
-            return;
-          }
-
-          results.add(sample);
-        }
-
-        public boolean isStats() {
-          return false;
-        }
-      });
+      collector.setListener(visualizer);
       collector.loadExistingFile();
       return new ArrayList<>(results);
     } catch (Exception e) {
       LOG.error("Error while loading the result from the file {} ", file.getAbsolutePath(), e);
-      e.printStackTrace();
-      throw new IllegalArgumentException("Unable to load test results from " + file, e);
+    }
+    return new ArrayList<>();
+  }
+
+  private CustomVisualizer getVisualizer(boolean shouldFilter, JMeterElementUtils utils,
+                                   Collection<SampleResult> results) {
+    return new CustomVisualizer(shouldFilter, utils, results);
+  }
+
+  public static class CustomVisualizer implements Visualizer {
+    private final boolean shouldFilter;
+    private final JMeterElementUtils utils;
+    private final Collection<SampleResult> results;
+    private boolean isDebugEnabled = false;
+
+    public CustomVisualizer(boolean shouldFilter, JMeterElementUtils utils,
+                            Collection<SampleResult> results) {
+      this.shouldFilter = shouldFilter;
+      this.utils = utils;
+      this.results = results;
+    }
+
+    @Override
+    public void add(SampleResult sample) {
+      if (shouldFilter && utils.canBeFiltered(() -> sample)) {
+        if (isDebugEnabled) {
+          LOG.debug("SampleResult '{}' filtered", sample.getSampleLabel());
+        }
+        return;
+      }
+
+      if (!(sample instanceof HTTPSampleResult)) {
+        // JMeter doesn't register them either, so we skip them.
+        return;
+      }
+
+      HTTPSampleResult httpSampleResult = (HTTPSampleResult) sample;
+      SampleResult[] subResults = httpSampleResult.getSubResults();
+      if (subResults.length > 0) {
+        results.addAll(Arrays.asList(subResults));
+        if (isDebugEnabled) {
+          LOG.debug("HTTPSampleResult '{}' with {} subResults added", sample.getSampleLabel(),
+              subResults.length);
+        }
+        return;
+      }
+
+      results.add(sample);
+      if (isDebugEnabled) {
+        LOG.debug("SampleResult '{}' added", sample.getSampleLabel());
+      }
+    }
+
+    @Override
+    public boolean isStats() {
+      return false;
+    }
+
+    public void setDebugEnabled(boolean isDebugEnabled) {
+      this.isDebugEnabled = isDebugEnabled;
     }
   }
 

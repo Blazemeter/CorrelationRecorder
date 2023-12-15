@@ -36,12 +36,6 @@ public class CorrelationTemplatesRepositoriesConfiguration {
     return manager;
   }
 
-  /*
-  public void save(String name, String url) throws IOException {
-    getTemplateRegistry(name, url).save(name, url);
-  }
-  */
-
   private CorrelationTemplatesRepositoriesRegistry getTemplateRegistry(String name) {
     return ((CorrelationTemplatesRepositoriesRegistry) localConfig.getRepositoryManager(name)
         .getTemplateRegistry());
@@ -121,4 +115,9 @@ public class CorrelationTemplatesRepositoriesConfiguration {
       return templatesAndProperties;
     }
   }
+
+  public LocalConfiguration getLocalConfig() {
+    return localConfig;
+  }
+
 }

@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core.automatic;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
+import com.helger.commons.annotation.VisibleForTesting;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -21,11 +22,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jorphan.collections.HashTree;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -44,6 +47,17 @@ public class RecordingExtraction implements AppearancesExtraction {
   public RecordingExtraction(Configuration configuration, Map<String, List<Appearances>> map) {
     this.utils = new JMeterElementUtils(configuration);
     this.appearanceMap = map;
+  }
+
+  @VisibleForTesting
+  public Map<String, HTTPSamplerProxy> generateSamplerMap(String filepath) {
+    HashTree testPlan = JMeterElementUtils.getTestPlan(filepath);
+    List<HTTPSamplerBase> requests = getRequests(testPlan, false);
+    Map<String, HTTPSamplerProxy> samplerMap = new HashMap<>();
+    for (HTTPSamplerBase sampler : requests) {
+      samplerMap.put(sampler.getName(), (HTTPSamplerProxy) sampler);
+    }
+    return samplerMap;
   }
 
   @Override
@@ -101,26 +115,30 @@ public class RecordingExtraction implements AppearancesExtraction {
         continue;
       }
 
-      if (JMeterElementUtils.isJson(value)) {
-        try {
-          if (JMeterElementUtils.isJsonArray(value)) {
-            LOG.warn("JSON Arrays as Arguments on HTTP requests is not supported yet. "
-                + "Skipping value: '{}'='{}'", key, value);
-            continue;
-          }
+      storeValue(sampler, key, value);
+    }
+  }
 
-          JSONObject jsonObject = new JSONObject(value);
-          utils.extractParametersFromJson(jsonObject, appearanceMap, sampler, 2);
-        } catch (JSONException e) {
-          LOG.trace("There was an error while extracting JSON values for {}. ", value, e);
+  public void storeValue(HTTPSamplerBase sampler, String key, String value) {
+    if (JMeterElementUtils.isJson(value)) {
+      try {
+        if (JMeterElementUtils.isJsonArray(value)) {
+          utils.extractParametersFromJsonArray(new JSONArray(value), appearanceMap, sampler,
+              2, key);
+          return;
         }
-      } else if (utils.isParameterized(value)) {
-        LOG.warn("Parameterized value: '" + key + "'='" + value + "'");
-      } else if (sampler.getPostBodyRaw()) {
-        utils.addToMap(appearanceMap, key, value, sampler, "Body Data (JSON)");
-      } else {
-        utils.addToMap(appearanceMap, key, value, sampler, "HTTP arguments");
+
+        JSONObject jsonObject = new JSONObject(value);
+        utils.extractParametersFromJson(jsonObject, appearanceMap, sampler, 2);
+      } catch (JSONException e) {
+        LOG.trace("There was an error while extracting JSON values for {}. ", value, e);
       }
+    } else if (utils.isParameterized(value)) {
+      LOG.warn("Parameterized value: '" + key + "'='" + value + "'");
+    } else if (sampler.getPostBodyRaw()) {
+      utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_BODY_JSON);
+    } else {
+      utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_ARGUMENTS);
     }
   }
 
@@ -159,9 +177,9 @@ public class RecordingExtraction implements AppearancesExtraction {
     try {
       // Path in Rest format (/key/value)
       String urlPath = sampler.getPath();
-      int intPort = sampler.getPortIfSpecified();
       String basePath = urlPath;
-      if (urlPath.contains("?")) { // If query data exist, remove to get the base path
+      boolean containsQuestionMark = urlPath.contains("?");
+      if (containsQuestionMark) { // If query data exist, remove to get the base path
         basePath = basePath.split("\\?")[0];
       }
       String[] pathValues = basePath.split("/");
@@ -170,21 +188,31 @@ public class RecordingExtraction implements AppearancesExtraction {
         String keyPathValue = pathValues[pathLen - 2];
         String keyValue = pathValues[pathLen - 1];
         // Only when the key is a word and the value is a number
-        if ((!StringUtils.isNumeric(keyPathValue) && StringUtils.isNumeric(keyValue)) &&
-            (!utils.canBeFiltered(keyPathValue, keyValue))) {
-          utils.addToMap(appearanceMap, keyPathValue, keyValue, sampler,
-              "Request Path");
+        if ((!StringUtils.isNumeric(keyPathValue) && StringUtils.isNumeric(keyValue))
+            && (!utils.canBeFiltered(keyPathValue, keyValue))) {
+
+          if (containsQuestionMark && urlPath.contains(keyValue + "?")) {
+            utils.addToMap(appearanceMap, keyPathValue, keyValue, sampler,
+                Sources.REQUEST_PATH_NUMBER_FOLLOWED_BY_QUESTION_MARK);
+          } else if (urlPath.contains(keyValue + "/")) {
+            utils.addToMap(appearanceMap, keyPathValue, keyValue, sampler,
+                Sources.REQUEST_PATH_NUMBER_FOLLOWED_BY_SLASH);
+          } else {
+            utils.addToMap(appearanceMap, keyPathValue, keyValue, sampler,
+                Sources.REQUEST_PATH);
+          }
         }
       }
-      if (urlPath.contains("?")) { // Extract query values
+
+      if (containsQuestionMark) { // Extract query values
         String baseUrl = sampler.getUrl().toString();
         String query = urlPath.split("\\?")[1];
         String url = baseUrl.split("\\?")[0] + "?" + query;
         Map<String, List<String>> params = splitQuery(new URL(url), charset.toString());
         params.forEach((key, values) -> {
-          String value = values.size() > 0 ? values.get(0) : "";
+          String value = !values.isEmpty() ? values.get(0) : "";
           if (!utils.canBeFiltered(key, value)) {
-            utils.addToMap(appearanceMap, key, value, sampler, "Request Query");
+            utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_QUERY);
           }
         });
       }
@@ -224,5 +252,9 @@ public class RecordingExtraction implements AppearancesExtraction {
         utils.addToMap(appearanceMap, name, parsedAuthValue[1], headerManager, "Bearer");
       }
     }
+  }
+
+  public Map<String, List<Appearances>> getAppearanceMap() {
+    return appearanceMap;
   }
 }

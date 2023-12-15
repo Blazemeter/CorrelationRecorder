@@ -19,8 +19,9 @@ import javax.swing.border.Border;
 import javax.swing.text.JTextComponent;
 
 public class BaseValidation<T extends JTextComponent> implements ComponentValidation<T> {
+  public static final Color INVALID_COLOR = Color.red;
   protected final Border fallbackBorder = new JTextField().getBorder();
-  protected final Border invalidBorder = BorderFactory.createLineBorder(Color.red);
+  protected final Border invalidBorder = BorderFactory.createLineBorder(INVALID_COLOR);
   protected Border defaultBorder;
 
   protected T field;
@@ -34,15 +35,24 @@ public class BaseValidation<T extends JTextComponent> implements ComponentValida
     this.defaultBorder = getDefaultBorderForComponent(field);
   }
 
-  @Override
-  public void applyFormat() {
-    boolean valid = isValid();
+  public void applyFormat(boolean valid) {
     getOutermostComponent(field).setBorder(valid ? defaultBorder : invalidBorder);
     error.setVisible(!valid);
     error.setText(valid ? "" : conditions.stream()
         .filter(validation -> !validation.isValid())
         .map(Condition::getErrorMessage)
         .collect(Collectors.joining(". ")));
+  }
+
+  @Override
+  public void applyFormat() {
+    boolean valid = isValid();
+    applyFormat(valid);
+  }
+
+  @Override
+  public void clearFormat() {
+    applyFormat(true);
   }
 
   private JComponent getOutermostComponent(T field) {
@@ -84,12 +94,9 @@ public class BaseValidation<T extends JTextComponent> implements ComponentValida
 
   @Override
   public void updateValidationStates() {
-    System.out.println("Updating " + conditions.size() + " conditions for field "
-        + field.getName() + ". Currently " + getValidString());
     for (Condition condition : conditions) {
       condition.updateState(field.getText());
     }
-    System.out.println("Updated state: " + getValidString());
   }
 
   @Override
@@ -118,11 +125,14 @@ public class BaseValidation<T extends JTextComponent> implements ComponentValida
   }
 
   @Override
+  public boolean getErrorVisible() {
+    return error.isVisible();
+  }
+
+  @Override
   public void reset() {
     field.setText("");
-    field.setBorder(defaultBorder);
-    error.setText("");
-    error.setVisible(false);
+    applyFormat(true);
   }
 }
 

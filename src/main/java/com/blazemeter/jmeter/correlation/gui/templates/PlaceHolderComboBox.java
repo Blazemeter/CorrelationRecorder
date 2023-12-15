@@ -14,16 +14,15 @@ import javax.swing.JComboBox;
 import javax.swing.JList;
 
 public class PlaceHolderComboBox extends JComboBox<CorrelationTemplateVersions> {
+  private final PlaceHolderTextField editorPlaceholderTextField;
 
   public PlaceHolderComboBox() {
     super();
     setEditable(true);
-
-    PlaceHolderTextField placeholderTextField = new PlaceHolderTextField();
-    placeholderTextField.setPlaceHolder("Type a new template name or select existing");
-    placeholderTextField.setBorder(null);
-    placeholderTextField.setName("templateName");
-    setEditor(new PlaceholderComboBoxEditor(placeholderTextField));
+    editorPlaceholderTextField = new PlaceHolderTextField();
+    editorPlaceholderTextField.setPlaceHolder("Type a new template name or select existing");
+    editorPlaceholderTextField.setBorder(null);
+    setEditor(new PlaceholderComboBoxEditor(editorPlaceholderTextField));
     setSelectedItem(null);
     setRenderer(new DefaultListCellRenderer() {
       @Override
@@ -38,6 +37,12 @@ public class PlaceHolderComboBox extends JComboBox<CorrelationTemplateVersions> 
         return component;
       }
     });
+  }
+
+  @Override
+  public void setName(String name) {
+    super.setName(name);
+    editorPlaceholderTextField.setName(name + ".editorPlaceHolder");
   }
 
   public void setTemplates(List<CorrelationTemplateVersions> templates) {

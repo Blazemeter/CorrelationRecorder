@@ -9,9 +9,11 @@ import com.blazemeter.jmeter.correlation.gui.common.ThemedIconLabel;
 import com.google.common.annotations.VisibleForTesting;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.FontMetrics;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.ItemEvent;
@@ -32,6 +34,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class CorrelationRulePartPanel extends JPanel {
 
@@ -67,6 +71,35 @@ public class CorrelationRulePartPanel extends JPanel {
     prepareComboBox(update, options);
     prepareHelper(name);
     prepareAdvancedSection(update);
+  }
+
+  public static void resizeTextField(JTextField textField) {
+    // We are using a magic number here because we don't want to resize the field if the text is
+    // smaller than the minimum size
+    int usedWidth = 200;
+
+    Container fieldParent = textField.getParent();
+    FontMetrics fm = textField.getFontMetrics(textField.getFont());
+
+    // Adding 10 for some padding
+    int estimatedRequiredWidth = fm.stringWidth(textField.getText()) + 10;
+    if (neededSizeIsSmallerThanMin(textField, estimatedRequiredWidth)
+        || neededSizeIsBiggerThanAvailable(usedWidth, fieldParent, estimatedRequiredWidth)) {
+      return;
+    }
+
+    int height = textField.getPreferredSize().height;
+    textField.setPreferredSize(new Dimension(estimatedRequiredWidth, height));
+    fieldParent.revalidate();
+  }
+
+  private static boolean neededSizeIsBiggerThanAvailable(int usedWidth, Container parent,
+                                                         int width) {
+    return width > parent.getWidth() - usedWidth;
+  }
+
+  private static boolean neededSizeIsSmallerThanMin(JTextField textField, int width) {
+    return width < textField.getMinimumSize().width;
   }
 
   private void setDisplayExtensionConsumer(
@@ -161,7 +194,29 @@ public class CorrelationRulePartPanel extends JPanel {
   }
 
   public void addFields() {
-    listComponents.forEach(this::add);
+    for (Component component : listComponents) {
+      if (component instanceof JTextField) {
+        JTextField textField = (JTextField) component;
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+          @Override
+          public void insertUpdate(DocumentEvent e) {
+            resizeTextField(textField);
+          }
+
+          @Override
+          public void removeUpdate(DocumentEvent e) {
+            resizeTextField(textField);
+          }
+
+          @Override
+          public void changedUpdate(DocumentEvent e) {
+            resizeTextField(textField);
+          }
+        });
+      }
+      add(component);
+    }
+
     //Don't add "advanced section icons" if there isn't advanced fields
     if (!listAdvancedComponents.isEmpty()) {
       add(collapsibleIcon);
@@ -180,6 +235,7 @@ public class CorrelationRulePartPanel extends JPanel {
   protected Component buildField(ParameterDefinition p) {
     Component field = (Component) ((ParameterDefinition.builderFromRawParameterDefinition(p)))
         .build(getName());
+    field.setMinimumSize(RulesContainer.FIELD_PREFERRED_SIZE);
     field.setPreferredSize(RulesContainer.FIELD_PREFERRED_SIZE);
     return field;
   }
@@ -206,6 +262,7 @@ public class CorrelationRulePartPanel extends JPanel {
   private void prepareAdvancedSection(Runnable update) {
     advancedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     advancedPanel.setName(getName() + "-advancedPanel");
+    advancedPanel.setOpaque(false);
     collapsibleIcon = new JLabel();
     collapsibleIcon.setIcon(COLLAPSED_ICON);
     collapsibleIcon.setName(getName() + "-collapsedIcon");

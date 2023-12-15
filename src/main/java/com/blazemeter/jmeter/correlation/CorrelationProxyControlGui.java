@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation;
 
+import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplateDependency;
@@ -21,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import org.apache.jmeter.protocol.http.proxy.gui.ProxyControlGui;
 import org.apache.jmeter.testelement.TestElement;
@@ -79,6 +82,47 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   public CorrelationProxyControlGui(CorrelationProxyControl model, RulesContainer container) {
     this.model = model;
     this.rulesContainer = container;
+  }
+
+  public void actionPerformed(ActionEvent action) {
+    String command = action.getActionCommand();
+    if ("start".equals(command)) {
+      List<String> issues = new ArrayList<>();
+      if (!model.isProperlyConfigured()) {
+        issues.add(
+            "- You are missing some configurations in your properties file (more info in the "
+                + "logs)");
+      }
+
+      if (model.isLegacyEnabled()) {
+        issues.add("- Legacy mode is enabled and you will not be able to " +
+            "generate correlation suggestions.");
+        if (!model.hasLoadedRules()) {
+          issues.add("- Legacy mode is enabled and has no rules loaded, " +
+              "no correlation will be performed.");
+        }
+      }
+
+      if (!issues.isEmpty() && !model.areWarningsDisabled()) {
+        String issuesConsolidatedMessage = "We noticed a few things before you start: "
+            + System.lineSeparator() + System.lineSeparator()
+            + String.join("\n", issues)
+            + System.lineSeparator() + System.lineSeparator();
+        LOG.info(issuesConsolidatedMessage);
+
+        int response = JOptionPane.showConfirmDialog(null,
+            issuesConsolidatedMessage
+                + "Do you wish to continue regardless?",
+            "Before we start recording", JOptionPane.YES_NO_OPTION);
+
+        if (response != JOptionPane.YES_OPTION) {
+          return;
+        }
+
+        AnalysisReporter.enableCorrelation();
+      }
+    }
+    super.actionPerformed(action);
   }
 
   private JTabbedPane findTabbedPane() {
@@ -308,6 +352,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
       Repository repository = repositoryMap.get(repositoryName);
       if (repository == null) {
         repository = new Repository(repositoryName);
+        repository.setDisplayName(repositoryEntry.getDisplayName());
         repositoryMap.put(repositoryName, repository);
       }
 

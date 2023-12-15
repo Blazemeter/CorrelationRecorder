@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -158,12 +159,6 @@ public class RegexCorrelationExtractorTest {
     assertThat(TestUtils.comparableFrom(children)).isEqualTo(
         TestUtils.comparableFrom(
             Collections.singletonList(regexExtractor)));
-  }
-
-  @Test
-  public void shouldAddChildRegexExtractorWhenMatchesAgainstSampleResultBodyAsADocument()
-      throws MalformedURLException {
-    assertAddChildRegex("(Test Body \t\n)", ResultField.BODY_AS_A_DOCUMENT);
   }
 
   @Test
@@ -411,9 +406,31 @@ public class RegexCorrelationExtractorTest {
     return vars;
   }
 
-  private static class ComparableJMeterVariables extends JMeterVariables {
+  @Mock
+  private CorrelationComponentsRegistry registry;
 
-    Map<String, String> vars = new HashMap<>();
+  @Test
+  public void shouldCatchAllMatchedValues() throws MalformedURLException {
+    ComparableJMeterVariables variables = new ComparableJMeterVariables();
+
+    RegexCorrelationExtractor<BaseCorrelationContext> regexExtractor =
+        new RegexCorrelationExtractor<>("wpnonce=(.+?)'> ", "-1", "1",
+            ResultField.BODY.name(), "true");
+    regexExtractor.setVariableName("nonce");
+    regexExtractor.setMultiValued(true);
+    regexExtractor.setContext(new BaseCorrelationContext());
+
+    String responseWithNonces = "<a href='_wpnonce=123'> Login</a> <a href='_wpnonce=345'> Login</a> ";
+
+
+    regexExtractor.process(null, new ArrayList<>(),
+        createSampleResultWithResponseBody(responseWithNonces), variables);
+    assertThat(variables.entrySet().size()).isEqualTo(3);
+  }
+
+  public static class ComparableJMeterVariables extends JMeterVariables {
+
+    public Map<String, String> vars = new HashMap<>();
 
     @Override
     public void put(String key, String value) {

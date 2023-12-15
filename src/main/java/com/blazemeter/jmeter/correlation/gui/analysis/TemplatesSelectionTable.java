@@ -182,7 +182,11 @@ public class TemplatesSelectionTable extends JTable {
       setDefaultColors(table, isSelected, this);
 
       TemplateVersionsTableItem item = (TemplateVersionsTableItem) getModel().getValueAt(row, 3);
-      setText(column == 1 ? item.getSelectedTemplateVersion().getRepositoryId() : item.getName());
+      setText(item.getName());
+      if (column == 1) {
+        setText(
+            model.getRepositoryDisplayName(item.getSelectedTemplateVersion().getRepositoryId()));
+      }
 
       setForegroundBasedOnPermissions(table, row, this);
 

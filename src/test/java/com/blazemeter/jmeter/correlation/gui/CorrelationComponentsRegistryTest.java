@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.XmlCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
@@ -151,11 +153,12 @@ public class CorrelationComponentsRegistryTest {
 
   @Test
   public void shouldGetDefaultAllowedExtractorsWhenGetAllowedExtractors() {
-    List<CorrelationRulePartTestElement<?>> expectedDefaultAllowedExtractors =
-        Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR,
-            new RegexCorrelationExtractor<>(),
-            CorrelationComponentsRegistry.MORE_EXTRACTOR);
-    assertThat(expectedDefaultAllowedExtractors).isEqualTo(registry.buildActiveExtractorRulePart());
+    List<CorrelationRulePartTestElement<?>> activeExtractor = registry.buildActiveExtractorRulePart();
+    assertThat(activeExtractor).isEqualTo(Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR,
+        new RegexCorrelationExtractor<>(),
+        new JsonCorrelationExtractor<>(),
+        new XmlCorrelationExtractor<>(),
+        CorrelationComponentsRegistry.MORE_EXTRACTOR));
   }
 
   @Test

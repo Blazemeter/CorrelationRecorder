@@ -92,7 +92,7 @@ public class RulesContainerIT {
     rulesContainer.updateLoadedTemplate(template);
     clickClear();
     saveTemplate();
-    verify(templateFrame, never()).setLoadedTemplates(any());
+    verify(templateFrame, never()).updateLastLoadedTemplate(any());
   }
 
   private void saveTemplate() {

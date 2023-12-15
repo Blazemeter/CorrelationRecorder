@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
@@ -28,8 +29,8 @@ public class CorrelationEngine {
     JMeterContextService.getContext().setVariables(vars);
   }
 
-  public void setCorrelationRules(List<RulesGroup> groups,
-                                  CorrelationComponentsRegistry registry) {
+  public synchronized void setCorrelationRules(List<RulesGroup> groups,
+                                               CorrelationComponentsRegistry registry) {
     rules.clear();
     groups.stream()
         .filter(RulesGroup::isEnable)
@@ -70,10 +71,11 @@ public class CorrelationEngine {
     initializedContexts.forEach(CorrelationContext::reset);
   }
 
-  public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-                      String responseFilter) {
+  public synchronized void process(HTTPSamplerBase sampler, List<TestElement> children,
+                                   SampleResult result,
+                                   String responseFilter) {
 
-    if (!result.isSuccessful()) {
+    if (result != null && !result.isSuccessful()) {
       sampler.setComment("ORIGINALLY FAILED");
     }
 
@@ -83,16 +85,26 @@ public class CorrelationEngine {
     }
 
     JMeterContextService.getContext().setVariables(vars);
-    rules.stream()
-        .filter(r -> r.isEnabled() && r.getCorrelationReplacement() != null)
-        .forEach(r -> r.getCorrelationReplacement().process(sampler, children, result, vars));
+    // Using for instead of streams to avoid ConcurrentModificationException
+    Iterator<CorrelationRule> replacementRulesIterator = rules.iterator();
+    while (replacementRulesIterator.hasNext()) {
+      CorrelationRule rule = replacementRulesIterator.next();
+      if (rule.isEnabled() && rule.getCorrelationReplacement() != null) {
+        rule.getCorrelationReplacement().process(sampler, children, result, vars);
+      }
+    }
 
     initializedContexts.forEach(c -> c.update(result));
 
     if (isContentTypeAllowed(result, responseFilter)) {
-      rules.stream()
-          .filter(r -> r.isEnabled() && r.getCorrelationExtractor() != null)
-          .forEach(r -> r.getCorrelationExtractor().process(sampler, children, result, vars));
+      // Using for instead of streams to avoid ConcurrentModificationException
+      Iterator<CorrelationRule> extractorRulesIterator = rules.iterator();
+      while (extractorRulesIterator.hasNext()) {
+        CorrelationRule rule = extractorRulesIterator.next();
+        if (rule.isEnabled() && rule.getCorrelationExtractor() != null) {
+          rule.getCorrelationExtractor().process(sampler, children, result, vars);
+        }
+      }
     }
   }
 
@@ -136,7 +148,7 @@ public class CorrelationEngine {
   }
 
   @VisibleForTesting
-  public List<CorrelationRule> getCorrelationRules() {
+  public synchronized List<CorrelationRule> getCorrelationRules() {
     return rules;
   }
 

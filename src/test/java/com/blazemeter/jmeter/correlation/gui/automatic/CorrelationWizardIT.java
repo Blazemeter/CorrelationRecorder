@@ -4,11 +4,10 @@ import static org.assertj.swing.fixture.Containers.showInFrame;
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.Repository;
+
 import java.awt.Container;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.swing.fixture.FrameFixture;
@@ -16,6 +15,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 
 @RunWith(SwingTestRunner.class)
 public class CorrelationWizardIT {
@@ -32,10 +32,17 @@ public class CorrelationWizardIT {
     CorrelationHistory.setSaveCurrentTestPlan(() -> "test");
     CorrelationHistory history = new CorrelationHistory();
     wizard.setHistory(history);
+    wizard.setRepositoriesSupplier(CorrelationWizardIT::getMockedRepository);
     wizard.init();
     Container contentPane = wizard.getContentPane();
-    wizard.displayTemplateSelection("test");
+    wizard.displayTemplateSelection("Test");
     frame = showInFrame(contentPane);
+  }
+
+  private static Map<String, Repository> getMockedRepository() {
+    Map<String, Repository> templates = new HashMap<>();
+    templates.put("repId1", new Repository("repId1"));
+    return templates;
   }
 
   private List<Template> generateTemplatesWithVersions(List<String> strings, String repoId) {
