@@ -207,10 +207,10 @@ public class Template {
 
     private String description;
     private String id;
-    private List<RulesGroup> groups;
+    private List<RulesGroup> groups = new ArrayList<>();
     private BufferedImage snapShot;
-    private String responseFilters;
-    private String components;
+    private String responseFilters = "";
+    private String components = "";
     private String repositoryId;
     private String version;
     private String changes;
@@ -287,18 +287,18 @@ public class Template {
 
     @Override
     public String toString() {
-      return "Builder{" +
-          "description='" + description + '\'' +
-          ", id='" + id + '\'' +
-          ", author='" + author + '\'' +
-          ", url='" + url + '\'' +
-          ", rules=" + groups.toString() +
-          ", responseFilters='" + responseFilters + '\'' +
-          ", components='" + components + '\'' +
-          ", version='" + version + '\'' +
-          ", repositoryId='" + repositoryId + '\'' +
-          ", changes='" + changes + '\'' +
-          '}';
+      return "Builder{"
+          + "description='" + description + '\''
+          + ", id='" + id + '\''
+          + ", author='" + author + '\''
+          + ", url='" + url + '\''
+          + ", rules=" + groups.toString()
+          + ", responseFilters='" + responseFilters + '\''
+          + ", components='" + components + '\''
+          + ", version='" + version + '\''
+          + ", repositoryId='" + repositoryId + '\''
+          + ", changes='" + changes + '\''
+          + '}';
     }
 
     @Override
@@ -313,7 +313,6 @@ public class Template {
       return Objects.equals(description, builder.description) &&
           Objects.equals(id, builder.id) &&
           Objects.equals(groups, builder.groups) &&
-          Objects.equals(snapShot, builder.snapShot) &&
           Objects.equals(responseFilters, builder.responseFilters) &&
           Objects.equals(components, builder.components) &&
           Objects.equals(version, builder.version) &&

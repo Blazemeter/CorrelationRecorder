@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.core.analysis;
 
 import static org.assertj.swing.fixture.Containers.showInFrame;
 import static org.mockito.Mockito.when;
+import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
@@ -19,6 +20,8 @@ import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +38,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import us.abstracta.jmeter.javadsl.core.engines.JmeterEnvironment;
 
 @RunWith(SwingTestRunner.class)
 public class AnalysisReporterIT {
@@ -52,13 +54,13 @@ public class AnalysisReporterIT {
 
   @Before
   public void setup() throws IOException {
+    JMeterTestUtils.setupUpdatedJMeter();
     engine = new CorrelationEngine();
     panel = new CorrelationSuggestionsPanel(null);
     frame = showInFrame(panel);
     when(registry.getContext(SiebelContext.class)).thenReturn(new SiebelContext());
     when(registry.getContext(BaseCorrelationContext.class))
         .thenReturn(new BaseCorrelationContext());
-    JmeterEnvironment jmeterEnvironment = new JmeterEnvironment();
     AnalysisReporter.startCollecting();
     AnalysisReporter.disableCorrelation();
   }
@@ -70,6 +72,7 @@ public class AnalysisReporterIT {
     if (AnalysisReporter.isCollecting()) {
       AnalysisReporter.stopCollecting();
     }
+    AnalysisReporter.enableCorrelation();
   }
 
   /**
@@ -78,7 +81,7 @@ public class AnalysisReporterIT {
    */
   @Test
   public void shouldGenerateMatchingSuggestions()
-      throws IllegalUserActionException, InterruptedException {
+          throws IllegalUserActionException, InterruptedException, UnsupportedEncodingException {
     //Prepare the engine with the desired rules
     engine.setCorrelationRules(createWordpressRules(), registry);
 
@@ -106,7 +109,7 @@ public class AnalysisReporterIT {
    * indexes (the first request and the first response are matched, and so on).
    */
   @Test
-  public void shouldApplyRulesOverFiles() {
+  public void shouldApplyRulesOverFiles() throws UnsupportedEncodingException {
     //Prepare the engine with the desired rules
     engine.setCorrelationRules(createWordpressRules(), registry);
 
@@ -126,17 +129,17 @@ public class AnalysisReporterIT {
     System.out.println(AnalysisReporter.getReporter().getReportAsString());
   }
 
-  private List<SampleResult> loadSampleResults() {
+  private List<SampleResult> loadSampleResults() throws UnsupportedEncodingException {
     return new ResultFileParser(new Configuration())
         .loadFromFile(new File(getFilePath("/recordings/recordingTrace/recordingWithNonces.jtl")),
             true);
   }
 
-  private String getFilePath(String filename) {
-    return getClass().getResource(filename).getPath();
+  private String getFilePath(String filename) throws UnsupportedEncodingException {
+    return URLDecoder.decode(getClass().getResource(filename).getPath(), "UTF-8");
   }
 
-  private JMeterTreeModel loadJmxFile() throws IllegalUserActionException {
+  private JMeterTreeModel loadJmxFile() throws IllegalUserActionException, UnsupportedEncodingException {
     HashTree hashTree = JMeterElementUtils
         .getTestPlan(getFilePath("/recordings/testplans/recordingWithNonces.jmx"));
 
@@ -148,8 +151,10 @@ public class AnalysisReporterIT {
       return loadJmxFile().getNodesOfType(HTTPSamplerProxy.class);
     } catch (IllegalUserActionException e) {
       e.printStackTrace();
+    } catch (UnsupportedEncodingException e) {
+        throw new RuntimeException(e);
     }
-    return new ArrayList<>();
+      return new ArrayList<>();
   }
 
   private List<HTTPSamplerProxy> getSamplerProxies(List<JMeterTreeNode> nodesOfType) {

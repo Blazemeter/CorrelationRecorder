@@ -29,10 +29,8 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
     super(buttonsValidation, new String[] {ENABLE_HEADER, VARIABLE_HEADER,
         EXTRACTOR_HEADER, REPLACEMENT_HEADER});
     addTableModelListener(this::doTableResize);
-    setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
     CustomCellRenderer cellRenderer = new CustomCellRenderer();
-    configureColumn(ENABLE_HEADER, new EnableRenderer(), new EnableEditor());
+    configureColumn(ENABLE_HEADER, null, new EnableEditor());
     configureColumn(VARIABLE_HEADER, buildVariableRenderer(), new VariableEditor());
     configureColumn(EXTRACTOR_HEADER, cellRenderer, new SelectorEditor());
     configureColumn(REPLACEMENT_HEADER, cellRenderer, new SelectorEditor());
@@ -153,22 +151,19 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
 
     setSize(calculatedSize);
     setPreferredSize(calculatedSize);
-    doColumnsResize(isEnableWidth, refVariableWidth, maxExtractorWidth, maxReplacementWidth);
+    doColumnsResize(isEnableWidth);
     revalidate();
     repaint();
   }
 
-  private void doColumnsResize(int isEnableWidth, int varColumnWidth, int extractorColumnWidth,
-                               int replacementColumnWidth) {
+  private void doColumnsResize(int isEnableWidth) {
     setColumnWidth(0, isEnableWidth);
-    setColumnWidth(1, varColumnWidth);
-    setColumnWidth(2, extractorColumnWidth);
-    setColumnWidth(3, replacementColumnWidth);
   }
 
   private void setColumnWidth(int column, int width) {
     TableColumn model = getColumnModel().getColumn(column);
     model.setWidth(width);
+    model.setMaxWidth(width);
     getTableHeader().setResizingColumn(model);
   }
 
@@ -189,17 +184,6 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
       rulePartPanel.getAdvancedPanel().setBackground(background);
       rulePartPanel.getAdvancedPanel().setForeground(foreground);
       return component;
-    }
-  }
-
-  private static class EnableRenderer implements TableCellRenderer {
-
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                   boolean hasFocus, int row, int column) {
-      JCheckBox enableCheckBox = new JCheckBox();
-      enableCheckBox.setSelected((Boolean) value);
-      return enableCheckBox;
     }
   }
 

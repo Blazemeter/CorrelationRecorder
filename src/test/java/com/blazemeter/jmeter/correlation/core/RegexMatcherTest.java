@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.BeforeClass;

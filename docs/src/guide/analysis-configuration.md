@@ -22,7 +22,7 @@ The total of characters extracted for the context of a value. This is the total 
 correlation.configuration.context_length=10
 
 ### Max Number of Appearances
-The maximum number of appearances of a value to be considered for correlation. Values that appear more than this number of times will be ignored.
+The maximum number of appearances of a value to be considered for correlation. Values that appear more than this number of times will be ignored. The value -1 disables the maximum control.
 
 correlation.configuration.max_number_of_appearances=50
 

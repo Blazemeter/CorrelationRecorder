@@ -182,8 +182,22 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   protected String replaceWithRegex(String input, String regex,
                                     String variableName, JMeterVariables vars)
       throws MalformedPatternException {
+    // Skip empty inputs
+    if (input == null || input.isEmpty() || regex == null || regex.isEmpty() || variableName == null
+        || variableName.isEmpty()) {
+      return input;
+    }
+
     PatternMatcher matcher = JMeterUtils.getMatcher();
-    Pattern pattern = new Perl5Compiler().compile(regex);
+    Pattern pattern;
+
+    try {
+      pattern = new Perl5Compiler().compile(regex);
+    } catch (MalformedPatternException e) {
+      LOG.warn("Malformed pattern: {}", regex, e);
+      throw e;
+    }
+
     PatternMatcherInput patternMatcherInput = new PatternMatcherInput(input);
     int beginOffset = patternMatcherInput.getBeginOffset();
     char[] inputBuffer = patternMatcherInput.getBuffer();

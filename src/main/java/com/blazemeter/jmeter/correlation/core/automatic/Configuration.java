@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core.automatic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class Configuration {
       "d", "r", "s", "ipv6", "ipv4", "remind_me_later",
       "redirect_to", "pagenow", "if-modified-since", "url", "redirect", "redirect_uri",
       "host", "expires", "date", "as", "rel",
-      "link", "returl", "dur", "vary", "connection");
+      "link", "returl", "dur", "vary", "connection", "desc", "sort", "order", "order_by");
 
   private int minLength;
   private final int contextLength;
@@ -170,6 +171,46 @@ public class Configuration {
     return requestedParameters;
   }
 
+  public boolean shouldAllowApparentlyEqualsValues() {
+    return JMeterUtils.getPropDefault("correlation.configuration.allow_apparently_equals_values",
+        true);
+  }
+
+  public boolean shouldAllowManuallyRequestValues() {
+    return JMeterUtils.getPropDefault("correlation.configuration.allow_manually_request_values",
+        true);
+  }
+
+  public boolean shouldAllowOrphanAppearances() {
+    return JMeterUtils
+        .getPropDefault("correlation.configuration.allow_manually_request_values_with_regex",
+        true);
+  }
+
+  public void setAllAllowed(boolean allow) {
+    setAllowManuallyRequestValues(allow);
+    setAllowOrphanAppearances(allow);
+    setAllowApparentlyEqualsValues(allow);
+  }
+
+  public void setAllowManuallyRequestValues(boolean allow) {
+    JMeterUtils
+        .setProperty("correlation.configuration.allow_manually_request_values",
+            String.valueOf(allow));
+  }
+
+  public void setAllowOrphanAppearances(boolean allow) {
+    JMeterUtils
+        .setProperty("correlation.configuration.allow_manually_request_values_with_regex",
+            String.valueOf(allow));
+  }
+
+  public void setAllowApparentlyEqualsValues(boolean allow) {
+    JMeterUtils
+        .setProperty("correlation.configuration.allow_apparently_equals_values",
+            String.valueOf(allow));
+  }
+
   @Override
   public String toString() {
     return "Configuration {"
@@ -183,5 +224,11 @@ public class Configuration {
         + ", ignoredParameters=" + ignoredParameters
         + ", requestedParameters=" + requestedParameters
         + '}';
+  }
+
+  public Optional<Boolean> isDebugModeEnabled() {
+    return Optional
+        .of(JMeterUtils
+            .getPropDefault("correlation.configuration.debug_mode", false));
   }
 }

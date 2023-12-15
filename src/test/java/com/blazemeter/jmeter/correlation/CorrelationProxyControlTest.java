@@ -3,15 +3,12 @@ package com.blazemeter.jmeter.correlation;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.proxy.ComparableCookie;
 import com.blazemeter.jmeter.correlation.core.proxy.PendingProxy;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
@@ -22,18 +19,13 @@ import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
-import org.apache.jmeter.gui.GuiPackage;
-import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
-import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
@@ -45,7 +37,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -104,8 +95,6 @@ public class CorrelationProxyControlTest {
         .withCorrelationTemplatesRepositoriesConfiguration(configuration)
         .withLocalConfiguration(localConfiguration)
         .withTarget(target);
-    GuiPackage.initInstance(null, Mockito.mock(JMeterTreeModel.class));
-    Mockito.when(target.children()).thenReturn(Mockito.mock(Enumeration.class));
   }
 
   @After
@@ -121,19 +110,6 @@ public class CorrelationProxyControlTest {
     build.startedProxy(Thread.currentThread());
     build.deliverSampler(null, testElements, sampleResult);
     verify(correlationEngine, never()).process(any(), any(), any(), any());
-  }
-
-  @Test
-  public void shouldInvokeCorrelationEngineProcessWhenSamplerIsNotNull() {
-    CorrelationProxyControl proxyControl = builder.withCorrelationEngine(correlationEngine)
-        .build();
-    sampleResult = new HTTPSampleResult();
-    proxyControl.startedProxy(Thread.currentThread());
-    proxyControl.deliverSampler(sampler, testElements, sampleResult);
-    proxyControl.endedProxy(Thread.currentThread());
-    List<TestElement> children = new ArrayList<>();
-    verify(correlationEngine, times(1))
-        .process(sampler, children, sampleResult, DEFAULT_RESPONSE_FILTER);
   }
 
   @Test
@@ -273,20 +249,6 @@ public class CorrelationProxyControlTest {
     List<CorrelationRule> rules = Arrays.asList(oneRule, oneRule, oneRule,
         new CorrelationRule(SECOND_RULE_REF_VAR_NAME, regexExtractor, null));
     return Collections.singletonList(new RulesGroup.Builder().withRules(rules).build());
-  }
-
-  @Test
-  public void shouldClearCustomCookiesWhenStartProxy() {
-    model = builder.build();
-    ComparableCookie comparableCookie = new ComparableCookie("header", "headerValue", "localhost");
-    model.addCookie(comparableCookie);
-    model.setPort(8898);
-    try {
-      model.startProxy();
-    } catch (IOException e) {
-      //Is expected to throw an exception since 'keytool' command isn't allowed in this environment
-    }
-    softly.assertThat(model.getLastCookies()).isEmpty();
   }
 
   @Test

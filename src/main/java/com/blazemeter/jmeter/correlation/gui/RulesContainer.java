@@ -111,7 +111,7 @@ public class RulesContainer extends JPanel implements ActionListener {
     JButton suggestionButton = makeButton("correlate", OPEN_SUGGESTIONS);
     suggestionButton.setText("Open Suggestion Panel");
 
-    enableCorrelation = new JCheckBox("Enable Correlation (Legacy)");
+    enableCorrelation = new JCheckBox("Legacy Correlation");
     enableCorrelation.addActionListener(e -> {
       if (enableCorrelationConsumer != null) {
         enableCorrelationConsumer.accept(enableCorrelation.isSelected());
@@ -198,7 +198,7 @@ public class RulesContainer extends JPanel implements ActionListener {
 
   private void displaySaveTemplateFrame() {
     if (!loadedTemplates.isEmpty()) {
-      templateFrame.setLoadedTemplates(loadedTemplates.get(loadedTemplates.size() - 1));
+      templateFrame.updateLastLoadedTemplate(loadedTemplates.get(loadedTemplates.size() - 1));
     }
     templateFrame.showFrame();
   }

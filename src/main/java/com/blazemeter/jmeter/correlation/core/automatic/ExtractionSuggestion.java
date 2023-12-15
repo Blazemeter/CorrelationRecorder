@@ -1,10 +1,16 @@
 package com.blazemeter.jmeter.correlation.core.automatic;
 
+import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 
 public class ExtractionSuggestion {
+  private List<CorrelationExtractor<?>> extractors = new ArrayList<>();
+
+  //TODO:Remove the single extractor and only use the list
   private RegexCorrelationExtractor<?> extractor;
   private SampleResult sampleResult;
   private String value;
@@ -13,6 +19,11 @@ public class ExtractionSuggestion {
   // This suggestion comes from the analysis of a sample result?
   private boolean comesFromSampleResult = true;
   private HTTPSamplerBase sampler;
+
+  public ExtractionSuggestion(CorrelationExtractor<?> extractors, SampleResult sampleResult) {
+    this.extractors.add(extractors);
+    this.sampleResult = sampleResult;
+  }
 
   public ExtractionSuggestion(RegexCorrelationExtractor<?> extractor, SampleResult sampleResult) {
     this.extractor = extractor;
@@ -71,6 +82,15 @@ public class ExtractionSuggestion {
 
   public HTTPSamplerBase getSampler() {
     return sampler;
+  }
+
+  public List<CorrelationExtractor<?>> getExtractors() {
+    return extractors;
+  }
+
+  public void setExtractors(
+      List<CorrelationExtractor<?>> extractors) {
+    this.extractors = extractors;
   }
 
   @Override

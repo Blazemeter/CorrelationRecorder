@@ -17,9 +17,13 @@ import java.util.Map;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AnalysisReporter {
+
   public static final String NO_REPORT = "The Analyzer was not active. No report available.";
+  private static final Logger LOG = LoggerFactory.getLogger(AnalysisReporter.class);
   private static AnalysisReporter reporter;
   private static Map<CorrelationRulePartTestElement<?>, Report> reports
       = new HashMap<>();
@@ -189,7 +193,9 @@ public class AnalysisReporter {
       RegexCorrelationReplacement<?> replacement = (RegexCorrelationReplacement<?>) rulePart;
       for (ReportEntry entry : report.entries) {
         if (!(entry.affectedElement instanceof TestElement)) {
-          System.out.println("Replacement affect element is not an TestElement");
+          if (LOG.isDebugEnabled()) {
+            System.out.println("Replacement affect element is not an TestElement");
+          }
           continue;
         }
         TestElement usage = (TestElement) entry.affectedElement;
@@ -220,7 +226,9 @@ public class AnalysisReporter {
       CorrelationSuggestion suggestion = new CorrelationSuggestion();
       for (ReportEntry entry : report.entries) {
         if (!(entry.affectedElement instanceof HTTPSamplerBase)) {
-          System.out.println("Extractor affect element is not an SampleResult");
+          if (LOG.isDebugEnabled()) {
+            System.out.println("Extractor affect element is not an SampleResult");
+          }
           continue;
         }
 

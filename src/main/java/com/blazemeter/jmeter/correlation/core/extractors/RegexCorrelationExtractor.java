@@ -11,6 +11,7 @@ import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -22,6 +23,7 @@ import org.apache.jmeter.extractor.RegexExtractor;
 import org.apache.jmeter.extractor.gui.RegexExtractorGui;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.slf4j.Logger;
@@ -211,9 +213,10 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     this.currentSamplersChild = children;
 
     RegexMatcher regexMatcher = new RegexMatcher(regex, groupNr);
-    String varName = multiValued ? generateVariableName() : variableName;
     if (matchNr >= 0) {
-      String match = regexMatcher.findMatch(target.getField(result), matchNr);
+      String field = target.getField(result);
+      String match = regexMatcher.findMatch(field, matchNr);
+      String varName = multiValued ? generateVariableName() : variableName;
       if (match != null && !match.equals(vars.get(varName))) {
         analyze(match, sampler, varName);
         addVarAndChildPostProcessor(match, varName,
@@ -222,6 +225,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     } else {
       ArrayList<String> matches = regexMatcher.findMatches(target.getField(result));
       if (matches.size() == 1) {
+        String varName = multiValued ? generateVariableName() : variableName;
         String match = matches.get(0);
         analyze(match, sampler, varName);
         addVarAndChildPostProcessor(match, varName,
@@ -231,6 +235,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
           clearJMeterVariables(vars);
         }
         String value = String.valueOf(matches.size());
+        String varName = multiValued ? generateVariableName() : variableName;
         analyze(value, sampler, varName);
         addVarAndChildPostProcessor(value,
             varName + "_matchNr", createPostProcessor(varName, matchNr));
@@ -352,5 +357,20 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
 
   public void setMultiValued(boolean multiValued) {
     this.multiValued = multiValued;
+  }
+
+  @Override
+  public List<AbstractTestElement> createPostProcessors(String variableName, int i) {
+    RegexExtractor regexExtractor = new RegexExtractor();
+    regexExtractor.setProperty(TestElement.GUI_CLASS, REGEX_EXTRACTOR_GUI_CLASS);
+    regexExtractor.setName("RegExp - " + variableName);
+    regexExtractor.setRefName(variableName);
+    regexExtractor.setRegex(regex);
+    regexExtractor.setTemplate("$" + groupNr + "$");
+    regexExtractor.setMatchNumber(matchNr);
+    regexExtractor.setDefaultValue(variableName + DEFAULT_REGEX_EXTRACTOR_SUFFIX);
+    regexExtractor.setUseField(target.getCode());
+    regexExtractor.setScopeAll();
+    return Collections.singletonList(regexExtractor);
   }
 }

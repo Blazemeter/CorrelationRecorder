@@ -48,6 +48,8 @@ public class ResultsExtraction implements AppearancesExtraction {
   private final Configuration configuration;
   private Map<String, List<Appearances>> appearanceMap;
 
+  private Map<String, HTTPSamplerProxy> requestsMap;
+
   public ResultsExtraction(Configuration configuration) {
     this.configuration = configuration;
     this.utils = new JMeterElementUtils(configuration);
@@ -270,8 +272,8 @@ public class ResultsExtraction implements AppearancesExtraction {
   @Override
   public Map<String, List<Appearances>> extractAppearanceMap(String filepath) {
     appearanceMap = new HashMap<>();
-    List<SampleResult> results = new ResultFileParser(configuration)
-        .loadFromFile(new File(filepath), true);
+    ResultFileParser resultFileParser = new ResultFileParser(configuration);
+    List<SampleResult> results = resultFileParser.loadFromFile(new File(filepath), true);
 
     extractAppearancesFromResults(results);
     return appearanceMap;
@@ -287,12 +289,22 @@ public class ResultsExtraction implements AppearancesExtraction {
     RecordingExtraction samplersExtractor = new RecordingExtraction(configuration, appearanceMap);
     for (SampleResult result : results) {
       if (result instanceof HTTPSampleResult) {
+
         HTTPSampleResult httpSampleResult = (HTTPSampleResult) result;
         HTTPSamplerProxy sourceRequest = parseToHttpSampler(httpSampleResult);
+        if (requestsMap != null && requestsMap.containsKey(result.getSampleLabel())) {
+          sourceRequest = requestsMap.get(result.getSampleLabel());
+        }
         samplersExtractor.extractParametersFromHttpSampler(sourceRequest);
         extractParametersFromHeaderStrings(result.getResponseHeaders(), sourceRequest, "Response");
         extractParametersFromHeaderStrings(httpSampleResult.getRequestHeaders(), sourceRequest,
             "Request");
+
+        /*
+        * If the content type of the response is a JSON, we could parse the Response
+        * and store the values in the appearanceMap using
+        * source=Sources.RESPONSE_BODY_JSON (Response Body JSON)
+        */
       }
     }
   }
@@ -405,5 +417,9 @@ public class ResultsExtraction implements AppearancesExtraction {
       utils.addToMap(appearanceMap, name, value, sourceRequest,
           "Header " + headerSource + " (Sub-Parameters)");
     }
+  }
+
+  public void setRequestsMap(Map<String, HTTPSamplerProxy> requestsMap) {
+    this.requestsMap = requestsMap;
   }
 }

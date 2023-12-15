@@ -1,0 +1,53 @@
+<style type="text/css">
+    .tg {border-collapse:collapse;border-spacing:0;}
+    .tg td {border-color:grey;border-style:solid;border-width:1px;font-family:Arial, sans-serif; overflow:hidden;padding:10px 5px;word-break:normal;}
+    .tg th {border-color:grey;border-style:solid;border-width:1px;font-family:Arial, sans-serif; font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+    .tg .tg-0lax {text-align:left;vertical-align:top}
+
+</style>
+
+<b>Json Correlation Extractor</b>
+<p>Use the Regular Expression (RegEx) to get the values from the response</p>
+<br>
+<table class="tg">
+    <thead>
+    <tr>
+        <th>Field</th>
+        <th>Description</th>
+        <th>Default Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>RegEx</td>
+        <td>Regular Expression used to do the matching</td>
+        <td>param="(.+?)"</td>
+    </tr>
+    <tr>
+        <td>Match Number</td>
+        <td>determines which appearance of the RegEx will be considered for the extraction</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>Group Number</td>
+        <td>determines the group from where the information will be taken, based on the RegEx</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>Target</td>
+        <td>determines where the RegEx will be applied</td>
+        <td>Response's Body</td>
+    </tr>
+    <tr>
+        <td>Multivalued</td>
+        <td>determines if multiple variables will be extracted and also, without overwriting existent ones.</td>
+        <td>Unchecked</td>
+    </tr>
+    </tbody>
+</table>
+<p>For more information about Extractors and how to use them, check the Documentation at <a
+        href="https://github.com/Blazemeter/CorrelationRecorder/blob/master/README.md#list-of-correlation-extractors">List
+    Correlation Extractors</a></p>
+
+
+

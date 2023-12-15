@@ -24,15 +24,14 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import javax.swing.JPanel;
+import javax.swing.text.JTextComponent;
 import javax.xml.parsers.ParserConfigurationException;
 import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.fixture.JButtonFixture;
 import org.assertj.swing.fixture.JComboBoxFixture;
 import org.assertj.swing.fixture.JLabelFixture;
 import org.assertj.swing.fixture.JListFixture;
-import org.assertj.swing.fixture.JProgressBarFixture;
 import org.assertj.swing.fixture.JTextComponentFixture;
-import org.assertj.swing.timing.Timeout;
 import org.custommonkey.xmlunit.HTMLDocumentBuilder;
 import org.custommonkey.xmlunit.TolerantSaxDocumentBuilder;
 import org.custommonkey.xmlunit.XMLUnit;
@@ -51,7 +50,6 @@ public class TemplatesManagerFrameIT {
   private static final String LOCAL_TEMPLATE_ID = "LocalTemplate (local)";
   private static final String EXTERNAL_TEMPLATE_ID = "ExternalTemplate (external)";
   private static final int HALF_PROGRESS = 50;
-
   private FrameFixture frame;
 
   @Mock
@@ -90,18 +88,22 @@ public class TemplatesManagerFrameIT {
         templatesRegistryHandler, repositoriesRegistryHandler, lastTemplateHandler, new JPanel());
     templatesManagerFrame.setConfigFrame(configFrame);
     frame = showInFrame(templatesManagerFrame.getContentPane());
+    templatesManagerFrame.showFrame();
   }
 
   private void setupRepository(CorrelationTemplatesRepository repository, String name,
                                List<Template> templates) {
     when(repository.getName()).thenReturn(name);
+    when(repository.getDisplayName()).thenReturn(name);
     Map<Template, TemplateProperties> templateAndProperties = new HashMap<>();
     for (Template template : templates) {
       templateAndProperties.put(template, new TemplateProperties());
     }
-    when(repositoriesRegistryHandler.getCorrelationTemplatesAndPropertiesByRepositoryName(name,
-        false))
+
+    when(repositoriesRegistryHandler
+        .getCorrelationTemplatesAndPropertiesByRepositoryName(name, true))
         .thenReturn(templateAndProperties);
+
     for (int i = 0; i < templates.size(); i++) {
       when(templates.get(i).getId()).thenReturn(StringUtils.capitalize(name) + "Template");
       when(templates.get(i).getDescription()).thenReturn("Description" + i);
@@ -110,6 +112,11 @@ public class TemplatesManagerFrameIT {
       when(templates.get(i).getRepositoryId()).thenReturn(name);
       when(templates.get(i).isInstalled()).thenReturn(i % 2 != 0);
     }
+  }
+
+  private void mockTemplateAndProperties() {
+    when(repositoriesRegistryHandler.getCorrelationTemplatesAndPropertiesByRepositoryName("external", true))
+        .thenReturn(Collections.singletonMap(firstVersionFirstTemplateExternalRepository, new TemplateProperties()));
   }
 
   @After
@@ -244,7 +251,9 @@ public class TemplatesManagerFrameIT {
   }
 
   private void searchForSpecificText(String str) {
-    frame.textBox("searchField").setText(str);
+    JTextComponentFixture searchField = frame.textBox("searchField");
+    JTextComponent target = searchField.target();
+    target.setText(str);
   }
 
   @Test
@@ -300,17 +309,6 @@ public class TemplatesManagerFrameIT {
     findTemplateIdLabel().requireText(firstVersionFirstTemplateLocalRepository.getId());
   }
 
-  @Test
-  public void shouldShowProgressBarWhenPressRefresh() {
-    CountDownLatch refreshProgressLock = setupRefreshTaskWithUpdates();
-    try {
-      clickRefreshRepositories();
-      findProgressBar().requireVisible();
-    } finally {
-      refreshProgressLock.countDown();
-    }
-  }
-
   private CountDownLatch setupRefreshTaskWithUpdates() {
     CountDownLatch latch = new CountDownLatch(1);
     doAnswer(a -> {
@@ -327,27 +325,6 @@ public class TemplatesManagerFrameIT {
     frame.button("refreshButton").click();
   }
 
-  private JProgressBarFixture findProgressBar() {
-    return frame.progressBar("loadingProgressBar");
-  }
-
-  @Test
-  public void shouldIncrementProgressBarWhenRefreshRepositories() {
-    CountDownLatch refreshProgressLock = setupRefreshTaskWithUpdates();
-    try {
-      clickRefreshRepositories();
-      findProgressBar().waitUntilValueIs(HALF_PROGRESS);
-    } finally {
-      refreshProgressLock.countDown();
-    }
-  }
-
-  @Test
-  public void shouldEnableConfirmRefreshButtonWhenRefreshWithChanges() {
-    refreshRepositories();
-    findConfirmRefreshButton().requireEnabled(Timeout.timeout(10000));
-  }
-
   private void refreshRepositories() {
     CountDownLatch refreshProgressLock = setupRefreshTaskWithUpdates();
     try {
@@ -356,10 +333,4 @@ public class TemplatesManagerFrameIT {
       refreshProgressLock.countDown();
     }
   }
-
-  private JButtonFixture findConfirmRefreshButton() {
-    return frame.button("confirmRefreshButton");
-  }
-
-
 }

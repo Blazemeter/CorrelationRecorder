@@ -4,6 +4,7 @@ import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -54,11 +55,10 @@ public class CorrelationProxy extends Proxy {
     wrapClientSocketWithProxyControlNotifierSocket(proxyControl);
     try {
       super.run();
-    } catch (org.jsoup.UncheckedIOException e) {
+    } catch (UncheckedIOException e) {
       LOG.warn("Error while processing a request: {}", e.getMessage());
     } catch (Exception exception) {
-      LOG.warn("There was an unexpected error while processing the last request: {}",
-          exception.getMessage());
+      LOG.warn("There was an unexpected error while processing the last request:", exception);
     }
     proxyControl.endedProxy(this);
   }

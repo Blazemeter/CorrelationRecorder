@@ -8,7 +8,9 @@ import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.XmlCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
@@ -16,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -41,8 +44,9 @@ public class CorrelationComponentsRegistry {
   private static CorrelationComponentsRegistry instance;
   private final Set<Class<?>> customExtractors = new HashSet<>();
   private final Set<Class<?>> customReplacements = new HashSet<>();
-  private final List<Class<?>> defaultExtractors = Collections
-      .singletonList(RegexCorrelationExtractor.class);
+  private final List<Class<?>> defaultExtractors =
+      Arrays.asList(RegexCorrelationExtractor.class, JsonCorrelationExtractor.class,
+          XmlCorrelationExtractor.class);
   private final List<Class<?>> defaultReplacements = Collections
       .singletonList(RegexCorrelationReplacement.class);
   private final List<String> deprecatedComponents = Collections.singletonList(

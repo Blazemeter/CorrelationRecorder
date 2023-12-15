@@ -7,10 +7,10 @@ import java.util.stream.Collectors;
 public class TemplateVersionUtils {
 
   public static String getInformationAsHTLM(Template template, boolean showInstalled,
-                                            boolean canUse) {
+                                            boolean canUse, String repositoryName) {
     StringBuilder content = new StringBuilder();
     content.append("<h2>");
-    content.append(template.getId()).append(" (").append(template.getRepositoryId()).append(")");
+    content.append(template.getId()).append(" (").append(repositoryName).append(")");
     content.append(" v").append(template.getVersion());
 
     if (template.isInstalled() && showInstalled) {

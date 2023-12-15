@@ -158,6 +158,7 @@ public class LocalConfigurationTest {
 
   @Test
   public void shouldDeleteRepositoryWhenDeleteAddedRepository() {
+    List<String> repositoriesNames = configuration.getRepositoriesNames();
     configuration.removeRepository(firstRepository.getName());
     assertEquals(Arrays.asList(CENTRAL_REPOSITORY_NAME,
             localRepository.getName()),

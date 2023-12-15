@@ -1,16 +1,22 @@
 package com.blazemeter.jmeter.correlation.core.automatic;
 
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
+import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CorrelationSuggestion {
+  private static final Logger LOG = LoggerFactory.getLogger(CorrelationSuggestion.class);
   private String paramName;
   private String originalValue;
   private String newValue;
@@ -173,15 +179,6 @@ public class CorrelationSuggestion {
     }
   }
 
-  public List<CorrelationRule> getCorrelationRules() {
-    List<CorrelationRule> rules = new ArrayList<>();
-    extractionSuggestions.forEach(s -> rules.add(
-        new CorrelationRule(s.getName(), s.getExtractor(), null)));
-    replacementSuggestions.forEach(s -> rules.add(
-        new CorrelationRule(s.getName(), null, s.getReplacementSuggestion())));
-    return rules;
-  }
-
   @Override
   public String toString() {
     return "CorrelationSuggestion{"
@@ -248,5 +245,42 @@ public class CorrelationSuggestion {
       suggestion.method = method;
       return suggestion;
     }
+  }
+
+  public List<CorrelationRule> toCorrelationRules() {
+    if (extractionSuggestions.isEmpty() && replacementSuggestions.isEmpty()) {
+      LOG.warn("No suggestions found for parameter {}", paramName);
+    }
+
+    Set<CorrelationRule> uniqueRules = new HashSet<>();
+    List<CorrelationRule> correlationRules = new ArrayList<>();
+    for (ExtractionSuggestion extractionSuggestion : extractionSuggestions) {
+      //TODO: We need to stop using a single Extractor and use the list
+      if (extractionSuggestion.getExtractor() != null) {
+        CorrelationRule rule = new CorrelationRule(extractionSuggestion.getName(),
+            extractionSuggestion.getExtractor(), null);
+        correlationRules.add(rule);
+        uniqueRules.add(rule);
+      }
+
+      for (CorrelationExtractor<?> extractor: extractionSuggestion.getExtractors()) {
+        CorrelationRule rule = new CorrelationRule(extractionSuggestion.getName(), extractor, null);
+        correlationRules.add(rule);
+        uniqueRules.add(rule);
+      }
+    }
+
+    for (ReplacementSuggestion replacementSuggestion : replacementSuggestions) {
+      CorrelationRule rule = new CorrelationRule(replacementSuggestion.getName(), null,
+          replacementSuggestion.getReplacementSuggestion());
+      correlationRules.add(rule);
+      uniqueRules.add(rule);
+    }
+
+    if (correlationRules.size() != uniqueRules.size()) {
+      LOG.warn("There are duplicated rules in the suggestion for parameter {}", paramName);
+    }
+
+    return new ArrayList<>(uniqueRules);
   }
 }

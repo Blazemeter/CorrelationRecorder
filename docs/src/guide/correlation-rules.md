@@ -40,8 +40,8 @@ Each one of these rules, will help to make this whole process of capturing and r
 
 ### Configuration
 
-Assuming you know [what a correlation is](/guide/correlation-process#correlation-process-2) and which parts of the process
- the [Correlation Rules are part of](/guide/after-recording.html#by-using-correlation-templates) lets jump into adding and configuring your rules.
+Assuming you know [what a correlation is](/guide/correlation-process.md#correlation-process-2) and which parts of the process
+ the [Correlation Rules are part of](/guide/after-recording.md#by-using-correlation-templates) lets jump into adding and configuring your rules.
 
 Go to *bzm - Correlation Recorder* > click the Rules Tab.
 
@@ -115,7 +115,7 @@ Once a value its extracted for the Correlation Extractor, it's stored in a varia
 
 All the Correlation Extractors mentioned below comes either installed by default in the plugin, or as a part of the preloaded Siebel Template. To know more about how to load and save Correlation Rules Templates, please refer to the [Saving and Loading Rules](#saving-and-loading-rules) section, for further details about it.
 
-In case none of the following ones fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](/custom-extensions) section that we have prepared for you.
+In case none of the following ones fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](custom-extensions) section that we have prepared for you.
 
 **Regex**
 
@@ -304,7 +304,7 @@ Now that we have a basic idea of a replacement, lets explain the most complex an
 
 All the Correlation Replacements mentioned below comes either installed by default in the plugin, or as a part of the preloaded Siebel Template. To know more about how to load and save Correlation Rules Templates, please refer to the [Saving and Loading Rules](#saving-and-loading-rules) section, for further details about it.
 
-In case none of the following Replacements fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](CUSTOM_EXTENSIONS.md) section that we have prepared for you.
+In case none of the following Replacements fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](custom-extensions) section that we have prepared for you.
 
 **Regex**
 

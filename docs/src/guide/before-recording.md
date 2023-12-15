@@ -143,7 +143,7 @@ Once a value its extracted for the Correlation Extractor, it's stored in a varia
 
 All the Correlation Extractors mentioned below comes either installed by default in the plugin, or as a part of the preloaded Siebel Template. To know more about how to load and save Correlation Rules Templates, please refer to the [Saving and Loading Rules](#saving-and-loading-rules) section, for further details about it.
 
-In case none of the following ones fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](/custom-extensions) section that we have prepared for you.
+In case none of the following ones fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](custom-extensions) section that we have prepared for you.
 
 **Regex**
 

@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.gui.common;
 
+import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import java.io.IOException;
 import javax.swing.JPanel;
@@ -9,10 +10,12 @@ import org.custommonkey.xmlunit.TolerantSaxDocumentBuilder;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xmlunit.matchers.CompareMatcher;
 
+@RunWith(SwingTestRunner.class)
 public class HelperDialogTest {
 
   private HelperDialog helperDialog;

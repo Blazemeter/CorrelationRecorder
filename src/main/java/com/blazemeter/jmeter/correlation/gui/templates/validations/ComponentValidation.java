@@ -7,6 +7,8 @@ public interface ComponentValidation<T extends JTextComponent> {
 
   void applyFormat();
 
+  void clearFormat();
+
   boolean isValid();
 
   T getField();
@@ -14,6 +16,8 @@ public interface ComponentValidation<T extends JTextComponent> {
   void setErrorMessage(String message);
 
   String getErrorMessage();
+
+  boolean getErrorVisible();
 
   void reset();
 }

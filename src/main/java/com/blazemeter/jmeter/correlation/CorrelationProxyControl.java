@@ -52,10 +52,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
@@ -106,6 +106,9 @@ public class CorrelationProxyControl extends ProxyControl implements
       "filterContentType", SampleResult.class);
   private static final Field SERVER_FIELD = getProxyControlField("server");
   private static final Field SAMPLE_GAP_FIELD = getProxyControlField("sampleGap");
+  private static final String PROXY_REDIRECT_DISABLING_NAME = "proxy.redirect.disabling";
+  private static final String CORRELATION_PROXY_REDIRECT_DISABLING_NAME =
+      "correlation.proxy.redirect.disabling";
   // this is used to deliver samples in order, check CorrelationProxy.
   private final LinkedHashMap<Object, PendingProxy> pendingProxies = new LinkedHashMap<>();
   private final Set<ComparableCookie> lastComparableCookies = new LinkedHashSet<>();
@@ -117,9 +120,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   private List<SampleResult> samples = new ArrayList<>();
   private Method putSamplesIntoModel;
   private CorrelationHistory history = new CorrelationHistory();
-  private boolean analysisMode = false;
-  private boolean shouldStore = false;
   private Runnable onStopRecordingMethod;
+  private String originalDisablingValue = null;
 
   @SuppressWarnings("checkstyle:RedundantModifier")
   public CorrelationProxyControl() {
@@ -181,16 +183,6 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public synchronized void startProxy() throws IOException {
-    if (correlationEngine.isEnabled()
-        && !correlationEngine.getCorrelationRules().isEmpty()) {
-      int response = JOptionPane.showConfirmDialog(null,
-          "Correlation Rules analysis is enabled! " + System.lineSeparator()
-              + "We suggest using the Correlation Rules after Recording." + System.lineSeparator()
-              + "Do you want us to disable them for you before continuing with the Recording?",
-          "Correlation Engine", JOptionPane.YES_NO_OPTION);
-      correlationEngine.setEnabled(response != JOptionPane.YES_OPTION);
-    }
-
     JMeterElementUtils.setupResultCollectors(this);
     lastComparableCookies.clear();
     correlationEngine.reset();
@@ -223,6 +215,19 @@ public class CorrelationProxyControl extends ProxyControl implements
       LOG.error("Could not create HTTP(S) Test Script Recorder Proxy daemon", e);
       throw e;
     }
+  }
+
+  public boolean isLegacyEnabled() {
+    return correlationEngine.isEnabled();
+  }
+
+  public boolean hasLoadedRules() {
+    return !correlationEngine.getCorrelationRules().isEmpty();
+  }
+
+  public boolean areWarningsDisabled() {
+    String property = JMeterUtils.getProperty("correlation.configurations.warnings.disabled");
+    return "true".equals(property);
   }
 
   /*
@@ -287,7 +292,6 @@ public class CorrelationProxyControl extends ProxyControl implements
   public synchronized void deliverSampler(HTTPSamplerBase sampler, TestElement[] testElements,
                                           SampleResult result) {
     pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
-
   }
 
   public synchronized void startedProxy(Thread proxy) {
@@ -304,7 +308,7 @@ public class CorrelationProxyControl extends ProxyControl implements
       return;
     }
     /*
-     when result is null then the request is not recorded. This is to keep logic from JMeter
+     When result is null then the request is not recorded. This is to keep logic from JMeter
      recorder.
      */
     if (pendingProxy.getResult() == null) {
@@ -840,9 +844,18 @@ public class CorrelationProxyControl extends ProxyControl implements
   @Override
   public synchronized void stopProxy() {
     super.stopProxy();
+    if (originalDisablingValue != null) {
+      JMeterUtils.getJMeterProperties().put(PROXY_REDIRECT_DISABLING_NAME,
+          originalDisablingValue);
+    }
 
     if (getSamples().isEmpty()) {
       LOG.warn("No samples were recorded. Skipping correlation suggestions generation.");
+      return;
+    }
+
+    if (isLegacyEnabled()) {
+      LOG.warn("Legacy mode is enabled. Skipping correlation suggestions generation.");
       return;
     }
 
@@ -858,37 +871,8 @@ public class CorrelationProxyControl extends ProxyControl implements
     SwingUtilities.invokeLater(onStopRecordingMethod);
   }
 
-  private boolean shouldAutoSave() {
-    return getPropertyAsBoolean("correlation.automatic_save_samples", true);
-  }
-
-  @VisibleForTesting
-  public void setShouldAutoSave(boolean shouldAutoSave) {
-    setProperty("correlation.automatic_save_samples", shouldAutoSave);
-  }
-
   public void setCorrelationHistory(CorrelationHistory history) {
     this.history = history;
-  }
-
-  public CorrelationHistory getCorrelationHistory() {
-    if (history == null) {
-      history = new CorrelationHistory();
-    }
-    return history;
-  }
-
-  @VisibleForTesting
-  public void setShouldDisplayWizard(boolean shouldDisplayWizard) {
-    setProperty("correlation.display_wizard", shouldDisplayWizard);
-  }
-
-  public void setAnalysisMode(boolean analysisMode) {
-    this.analysisMode = analysisMode;
-  }
-
-  public void setShouldStore(boolean shouldStore) {
-    this.shouldStore = shouldStore;
   }
 
   public CorrelationComponentsRegistry getCorrelationComponentsRegistry() {
@@ -904,5 +888,32 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   public void enableCorrelation(Boolean enableCorrelation) {
     this.correlationEngine.setEnabled(enableCorrelation);
+  }
+
+  public boolean isProperlyConfigured() {
+    boolean isConfigured = isRedirectDisablingConfigured();
+
+    if (!isConfigured) {
+      LOG.warn("The '" + CORRELATION_PROXY_REDIRECT_DISABLING_NAME
+          + "' property is missing or not configured "
+          + "correctly." + System.lineSeparator()
+          + "To ensure the recording works properly, set it to 'false' in your "
+          + "blazemeter.properties file." + System.lineSeparator()
+          + "To disable these notifications in the future, add: "
+          + "correlation.configurations.warnings.disabled=true to your "
+          + "blazemeter.properties file.");
+    } else {
+      Properties properties = JMeterUtils.getJMeterProperties();
+      originalDisablingValue = properties.getProperty(PROXY_REDIRECT_DISABLING_NAME);
+      String newDisablingValue = JMeterUtils.getProperty(CORRELATION_PROXY_REDIRECT_DISABLING_NAME);
+      properties.put(PROXY_REDIRECT_DISABLING_NAME, newDisablingValue);
+    }
+
+    return isConfigured;
+  }
+
+  private boolean isRedirectDisablingConfigured() {
+    String property = JMeterUtils.getProperty(CORRELATION_PROXY_REDIRECT_DISABLING_NAME);
+    return "false".equals(property);
   }
 }

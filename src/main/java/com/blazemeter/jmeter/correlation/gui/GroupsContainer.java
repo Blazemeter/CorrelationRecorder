@@ -12,7 +12,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 
 public class GroupsContainer extends JPanel implements ActionListener {
 
@@ -31,7 +30,8 @@ public class GroupsContainer extends JPanel implements ActionListener {
     this.modelUpdate = modelUpdater;
     this.table = SwingUtils
         .createComponent("groupsTable", new GroupsTableGui(this::checkButtonsStatus));
-    add(new JScrollPane(table), BorderLayout.CENTER);
+    add(table.getTableHeader(), BorderLayout.NORTH);
+    add(table, BorderLayout.CENTER);
     add(buildGroupButtonPanel(), BorderLayout.SOUTH);
   }
 

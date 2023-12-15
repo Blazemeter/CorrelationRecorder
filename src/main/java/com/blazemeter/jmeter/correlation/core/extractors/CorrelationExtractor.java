@@ -9,9 +9,11 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.slf4j.Logger;
@@ -149,5 +151,9 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
     return "CorrelationReplacement{"
         + " replacementClass=" + getClass().getName()
         + " , paramValues='" + getParams() + "'}";
+  }
+
+  public List<AbstractTestElement> createPostProcessors(String variableName, int i) {
+    return new ArrayList<>();
   }
 }

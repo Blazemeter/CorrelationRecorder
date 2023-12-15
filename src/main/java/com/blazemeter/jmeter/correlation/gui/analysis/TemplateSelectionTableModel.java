@@ -24,6 +24,7 @@ public class TemplateSelectionTableModel extends AbstractTableModel {
   private final String[] columnNames = {"Select", "Repository", "Name", "Version"};
   private final List<TemplateVersionsTableItem> versionList = new ArrayList<>();
   private Map<Template, TemplateProperties> templatesAndProperties = new HashMap<>();
+  private Map<String, String> repositoryIdToName = new HashMap<>();
 
   public TemplateSelectionTableModel() {
   }
@@ -132,6 +133,7 @@ public class TemplateSelectionTableModel extends AbstractTableModel {
     for (Map.Entry<String, Repository> repositoryEntry : repositoryMap.entrySet()) {
       // We will iterate over the versionList
       Repository repository = repositoryEntry.getValue();
+      repositoryIdToName.put(repositoryEntry.getKey(), repository.getDisplayName());
       Map<String, Protocol> protocols = repository.getProtocols();
       for (Map.Entry<String, Protocol> protocolEntry : protocols.entrySet()) {
         Protocol protocol = protocolEntry.getValue();
@@ -172,5 +174,9 @@ public class TemplateSelectionTableModel extends AbstractTableModel {
       repositoryAndTemplates.get(repositoryId).add(template.toTemplateVersion());
     }
     return repositoryAndTemplates;
+  }
+
+  public String getRepositoryDisplayName(String repositoryId) {
+    return repositoryIdToName.get(repositoryId);
   }
 }

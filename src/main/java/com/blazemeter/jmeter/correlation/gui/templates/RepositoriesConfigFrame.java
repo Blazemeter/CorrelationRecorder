@@ -9,6 +9,7 @@ import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepo
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepository;
 import com.blazemeter.jmeter.correlation.gui.common.HelperDialog;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIconLabel;
+import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dialog;
@@ -177,7 +178,8 @@ public class RepositoriesConfigFrame extends JDialog implements ActionListener {
     };
   }
 
-  private void updateRepositoriesTable() {
+  @VisibleForTesting
+  void updateRepositoriesTable() {
     GuiUtils.cancelEditing(repositoryTable);
     List<CorrelationTemplatesRepository> listCorrelationRepositories = repositoryHandler
         .getCorrelationRepositories();
@@ -442,6 +444,7 @@ public class RepositoriesConfigFrame extends JDialog implements ActionListener {
   }
 
   private class RepositoryInputTableModel extends DefaultTableModel implements
+
       Iterable<RepositoryInput>, TableModelListener, CellEditorListener {
 
     private final ArrayList<RepositoryInput> inputs;

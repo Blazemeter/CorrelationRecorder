@@ -1,0 +1,21 @@
+{
+  "id" : "wordpress",
+  "description" : "This is an example of a <b>Correlation Template</b>, using Correlation Recorder on <span style='color: red'>Wordpress</span>. <br> <br>This allows you to log in and log out, considering their Wordpress login session 'nonce'.<br><br>Use this example as base for your Correlation Templates.",
+  "version" : "0.1-alpha",
+  "components" : "",
+  "responseFilters" : "",
+  "rules" : [ {
+    "referenceName" : "sessionNonce",
+    "correlationExtractor" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+      "regex" : "_wpnonce=(.*)\""
+    },
+    "correlationReplacement" : {
+      "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+      "regex" : "_wpnonce=(.*)"
+    }
+  } ],
+  "dependencies" : [ ],
+  "repositoryId" : "central",
+  "changes" : "This section is used to add all the changes for each version you are saving.\n\nNo dependencies needed to run this template."
+}

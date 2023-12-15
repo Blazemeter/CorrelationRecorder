@@ -2,16 +2,21 @@ package com.blazemeter.jmeter.correlation.gui.automatic;
 
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
+import com.blazemeter.jmeter.correlation.core.automatic.Configuration;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
-import com.blazemeter.jmeter.correlation.core.automatic.ElementsComparison;
-import com.blazemeter.jmeter.correlation.core.automatic.ElementsModification;
-import com.blazemeter.jmeter.correlation.core.automatic.ModificationResult;
+import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
+import com.blazemeter.jmeter.correlation.core.suggestions.SuggestionGenerator;
+import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContext;
+import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
+import com.blazemeter.jmeter.correlation.core.suggestions.method.AnalysisMethod;
+import com.blazemeter.jmeter.correlation.core.suggestions.method.ComparisonMethod;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
 import com.blazemeter.jmeter.correlation.core.templates.repository.Properties;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
+import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -43,7 +48,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.gui.util.JMeterToolBar;
 import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
@@ -279,15 +283,6 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     }
   }
 
-  private void addToReport(ModificationResult modificationResult, List<String> changes) {
-    String name = modificationResult.getNode().getName();
-    changes.add(name + " (" + modificationResult.getModificationCount() + " changes)");
-    modificationResult.getExtractionList().forEach(extractionResult ->
-        changes.add("    - " + extractionResult));
-    modificationResult.getReplacementList().forEach(replacementResult ->
-        changes.add("  - " + replacementResult));
-  }
-
   private void manualReplayAndGenerateSuggestions() {
     toggleWizardVisibility();
     replayTestPlan();
@@ -297,6 +292,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     autoCorrelateMethod = this::applySuggestions;
   }
 
+  // Reminder: This method is called when the Suggestions came from Comparison methods.
   public void applySuggestions() {
     List<CorrelationSuggestion> suggestions = exportSelectedSuggestions();
     if (suggestions.isEmpty()) {
@@ -307,15 +303,19 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
       return;
     }
 
+    AnalysisContext context = new AnalysisContext();
+    String recordingTraceFilePath = getRecordingTraceSupplier.get();
+    context.setRecordingTraceFilePath(recordingTraceFilePath);
+    context.setRecordingTestPlan(JMeterElementUtils.getNormalizedTestPlan());
+    context.setRegistry(CorrelationComponentsRegistry.getInstance());
+
     logStepConsumer.accept("(Save) Before apply suggestions");
-    Map<JMeterTreeNode, ModificationResult> report
-        = ElementsModification.applySelectedSuggestions(suggestions);
+    SuggestionGenerator generator
+        = SuggestionGenerator.getInstance(new AnalysisMethod(context));
+    generator.applySuggestions(suggestions);
     logStepConsumer.accept("(Save) After apply suggestions");
-    reportList.clearSelection();
-    List<String> changes = new ArrayList<>();
-    report.forEach((affectedNode, modificationResult) -> addToReport(modificationResult, changes));
-    reportList.setListData(changes.toArray(new String[0]));
-    reportList.repaint();
+    JMeterElementUtils.refreshJMeter();
+
     if (isExtraDebuggingEnabled) {
       displayAppliedResults();
     }
@@ -361,12 +361,16 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
       Map<Template, TemplateProperties> templatesAndProperties =
           repManager.getTemplatesAndProperties(templates);
 
+      if (templatesAndProperties == null || templatesAndProperties.isEmpty()) {
+        templatesAndProperties = this.wizard.getRepositoriesConfiguration()
+            .getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, true);
+      }
+
       for (Map.Entry<Template, TemplateProperties> templateEntry
           : templatesAndProperties.entrySet()) {
         TemplateProperties value = templateEntry.getValue();
         Properties properties = new Properties();
         properties.putAll(value);
-
         if (properties.canExport()) {
           canExport.add(templateEntry.getKey());
         } else {
@@ -390,7 +394,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
       Template source = suggestion.getSource();
       // Automatic or Template based
       if (source == null || canExport.contains(source)) {
-        rules.addAll(suggestion.getCorrelationRules());
+        rules.addAll(suggestion.toCorrelationRules());
       }
     }
 
@@ -416,10 +420,14 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
       return;
     }
 
-    List<CorrelationSuggestion> suggestions =
-        new ElementsComparison().generateSuggestionsFromFailingReplayTraceOnly(
-            getRecordingTraceSupplier.get(),
-            getReplayTraceSupplier.get());
+    SuggestionGenerator generator = SuggestionGenerator.getInstance(new ComparisonMethod());
+
+    ComparisonContext context = new ComparisonContext();
+    context.setRecordingTraceFilePath(getRecordingTraceSupplier.get());
+    context.setReplayTraceFilePath(getReplayTraceSupplier.get());
+    context.setConfiguration(new Configuration());
+
+    List<CorrelationSuggestion> suggestions = generator.generateSuggestions(context);
 
     loadSuggestions(suggestions);
     toggleWizardVisibility();
