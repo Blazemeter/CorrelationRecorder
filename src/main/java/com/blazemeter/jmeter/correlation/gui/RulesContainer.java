@@ -4,11 +4,13 @@ import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
+import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationHistoryFrame;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
 import com.blazemeter.jmeter.correlation.gui.templates.TemplateSaveFrame;
 import com.blazemeter.jmeter.correlation.gui.templates.TemplatesManagerFrame;
@@ -49,6 +51,7 @@ public class RulesContainer extends JPanel implements ActionListener {
   private static final String CORRELATE = "correlate";
   private static final String TEMPLATE_ACTIONS_BUTTON_SUFFIX_TEXT = " Template";
   private static final String OPEN_SUGGESTIONS = "openSuggestions";
+  private static final String OPEN_HISTORY = "history";
 
   private final CorrelationTemplatesRegistryHandler templatesRegistryHandler;
   private final CorrelationTemplatesRepositoriesRegistryHandler repositoriesRegistryHandler;
@@ -58,6 +61,8 @@ public class RulesContainer extends JPanel implements ActionListener {
   private final ResponseFilterPanel responseFilterPanel;
   private TemplateSaveFrame templateFrame;
   private TemplatesManagerFrame loadFrame;
+  private CorrelationHistoryFrame historyFrame;
+  private CorrelationHistory history;
   private boolean isSiebelTestPlan;
   private JCheckBox enableCorrelation;
   private Runnable onWizardDisplay;
@@ -118,6 +123,9 @@ public class RulesContainer extends JPanel implements ActionListener {
       }
     });
 
+    JButton historyButton = makeButton("history", OPEN_HISTORY);
+    historyButton.setText("History");
+
     JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
     buttonPanel.setMinimumSize(new Dimension(100, 200));
     buttonPanel.add(loadButton);
@@ -131,6 +139,8 @@ public class RulesContainer extends JPanel implements ActionListener {
     buttonPanel.add(suggestionButton);
     buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
     buttonPanel.add(enableCorrelation);
+    buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+    buttonPanel.add(historyButton);
     return buttonPanel;
   }
 
@@ -171,6 +181,14 @@ public class RulesContainer extends JPanel implements ActionListener {
         break;
       case OPEN_SUGGESTIONS:
         displayCorrelationSuggestions();
+        break;
+      case OPEN_HISTORY:
+        if (historyFrame == null) {
+          historyFrame = new CorrelationHistoryFrame(this.history);
+
+        }
+        historyFrame.loadSteps(this.history.getSteps());
+        historyFrame.showFrame();
         break;
       default:
         throw new UnsupportedOperationException(action);
@@ -300,5 +318,9 @@ public class RulesContainer extends JPanel implements ActionListener {
   public void setEnableCorrelationConsumer(
       Consumer<Boolean> enableCorrelationConsumer) {
     this.enableCorrelationConsumer = enableCorrelationConsumer;
+  }
+
+  public void setHistory(CorrelationHistory history) {
+    this.history = history;
   }
 }

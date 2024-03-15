@@ -87,7 +87,7 @@ public class TestUtils {
    * @return the absolute path of the file.
    */
   public static String getFilePath(String filePath, Class<?> testClass) throws IOException {
-    return new File(testClass.getResource(filePath).getFile()).getAbsolutePath();
+    return new File(URLDecoder.decode(testClass.getResource(filePath).getFile(), "UTF-8")).getAbsolutePath();
   }
 
   /**
@@ -99,7 +99,7 @@ public class TestUtils {
    * @return the absolute path of the folder.
    */
   public static String getFolderPath(String folderPath, Class<?> testClass) throws IOException {
-    return new File(testClass.getResource(folderPath).getFile()).getAbsolutePath();
+    return new File(URLDecoder.decode(testClass.getResource(folderPath).getFile(), "UTF-8")).getAbsolutePath();
   }
 
   /**
@@ -170,11 +170,10 @@ public class TestUtils {
    */
   public static Optional<String> getFilePathFromResources(String filePath, Class<?> testClass) {
     try {
-      String path = getFilePath(filePath, testClass);
+      String path = getFolderPath(filePath, testClass);
       return Optional.of(path);
     } catch (Exception e) {
       return Optional.empty();
     }
   }
 }
-

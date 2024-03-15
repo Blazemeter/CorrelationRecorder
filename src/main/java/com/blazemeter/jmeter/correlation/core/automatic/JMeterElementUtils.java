@@ -110,43 +110,63 @@ public class JMeterElementUtils {
   }
 
   public static String getRecordingFilePath() {
-    List<JMeterTreeNode> recordingNodeList = getTreeModel()
-        .getNodesOfType(CorrelationProxyControl.class);
+    try {
+      List<JMeterTreeNode> recordingNodeList = getTreeModel()
+          .getNodesOfType(CorrelationProxyControl.class);
 
-    if (recordingNodeList.isEmpty()) {
+      if (recordingNodeList.isEmpty()) {
+        LOG.warn("No recording node found");
+        return null;
+      }
+
+      JMeterTreeNode recordingNode = getTreeModel()
+          .getNodeOf(recordingNodeList.get(0).getTestElement());
+
+      int childCount = recordingNode.getChildCount();
+      if (childCount == 0) {
+        LOG.warn("No recording node found");
+        return null;
+      }
+
+      JMeterTreeNode child = (JMeterTreeNode) recordingNode.getChildAt(0);
+      if (child.getTestElement() instanceof ResultCollector) {
+        return ((ResultCollector) child.getTestElement()).getFilename();
+      }
+
+      return null;
+    } catch (Exception e) {
+      e.printStackTrace();
       LOG.warn("No recording node found");
       return null;
     }
-
-    JMeterTreeNode recordingNode = getTreeModel()
-        .getNodeOf(recordingNodeList.get(0).getTestElement());
-
-    int childCount = recordingNode.getChildCount();
-    if (childCount == 0) {
-      LOG.warn("No recording node found");
-      return null;
-    }
-
-    JMeterTreeNode child = (JMeterTreeNode) recordingNode.getChildAt(0);
-    if (child.getTestElement() instanceof ResultCollector) {
-      return ((ResultCollector) child.getTestElement()).getFilename();
-    }
-
-    return null;
   }
 
-  public static String saveTestPlanSnapshot() {
-    String snapshotFilename = FileManagementUtils.getSnapshotFileName();
+  @VisibleForTesting
+  protected static void convertSubTree(HashTree tree) {
+    for (Object o : new ArrayList<>(tree.list())) {
+      JMeterTreeNode item = (JMeterTreeNode) o;
+      convertSubTree(tree.getTree(item));
+      TestElement testElement = item.getTestElement(); // requires JMeterTreeNode
+      tree.replaceKey(item, testElement);
+    }
+  }
+
+  public static String saveTestPlanConverted(HashTree testPlan, String name) {
     try {
-      HashTree snapshotTestPlan = getNormalizedTestPlan();
-      SaveService.saveTree(snapshotTestPlan, Files.newOutputStream(Paths.get(snapshotFilename)));
-      LOG.info("Test Plan's Snapshot saved to {}", snapshotFilename);
-      return snapshotFilename;
+      convertSubTree(testPlan);
+      SaveService.saveTree(testPlan,
+              Files.newOutputStream(Paths.get(name)));
+      LOG.info("Test Plan's Snapshot saved to {}", name);
+      return name;
     } catch (IOException e) {
       e.printStackTrace();
     }
-
     return "";
+  }
+
+  public static String saveTestPlanSnapshot() {
+    return saveTestPlanConverted(getTreeModel().getTestPlan(),
+            FileManagementUtils.getSnapshotFileName());
   }
 
   public static String saveTestPlan(HashTree testPlan, String filename) {
@@ -642,7 +662,8 @@ public class JMeterElementUtils {
     FileManagementUtils.makeReplayResultsFolder();
     FileManagementUtils.makeHistoryFolder();
 
-    if (isNotRunningWithGui()) {
+    if (GuiPackage.getInstance() == null) {
+      LOG.warn("GuiPackage is null");
       return;
     }
 
@@ -769,7 +790,7 @@ public class JMeterElementUtils {
     } else {
       report.setSuccessful(false);
       report.setReplayNewErrors(newErrors);
-      history.addFailedReplay(originalRecordingFilepath, collector.getFilename());
+      history.addFailedReplay(originalRecordingFilepath, collector.getFilename(), newErrors.size());
     }
 
     return report;

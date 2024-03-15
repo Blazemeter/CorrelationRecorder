@@ -114,7 +114,7 @@ public class ComparisonMethodTest extends ReplacementTest {
 
   private void mockGetRecordingResults(Configuration configuration) throws IOException {
     String path = TestUtils
-        .getFilePath("/recordings/recordingTrace/recordingForMendix.jtl", getClass());
+        .getFolderPath("/recordings/recordingTrace/recordingForMendix.jtl", getClass());
     List<SampleResult> results = new ResultFileParser(configuration)
         .loadFromFile(new File(path), true);
     when(context.getRecordingSampleResults()).thenReturn(results);

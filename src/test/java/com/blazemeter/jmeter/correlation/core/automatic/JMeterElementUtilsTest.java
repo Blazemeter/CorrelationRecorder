@@ -1,19 +1,52 @@
 package com.blazemeter.jmeter.correlation.core.automatic;
 
+import static com.blazemeter.jmeter.correlation.JMeterTestUtils.setupUpdatedJMeter;
+import static com.blazemeter.jmeter.correlation.TestUtils.findTestFile;
+import static com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils.convertSubTree;
 import static com.blazemeter.jmeter.correlation.core.automatic.extraction.method.XmlBodyExtractor.getXmlPath;
 
+import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.TestUtils;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+
 import junit.framework.TestCase;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jmeter.control.LoopController;
+import org.apache.jmeter.exceptions.IllegalUserActionException;
 import org.apache.jmeter.extractor.XPathExtractor;
+import org.apache.jmeter.gui.GuiPackage;
+import org.apache.jmeter.gui.tree.JMeterTreeListener;
+import org.apache.jmeter.gui.tree.JMeterTreeModel;
+import org.apache.jmeter.gui.tree.JMeterTreeNode;
+import org.apache.jmeter.protocol.http.config.gui.HttpDefaultsGui;
+import org.apache.jmeter.protocol.http.control.CookieManager;
+import org.apache.jmeter.protocol.http.control.HeaderManager;
+import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.save.SaveService;
+import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.TestPlan;
+import org.apache.jmeter.testelement.WorkBench;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
+import org.apache.jmeter.threads.ThreadGroup;
+import org.apache.jmeter.util.JMeterUtils;
+import org.apache.jorphan.collections.HashTree;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -28,7 +61,9 @@ public class JMeterElementUtilsTest extends TestCase {
   private JMeterContext jmctx;
   private static final String VAL_NAME = "value";
   private static final String VAL_NAME_NR = "value_matchNr";
-
+  private static final String TEST_ELEMENT_CLASS = "org.apache.jmeter.testelement";
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
 
   @Before
   public void setup() throws UnsupportedEncodingException {
@@ -164,5 +199,50 @@ public class JMeterElementUtilsTest extends TestCase {
     extractor.setXPathQuery("//a");
     extractor.process();
     assertEquals("<a><b/></a>", vars.get(VAL_NAME));
+  }
+  @Test
+  public void convertSubTreeShouldChangeKeyClassToTestElement() throws IllegalUserActionException {
+
+    // Create a new TestPlan
+    TestPlan testPlan = new TestPlan("My Test Plan");
+
+    // Create a ThreadGroup
+    ThreadGroup threadGroup = new ThreadGroup();
+    threadGroup.setName("My Thread Group");
+    threadGroup.setNumThreads(1);
+    threadGroup.setRampUp(1);
+    threadGroup.setSamplerController(new LoopController());
+
+    // Create an HTTPSampler
+    HTTPSamplerProxy httpSampler = new HTTPSamplerProxy();
+    httpSampler.setDomain("www.google.com");
+    httpSampler.setPath("/");
+    httpSampler.setMethod("GET");
+    httpSampler.setName("HTTP Request");
+
+    // Add the HTTPSampler to the ThreadGroup
+    threadGroup.addTestElement(httpSampler);
+    threadGroup.addIterationListener(new LoopController());
+
+    // Add the ThreadGroup to the TestPlan
+    testPlan.addTestElement(threadGroup);
+
+    // Create a JMeterTreeModel and add the TestPlan to it
+    JMeterTreeModel treeModel = new JMeterTreeModel();
+    treeModel.addComponent(testPlan, (JMeterTreeNode) treeModel.getRoot());
+
+    HashTree tree = treeModel.getTestPlan();
+
+    convertSubTree(tree);
+
+    checkTree(tree);
+
+  }
+
+  private void checkTree(HashTree tree) {
+    for (Object o : new ArrayList<>(tree.list())) {
+      assertTrue(o.getClass().getName().contains(TEST_ELEMENT_CLASS));
+      checkTree(tree.getTree(o));
+    }
   }
 }

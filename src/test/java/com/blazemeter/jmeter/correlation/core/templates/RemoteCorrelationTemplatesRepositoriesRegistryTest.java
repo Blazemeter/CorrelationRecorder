@@ -1,14 +1,9 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertTrue;
-import com.blazemeter.jmeter.correlation.TestUtils;
-import com.github.tomakehurst.wiremock.WireMockServer;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -22,14 +17,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
+public class RemoteCorrelationTemplatesRepositoriesRegistryTest extends WiredBaseTest{
 
   private static final String TEMPLATES_FOLDER = "correlation-templates";
+  private static final String WIRED_HOST = "localhost";
   private static final String REPOSITORY_NAME = "base";
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
-  private final WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
-
   private RemoteCorrelationTemplatesRepositoriesRegistry remote;
 
 
@@ -38,28 +32,18 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
     remote = new RemoteCorrelationTemplatesRepositoriesRegistry(
         new LocalConfiguration(
             Paths.get(folder.getRoot().getPath(), File.separator).toAbsolutePath().toString()));
-    wireMockServer.start();
-    configureFor("localhost", wireMockServer.port());
+    startWiredMock("localhost");
   }
 
   @After
   public void tearDown() {
-    if (wireMockServer.isRunning()) {
-      wireMockServer.stop();
-    }
+    stopWiredMock();
   }
 
   @Test
   public void shouldSaveTemplatesAndRepositoryFromURL() throws IOException, InterruptedException {
-    prepareURL("/test-repository.json");
-    prepareURL("/first-1.0-template.json");
-    skipURL("/first-1.0-snapshot.png");
-    prepareURL("/first-1.1-template.json");
-    skipURL("/first-1.1-snapshot.png");
-    prepareURL("/second-1.0-template.json");
-    skipURL("/second-1.0-snapshot.png");
-
-    remote.save(REPOSITORY_NAME, getBaseURL() + "/test-repository.json");
+    mockRequestsToRepoFiles();
+    remote.save(REPOSITORY_NAME, getBaseURL() + TEST_REPOSITORY_URL);
 
     List<String> expectedFiles = Arrays
         .asList("first-1.0-template.json", "base-repository.json", "second-1.0-template.json",
@@ -74,25 +58,6 @@ public class RemoteCorrelationTemplatesRepositoriesRegistryTest {
     //with this we avoid the test failing because of the order or the files
     assertTrue(expectedFiles.size() == actualFiles.size() &&
         expectedFiles.containsAll(actualFiles) && actualFiles.containsAll(expectedFiles));
-  }
-
-  private void prepareURL(String URL) throws IOException {
-    wireMockServer.stubFor(get(urlEqualTo(URL)).willReturn(aResponse()
-        .withStatus(200)
-        .withHeader("Cache-Control", "no-cache")
-        .withHeader("Content-Type", "application/json")
-        .withBody(TestUtils.getFileContent(URL, getClass()))
-    ));
-  }
-
-  private void skipURL(String URL) {
-    stubFor(get(urlEqualTo(URL)).willReturn(aResponse()
-        .withStatus(304)
-    ));
-  }
-
-  private String getBaseURL() {
-    return "http://localhost:" + wireMockServer.port();
   }
 
   private List<String> getGeneratedFilesNames() {

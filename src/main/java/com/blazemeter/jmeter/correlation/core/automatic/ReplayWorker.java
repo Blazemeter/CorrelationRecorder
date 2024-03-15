@@ -11,12 +11,15 @@ import org.slf4j.Logger;
 
 public class ReplayWorker extends SwingWorker<ReplayReport, Void> implements
     PropertyChangeListener {
+
   private static final Logger LOG = getLogger(ReplayWorker.class);
   public Runnable onDoneMethod;
   public Consumer<Exception> onFailureMethod;
 
   public Supplier<ReplayReport> methodToRun;
 
+  public ReplayWorkerArrivalContext replayWorkerContext =
+      ReplayWorkerArrivalContext.REPLAY_TEST_PLAN;
   public ReplayReport replayReport;
 
   public ReplayWorker() {
@@ -77,4 +80,17 @@ public class ReplayWorker extends SwingWorker<ReplayReport, Void> implements
       }
     }
   }
+
+  public enum ReplayWorkerArrivalContext {
+    REPLAY_TEST_PLAN, CORRELATION_METHOD
+  }
+
+  public ReplayWorkerArrivalContext getReplayWorkerArrivalContext() {
+    return replayWorkerContext;
+  }
+
+  public void setReplayWorkerArrivalContext(ReplayWorkerArrivalContext replayWorkerContext) {
+    this.replayWorkerContext = replayWorkerContext;
+  }
+
 }
