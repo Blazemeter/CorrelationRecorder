@@ -8,6 +8,7 @@ import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
+import com.blazemeter.jmeter.correlation.core.automatic.FileManagementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ResultFileParser;
 import com.blazemeter.jmeter.correlation.core.proxy.ComparableCookie;
@@ -90,8 +91,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   private static final String CORRELATION_COMPONENTS = "CorrelationProxyControl.components";
   private static final String RESPONSE_FILTER = "CorrelationProxyControl.responseFilter";
   private static final String TEMPLATE_PATH = "CorrelationProxyControl.templatePath";
-  private static final String CORRELATION_HISTORY_PATH =
-      "CorrelationProxyControl.correlationHistoryPath";
+  private static final String CORRELATION_HISTORY_ID =
+      "CorrelationProxyControl.correlationHistoryId";
   private static final String RECORDER_NAME = "bzm - Correlation Recorder";
   // we use reflection to be able to call these non visible methods and not have to re implement
   // them.
@@ -119,7 +120,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   private JMeterTreeNode target = null;
   private List<SampleResult> samples = new ArrayList<>();
   private Method putSamplesIntoModel;
-  private CorrelationHistory history = new CorrelationHistory();
+  private CorrelationHistory history;
   private Runnable onStopRecordingMethod;
   private String originalDisablingValue = null;
 
@@ -151,6 +152,7 @@ public class CorrelationProxyControl extends ProxyControl implements
         templateRepositoryConfig;
     this.localConfiguration = localConfiguration;
     this.correlationEngine = correlationEngine;
+    configHistory();
   }
 
   public CorrelationTemplatesRepositoriesConfiguration getTemplateRepositoryConfig() {
@@ -291,7 +293,12 @@ public class CorrelationProxyControl extends ProxyControl implements
   @Override
   public synchronized void deliverSampler(HTTPSamplerBase sampler, TestElement[] testElements,
                                           SampleResult result) {
-    pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
+    if (pendingProxies.containsKey(Thread.currentThread())) {
+      pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
+    } else {
+      LOG.error("Unexpected error. Proxy not found! {}", Thread.currentThread());
+      LOG.error(pendingProxies.keySet().toString());
+    }
   }
 
   public synchronized void startedProxy(Thread proxy) {
@@ -305,6 +312,7 @@ public class CorrelationProxyControl extends ProxyControl implements
     is not invoked for used clientSocket
      */
     if (pendingProxy == null) {
+      deliverPendingCompletedRequests();
       return;
     }
     /*
@@ -324,7 +332,7 @@ public class CorrelationProxyControl extends ProxyControl implements
     while (it.hasNext()) {
       PendingProxy proxy = it.next();
       if (!proxy.isComplete()) {
-        return;
+        continue;
       }
       deliverCompletedProxy(proxy);
       it.remove();
@@ -548,12 +556,12 @@ public class CorrelationProxyControl extends ProxyControl implements
     removeProperty(CORRELATION_RULES);
   }
 
-  public void setCorrelationHistoryPath(String path) {
-    setProperty(CORRELATION_HISTORY_PATH, path);
+  public void setCorrelationHistoryId(String id) {
+    setProperty(CORRELATION_HISTORY_ID, id);
   }
 
-  public void getCorrelationHistoryPath() {
-    getPropertyAsString(CORRELATION_HISTORY_PATH);
+  public String getCorrelationHistoryId() {
+    return getPropertyAsString(CORRELATION_HISTORY_ID);
   }
 
   public String getCorrelationComponents() {
@@ -658,12 +666,10 @@ public class CorrelationProxyControl extends ProxyControl implements
     return localConfiguration.getInstalledTemplates();
   }
 
-  public void update(String correlationComponents, List<RulesGroup> groups, String responseFilter,
-                     String correlationHistoryPath) {
+  public void update(String correlationComponents, List<RulesGroup> groups, String responseFilter) {
     setCorrelationComponents(correlationComponents);
     setCorrelationGroups(groups);
     setResponseFilter(responseFilter);
-    setCorrelationHistoryPath(correlationHistoryPath);
   }
 
   @Override
@@ -835,6 +841,20 @@ public class CorrelationProxyControl extends ProxyControl implements
     templateRepositoryConfig =
         new CorrelationTemplatesRepositoriesConfiguration(localConfiguration);
     setName(RECORDER_NAME);
+  }
+
+  public CorrelationHistory configHistory() {
+    if (history == null) {
+      String correlationHistoryId = getCorrelationHistoryId();
+      if (!correlationHistoryId.isEmpty()) {
+        history = CorrelationHistory.loadFromFile(correlationHistoryId);
+      }
+      if (history == null) { // When no HistoryID or valid History load, create a new one
+        history = new CorrelationHistory();
+        history.configHistoryId(FileManagementUtils.getHistoryFilenamePropertyName());
+      }
+    }
+    return history;
   }
 
   public List<SampleResult> getSamples() {

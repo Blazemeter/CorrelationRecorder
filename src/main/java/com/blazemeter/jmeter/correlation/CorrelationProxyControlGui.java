@@ -63,9 +63,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     Objects.requireNonNull(siebelPane).add("Correlation", rulesContainer);
     add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
 
-    history = new CorrelationHistory();
     wizard = new CorrelationWizard();
-    wizard.setHistory(history);
     wizard.setRepositoriesSupplier(this::getRepositories);
     wizard.setAddRuleConsumer(rulesContainer.obtainRulesExporter());
     wizard.init();
@@ -148,15 +146,15 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     super.modifyTestElement(el);
     if (el instanceof CorrelationProxyControl) {
       model = (CorrelationProxyControl) el;
+      history = model.configHistory();
       model.update(rulesContainer.getCorrelationComponents(),
           rulesContainer.getRulesGroups(),
-          rulesContainer.getResponseFilter(),
-          history.getHistoryPath());
+          rulesContainer.getResponseFilter());
       //model.update(analysisPanel.getAnalysis());
       model.setCorrelationHistory(history);
-      model.setCorrelationHistoryPath(history.getHistoryPath());
+      model.setCorrelationHistoryId(history.getHistoryId());
       model.setOnStopRecordingMethod(() -> {
-        wizard.setHistory(history);
+        updateHistory(history);
         wizard.requestPermissionToReplay();
       });
     }
@@ -178,15 +176,17 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     if (el instanceof CorrelationProxyControl) {
       CorrelationProxyControl correlationProxyControl = (CorrelationProxyControl) el;
       model = correlationProxyControl;
+      history = model.configHistory();
       if (wizard != null) {
         wizard.setRepositoriesConfiguration(model.getTemplateRepositoryConfig());
+        updateHistory(history);
       }
 
       CorrelationComponentsRegistry.getInstance().reset();
       rulesContainer.configure(correlationProxyControl);
       model.setOnStopRecordingMethod(() -> {
         if (history != null) {
-          wizard.setHistory(history);
+          updateHistory(history);
         }
         wizard.requestPermissionToReplay();
       });
@@ -371,6 +371,11 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     }
 
     return repositoryMap;
+  }
+
+  public void updateHistory(CorrelationHistory history) {
+    wizard.setHistory(history);
+    rulesContainer.setHistory(history);
   }
 
 }

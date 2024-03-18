@@ -35,7 +35,6 @@ import org.mockito.Mock;
 
 @RunWith(SwingTestRunner.class)
 public class TemplateSaveFrameIT extends BaseTest {
-  private final List<Template> lastLoadedTemplates = new ArrayList<Template>();
   private FrameFixture frame;
   @Mock
   private Template registeredTemplate;
@@ -44,6 +43,7 @@ public class TemplateSaveFrameIT extends BaseTest {
   @Mock
   private BufferedImage snapshot;
   private TemplateSaveFrame templateSaveFrame;
+  private final List<Template> lastLoadedTemplates = new ArrayList<Template>();
 
   @Before
   public void setup() {
@@ -110,7 +110,6 @@ public class TemplateSaveFrameIT extends BaseTest {
   private JComboBoxFixture findRepositoriesComboBox() {
     return frame.comboBox("repositoriesComboBox");
   }
-
   private JComboBoxFixture findProtocolsComboBox() {
     return frame.comboBox("protocolsComboBox");
   }
@@ -253,7 +252,7 @@ public class TemplateSaveFrameIT extends BaseTest {
     when(registeredTemplate.getVersion()).thenReturn(TEMPLATE_VERSION);
     when(registeredTemplate.getDescription()).thenReturn(TEMPLATE_DESCRIPTION);
     when(registeredTemplate.getDependencies())
-        .thenReturn(Arrays.asList(firstDependency, secondDependency));
+            .thenReturn(Arrays.asList(firstDependency, secondDependency));
   }
 
   private void prepareDependencyAndUrlValidity(CorrelationTemplateDependency dependency,
@@ -278,6 +277,7 @@ public class TemplateSaveFrameIT extends BaseTest {
   private String buildEmptyFieldMessage() {
     return "Field cannot be empty.";
   }
+
 
   private JLabelFixture findTemplateNameValidationLabel() {
     return frame.label("protocolValidation");
@@ -340,6 +340,6 @@ public class TemplateSaveFrameIT extends BaseTest {
     lastLoadedTemplates.add(lastLoadedTemplate);
     templateSaveFrame.updateLastLoadedTemplate(getLastLoadedTemplate());
     assertThat(templateSaveFrame.getDependenciesTable().getDependencies().size())
-        .isEqualTo(lastLoadedTemplate.getDependencies().size());
+            .isEqualTo(lastLoadedTemplate.getDependencies().size());
   }
 }

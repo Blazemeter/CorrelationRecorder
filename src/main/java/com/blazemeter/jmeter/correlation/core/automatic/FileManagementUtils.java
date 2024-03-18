@@ -91,9 +91,10 @@ public class FileManagementUtils {
     makeFolderAtBin(HISTORY_FOLDER);
   }
 
-  public String saveCorrelationHistoryFile(CorrelationHistory history, String filepath) {
-    return saveObjectToFile(history, filepath.isEmpty()
-        ? getHistoryFilenamePropertyName() : filepath);
+  public String saveCorrelationHistoryFile(CorrelationHistory history) {
+    return saveObjectToFile(history, history.getHistoryId().isEmpty()
+        ? getHistoryFilenamePropertyName() : String.format(getPathInBin(HISTORY_FOLDER)
+        + File.separator + "history-%s.json", history.getHistoryId()));
   }
 
   public static String getHistoryFilenamePropertyName() {
@@ -129,18 +130,43 @@ public class FileManagementUtils {
     writer = mapper.writerWithDefaultPrettyPrinter().with(filters);
   }
 
-  public CorrelationHistory loadCorrelationHistoryFile(String correlationHistoryPath) {
-    return loadObjectFromFile(correlationHistoryPath, CorrelationHistory.class);
+  public CorrelationHistory loadCorrelationHistoryFile(String correlationHistoryId) {
+    return loadObjectFromFile(
+        Paths.get(getPathInBin(HISTORY_FOLDER).toString(),
+                String.format("history-%s.json", correlationHistoryId))
+            .toString(), CorrelationHistory.class);
+  }
+
+  public static String getHistoryPath(String historyId) {
+    return Paths.get(getPathInBin(HISTORY_FOLDER).toString(),
+            String.format("history-%s.json", historyId))
+        .toString();
+  }
+
+  public static String getHistoryZipFilePath(String historyId) {
+    return String.format(getPathInBin(HISTORY_FOLDER)
+        + File.separator + "history-%s.zip", historyId);
+  }
+
+  public static String getParentFolderInBin(String path) {
+    return Paths.get(path)
+            .getParent().endsWith("Recording") ? RECORDING_FOLDER : REPLAY_FOLDER;
+  }
+
+  public static String getBinFilePath(String location) {
+    String folder = getParentFolderInBin(location);
+    String fileName = Paths.get(location).getFileName().toString();
+    return Paths.get(getPathInBin(folder).toString(), fileName)
+        .toAbsolutePath().toString();
   }
 
   public <T> T loadObjectFromFile(String filePath, Class<T> clazz) {
     File file = new File(filePath);
     try {
       return mapper.readValue(file, clazz);
-    } catch (IOException e) {
+    } catch (Exception e) {
       LOG.warn("There was an error trying to load the configuration file {}.",
           file, e);
-      e.printStackTrace();
       return null;
     }
   }
@@ -148,7 +174,7 @@ public class FileManagementUtils {
   /**
    * Stores the response in the given folder. The filename will be the current time in milliseconds.
    *
-   * @param response The Response
+   * @param response   The Response
    * @param folderPath The folder path
    * @return
    */
@@ -174,9 +200,10 @@ public class FileManagementUtils {
    * Note: This method uses the JMeter SaveService to store the object in XML format, you must
    * load the configuration for JMeter ensure that the SaveService is initialized.
    * This method is created for debugging purposes.
-   * @param object The object to store
+   *
+   * @param object     The object to store
    * @param folderPath The folder where the object will be stored
-   * @param fileName The name of the file where the object will be stored
+   * @param fileName   The name of the file where the object will be stored
    * @return The path to the file where the object was stored. Empty if there was an error.
    */
   public static Optional<String> saveObjectToXml(Object object, String folderPath,
@@ -206,7 +233,7 @@ public class FileManagementUtils {
    * returns an empty Optional.
    * This method is created for debugging purposes.
    *
-   * @param path the path to the directory containing the XML file.
+   * @param path     the path to the directory containing the XML file.
    * @param filename the name of the XML file.
    * @return an Optional containing the loaded object if successful, or an empty Optional if
    * an error occurred.

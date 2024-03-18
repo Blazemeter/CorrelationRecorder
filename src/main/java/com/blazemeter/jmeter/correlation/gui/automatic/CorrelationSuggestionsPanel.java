@@ -54,11 +54,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class is the panel that will be shown in the Correlation Tab.
- * It contains the logic to show the suggestions and the buttons to replay the recording
- * and clear the suggestions.
+ * This class is the panel that will be shown in the Correlation Tab. It contains the logic to show
+ * the suggestions and the buttons to replay the recording and clear the suggestions.
  */
 public class CorrelationSuggestionsPanel extends WizardStepPanel implements ActionListener {
+
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationSuggestionsPanel.class);
   private static final String CORRELATE = "correlate";
   private static final String MANUAL_REPLAY = "replay";
@@ -440,6 +440,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   }
 
   public static class SuggestionsTableModel extends DefaultTableModel {
+
     //Extended table will also show "New Value" column
     private boolean extended = false;
     private final List<String> columns = Arrays.asList("Select", "Source", "Name",

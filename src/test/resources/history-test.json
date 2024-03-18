@@ -1,0 +1,22 @@
+{
+  "steps" : [ {
+    "stepMessage" : "Original Recording",
+    "testPlanFilepath" : "Recording/snapshot-1.jmx",
+    "recordingTraceFilepath" : "Recording/recording-1.jtl",
+    "replayTraceFilepath" : null,
+    "timestamp" : "2024-01-22T11:26:20.230"
+  }, {
+    "stepMessage" : "Failed Replay",
+    "testPlanFilepath" : "Recording/snapshot-2.jmx",
+    "recordingTraceFilepath" : null,
+    "replayTraceFilepath" : "Replay/replay-2.jtl",
+    "timestamp" : "2024-01-22T11:28:20.230"
+  }, {
+    "stepMessage" : "(Save) Before apply suggestions",
+    "testPlanFilepath" : "Recording/snapshot-3.jmx",
+    "recordingTraceFilepath" : null,
+    "replayTraceFilepath" : null,
+    "timestamp" : "2024-01-22T11:29:20.230"
+  } ],
+  "historyId" : "test"
+}

@@ -9,6 +9,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayReport;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplayWorker;
+import com.blazemeter.jmeter.correlation.core.automatic.ReplayWorker.ReplayWorkerArrivalContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.SuggestionGenerator;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
@@ -98,7 +99,7 @@ public class CorrelationWizard extends JDialog {
 
   private BiConsumer<List<Template>, String> startNonCorrelatedAnalysis() {
     return (selectedTemplates, tracePath) -> {
-      history.addAnalysisStep("Before applying Rules Analysis (Non-Correlated)",
+      history.addAnalysisStep("Before applying rules analysis",
           JMeterElementUtils.saveTestPlanSnapshot(), tracePath);
 
       List<CorrelationSuggestion> suggestions = new ArrayList<>();
@@ -138,13 +139,15 @@ public class CorrelationWizard extends JDialog {
   }
 
   private void applySuggestionsFromTemplate(List<Template> selectedTemplates, String tracePath) {
-    history.addAnalysisStep("Before applying Rules Analysis (Correlated)",
+    history.addAnalysisStep("Before applying correlations",
         JMeterElementUtils.saveTestPlanSnapshot(), tracePath);
     templateSelectionPanel.runCorrelatedAnalysis(selectedTemplates, tracePath);
     JOptionPane.showMessageDialog(this,
         "The suggestions were applied successfully to your Test Plan." +
             System.lineSeparator() + "Please review the changes and, when you are ready, " +
             "replay to review the results.");
+    history.addAnalysisStep("After applying correlations",
+            JMeterElementUtils.saveTestPlanSnapshot(), tracePath);
     hideWizard();
   }
 
@@ -161,7 +164,6 @@ public class CorrelationWizard extends JDialog {
       step.setDisplayTemplateSelectionPanel(this::displayTemplateSelection);
       step.setDisplayMethodSelectionPanel(this::displayMethodSelection);
       step.setLogStepConsumer(this::logStep);
-      step.setGetCorrelationHistorySupplier(() -> history);
       step.setGetRecordingTraceSupplier(() -> history.getOriginalRecordingTrace());
       step.setGetReplayTraceSupplier(() -> history.getLastReplayTraceFilepath());
       step.setGetLastTestPlanSupplier(() -> history.getLastTestPlanFilepath());
@@ -197,8 +199,6 @@ public class CorrelationWizard extends JDialog {
 
   public void loadAndDisplaySuggestions() {
 
-    CorrelationWizard swContext = this;
-
     suggestionsPanel.setReplaySelectionMethod(this::displayMethodSelection);
     suggestionsPanel.setAutoCorrelateMethod(() -> {
       displayApplyingSuggestionsWaitingScreen();
@@ -212,7 +212,7 @@ public class CorrelationWizard extends JDialog {
         @Override
         protected void done() {
           disposeWaitingDialog();
-          JOptionPane.showMessageDialog(swContext,
+          JOptionPane.showMessageDialog(CorrelationWizard.this,
               "The suggestions were applied successfully to your Test Plan." +
                   System.lineSeparator() + "Please review the changes and, when you are ready, " +
                   "replay to review the results.");
@@ -224,6 +224,7 @@ public class CorrelationWizard extends JDialog {
 
     if (replayWorker == null) {
       setupReplayWorker();
+      replayWorker.setReplayWorkerArrivalContext(ReplayWorkerArrivalContext.CORRELATION_METHOD);
       displayReplayWaitingScreen();
       startReplayWorker();
       return;
@@ -323,6 +324,7 @@ public class CorrelationWizard extends JDialog {
 
   private void replayTestPlan() {
     setupReplayWorker();
+    replayWorker.setReplayWorkerArrivalContext(ReplayWorkerArrivalContext.REPLAY_TEST_PLAN);
     displayReplayWaitingScreen();
     startReplayWorker();
   }
@@ -394,7 +396,16 @@ public class CorrelationWizard extends JDialog {
       return;
     }
 
-    displayMethodSelection();
+    switch (replayWorker.getReplayWorkerArrivalContext()) {
+      case REPLAY_TEST_PLAN:
+        displayMethodSelection();
+        break;
+      case CORRELATION_METHOD:
+        loadAndDisplaySuggestions();
+        break;
+      default:
+        LOG.error("Unexpected arrival path to replay worker, please contact support");
+    }
   }
 
   public static boolean wantsToAutoCorrelate(ReplayReport report, Component parent) {
@@ -468,4 +479,5 @@ public class CorrelationWizard extends JDialog {
   public void setConfiguration(LocalConfiguration configuration) {
     this.configuration = configuration;
   }
+
 }
