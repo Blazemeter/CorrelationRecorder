@@ -174,3 +174,49 @@ If you enable this check box, do the recording and then attempt to apply any of 
  assure those will work properly, since the recording will contain elements that are already correlated or modified, 
  which might cause issues when identifying the dynamic values.
 :::
+
+## Using the History Manager
+During the workflow with the Correlation Recorder, we usually record flows and then correlate messages, do tests, and investigate if we did our correlations correctly.
+
+To make this job easier, the history manager arises.
+
+This tool automatically saves checkpoints after relevant situations such as applying correlations, making a reply of our saved flow or after saving our original recording. After these saves are done, we can easily restore a version of our test plan with a few clicks and analyze the steps we did. 
+
+### View the History
+
+This feature allow us to see all the iterations we did since our original recording. The date we did them and a few details. 
+
+To see the history we need to go to the Correlation Tab in the bzm-Correlation Recorder sampler and then click the Hisotry Button.
+
+![History Manager Presentation](./assets/using-the-plugin-history-1.png)
+
+Once we click the history button, we will see this window
+
+![History Manager Table](./assets/using-the-plugin-history-2.png)
+
+### Restore an Iteration
+
+With this feature you are going to be able to select one iteration and restore your test plan at the point the iteration was saved. 
+
+You just need to select one iteration and click the Restore button. After that you will see this message: 
+
+![Restore Iteration](./assets/using-the-plugin-history-3.png)
+
+when you click “ok” you are going to be redirected to your loaded testplan.
+
+### Delete iteration.
+
+You are able to delete the iterations you consider useless in your history. You just need to select every iteration you want to delete and click the delete button.
+
+### Export all History
+
+With this feature you are able to save and share the whole history. When you click the esport button, a zip file will be generated into the History folder of the bin folder where you have installed Jmeter. This zip file share the bin folder structure.
+
+To see a history shared with you, you can do it from two ways:
+1. You can extract its content in another bin folder and complement folders instead of substitute them.
+
+2. Open the zip file and copy every fil into its corresponding folder inside the bin folder.
+
+Then open the Test Plan associated with that history (usually it is shared outside the zip file) and go to the history.
+
+![History Zip File](./assets/using-the-plugin-history-4.png)
