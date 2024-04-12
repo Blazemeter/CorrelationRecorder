@@ -12,6 +12,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.FileManagementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplacementSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ResultFileParser;
+import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
@@ -143,7 +144,7 @@ public class ComparisonMethodTest extends ReplacementTest {
     ReplacementSuggestion replacementSuggestion = replacements.get(0);
 
     RegexCorrelationReplacement<BaseCorrelationContext> replacer = new RegexCorrelationReplacement<>();
-    RegexCorrelationReplacement<?> replacement = replacementSuggestion.getReplacementSuggestion();
+    RegexCorrelationReplacement<?> replacement = (RegexCorrelationReplacement) replacementSuggestion.getReplacementSuggestion();
     replacer.setParams(replacement.getParams());
     replacer.setContext(correlationContext);
     replacer.setVariableName(REFERENCE_NAME);

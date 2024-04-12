@@ -362,8 +362,15 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
           repManager.getTemplatesAndProperties(templates);
 
       if (templatesAndProperties == null || templatesAndProperties.isEmpty()) {
+        // Get all the templates and properties for the local repository and filter the selected
         templatesAndProperties = this.wizard.getRepositoriesConfiguration()
-            .getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, true);
+            .getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, true)
+            .entrySet()
+            .stream()
+            .filter(templateEntry -> templates.stream().anyMatch(t ->
+                templateEntry.getKey().getId().equals(t.getName()) &&
+                    templateEntry.getKey().getVersion().equals(t.getVersion())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
       }
 
       for (Map.Entry<Template, TemplateProperties> templateEntry
@@ -393,7 +400,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     for (CorrelationSuggestion suggestion : suggestions) {
       Template source = suggestion.getSource();
       // Automatic or Template based
-      if (source == null || canExport.contains(source)) {
+      if (source == null || templateContains(canExport, source)) {
         rules.addAll(suggestion.toCorrelationRules());
       }
     }
@@ -404,6 +411,12 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
             : "Export successful.",
         "Exporting rules",
         JOptionPane.INFORMATION_MESSAGE);
+  }
+
+  private boolean templateContains(Set<Template> list, Template toMatch) {
+    return list.stream()
+        .anyMatch(toEvaluate -> toEvaluate.getId().equals(toMatch.getId()) &&
+            toEvaluate.getVersion().equals(toMatch.getVersion()));
   }
 
   public void displayAppliedResults() {

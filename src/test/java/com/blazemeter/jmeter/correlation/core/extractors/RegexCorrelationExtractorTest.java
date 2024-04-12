@@ -3,8 +3,10 @@ package com.blazemeter.jmeter.correlation.core.extractors;
 import static com.blazemeter.jmeter.correlation.TestUtils.getFileContent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
+import com.blazemeter.jmeter.correlation.core.automatic.extraction.method.ComparableJMeterVariables;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -12,11 +14,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.entity.ContentType;
@@ -420,7 +419,8 @@ public class RegexCorrelationExtractorTest {
     regexExtractor.setMultiValued(true);
     regexExtractor.setContext(new BaseCorrelationContext());
 
-    String responseWithNonces = "<a href='_wpnonce=123'> Login</a> <a href='_wpnonce=345'> Login</a> ";
+    String responseWithNonces =
+        "<a href='_wpnonce=123'> Login</a> <a href='_wpnonce=345'> Login</a> ";
 
 
     regexExtractor.process(null, new ArrayList<>(),
@@ -428,32 +428,4 @@ public class RegexCorrelationExtractorTest {
     assertThat(variables.entrySet().size()).isEqualTo(3);
   }
 
-  public static class ComparableJMeterVariables extends JMeterVariables {
-
-    public Map<String, String> vars = new HashMap<>();
-
-    @Override
-    public void put(String key, String value) {
-      vars.put(key, value);
-      super.put(key, value);
-    }
-
-    @Override
-    public Object remove(String key) {
-      vars.remove(key);
-      return super.remove(key);
-    }
-
-    @Override
-    public String toString() {
-      return vars.keySet().stream()
-          .map(k -> "{" + k + "," + vars.get(k) + "}")
-          .collect(Collectors.joining(","));
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      return vars.equals(((ComparableJMeterVariables) obj).vars);
-    }
-  }
 }

@@ -61,6 +61,8 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
   private static final String DELETE = "delete";
   private static final String RESTORE = "restore";
   private static final String ZIP = "zip";
+  private static final String CREATE = "create";
+
   protected CorrelationHistory history;
   protected JDialog runDialog;
 
@@ -69,6 +71,7 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
   private JButton deleteButton;
   private JButton restoreButton;
   private JButton zipButton;
+  private JButton createCheckpointButton;
 
   public CorrelationHistoryFrame(CorrelationHistory history) {
     super();
@@ -117,6 +120,9 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
     TableColumn descColumn = table.getColumnModel().getColumn(2);
     descColumn.setMinWidth(400);
 
+    TableColumn notesColumn = table.getColumnModel().getColumn(3);
+    notesColumn.setMinWidth(150);
+
     JTableHeader header = table.getTableHeader();
     header.setFont(header.getFont().deriveFont(14f));
 
@@ -143,12 +149,20 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
         .withToolTip("Export history to a zip file.")
         .build();
 
+    createCheckpointButton = builder.withAction(CREATE)
+            .withName("createIteration")
+            .withText("Create Checkpoint")
+            .withToolTip("Create a snapshot of the jmx state as history iteration.")
+            .build();
+
     JPanel buttonsPanel = new JPanel();
     buttonsPanel.add(deleteButton);
     buttonsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
     buttonsPanel.add(restoreButton);
     buttonsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
     buttonsPanel.add(zipButton);
+    buttonsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+    buttonsPanel.add(createCheckpointButton);
 
     JPanel displayTablePanel = new JPanel();
     displayTablePanel.setLayout(new GridBagLayout());
@@ -226,6 +240,10 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
       case ZIP:
         this.zipHistory();
         return;
+      case CREATE:
+        this.history.addCustomIteration();
+        this.loadSteps(history.getSteps());
+        return;
       default:
         LOG.warn("Action {} not supported", action);
     }
@@ -257,7 +275,7 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
   }
 
   public static class HistoryTableModel extends DefaultTableModel {
-    private final List<String> columns = Arrays.asList("", "Timestamp", "Description");
+    private final List<String> columns = Arrays.asList("", "Timestamp", "Description", "Notes");
     private final List<HistoryItem> stepList = new ArrayList<>();
     private final Map<Template, List<CorrelationSuggestion>> suggestionsMap =
         new HashMap<>();
@@ -310,6 +328,8 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
           return "Not available";
         case 2:
           return step.getStepMessage();
+        case 3:
+          return step.getNotes();
         default:
           return "N/A";
       }
@@ -319,12 +339,19 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
       if (!stepList.isEmpty() && columnIndex == 0) {
         stepList.get(rowIndex).setSelected((boolean) aValue);
+      } else if (columnIndex == 1) {
+        stepList.get(rowIndex).getStep().setTimestamp((String) aValue);
+      } else if (columnIndex == 2) {
+        stepList.get(rowIndex).getStep().setStepMessage((String) aValue);
+      } else if (columnIndex == 3) {
+        stepList.get(rowIndex).getStep().setNotes((String) aValue);
       }
+
     }
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-      return columnIndex == 0;
+      return columnIndex != 1;
     }
 
     public List<Step> getSelectedSteps() {

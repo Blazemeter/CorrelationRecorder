@@ -53,28 +53,28 @@ public class CorrelationHistoryTest extends CorrelationHistoryBaseTest{
     @Test
     public void shouldAddOriginalRecordingStep() throws IOException {
         CorrelationHistory history = new CorrelationHistory();
-        history.addOriginalRecordingStep("originalRecordingFilepath",
-                "originalRecordingTraceFilepath");
-        assertEquals("originalRecordingFilepath", history.getOriginalRecordingFilepath());
-        assertEquals("originalRecordingTraceFilepath", history.getOriginalRecordingTrace());
+        history.addOriginalRecordingStep("Recording"+ File.separator+"originalRecordingFilepath",
+                "Recording"+ File.separator+"originalRecordingTraceFilepath");
+        assertEquals("Recording"+ File.separator+"originalRecordingFilepath", history.getOriginalRecordingFilepath());
+        assertEquals("Recording"+ File.separator+"originalRecordingTraceFilepath", history.getOriginalRecordingTrace());
     }
     @Test
     public void shouldAddOriginalRecordingStepWhenStepsAreNotEmpty() throws IOException {
         CorrelationHistory history = new CorrelationHistory();
-        history.addOriginalRecordingStep("test",
-                "test");
-        history.addOriginalRecordingStep("originalRecordingFilepath",
-                "originalRecordingTraceFilepath");
-        assertEquals("originalRecordingFilepath", history.getOriginalRecordingFilepath());
-        assertEquals("originalRecordingTraceFilepath", history.getOriginalRecordingTrace());
+        history.addOriginalRecordingStep("Recording"+ File.separator+"test",
+                "Recording"+ File.separator+"test");
+        history.addOriginalRecordingStep("Recording"+ File.separator+"originalRecordingFilepath",
+                "Recording"+ File.separator+"originalRecordingTraceFilepath");
+        assertEquals("Recording"+ File.separator+"originalRecordingFilepath", history.getOriginalRecordingFilepath());
+        assertEquals("Recording"+ File.separator+"originalRecordingTraceFilepath", history.getOriginalRecordingTrace());
     }
 
     private void addSuccessfulReplay(boolean errors) {
         CorrelationHistory history = new CorrelationHistory();
-        history.addSuccessfulReplay("testPlanFilepath","replayTraceFilepath",
+        history.addSuccessfulReplay("Recording"+ File.separator+"testPlanFilepath","Recording"+ File.separator+"replayTraceFilepath",
                 errors);
-        assertEquals("testPlanFilepath", history.getLastTestPlanFilepath());
-        assertEquals("replayTraceFilepath", history.getLastReplayTraceFilepath());
+        assertEquals("Recording"+ File.separator+"testPlanFilepath", history.getLastTestPlanFilepath());
+        assertEquals("Recording"+ File.separator+"replayTraceFilepath", history.getLastReplayTraceFilepath());
     }
 
     @Test
@@ -89,17 +89,17 @@ public class CorrelationHistoryTest extends CorrelationHistoryBaseTest{
     @Test
     public void shouldAddFailedReplay() throws IOException {
         CorrelationHistory history = new CorrelationHistory();
-        history.addFailedReplay("testPlanFilepath","replayTraceFilepath", 0);
-        assertEquals("testPlanFilepath", history.getLastTestPlanFilepath());
-        assertEquals("replayTraceFilepath", history.getLastReplayTraceFilepath());
+        history.addFailedReplay("Recording"+ File.separator+"testPlanFilepath","Replay"+ File.separator+"replayTraceFilepath", 0);
+        assertEquals("Recording"+ File.separator+"testPlanFilepath", history.getLastTestPlanFilepath());
+        assertEquals("Replay"+ File.separator+"replayTraceFilepath", history.getLastReplayTraceFilepath());
     }
 
     @Test
     public void shouldAddAnalisisStep() throws IOException {
         CorrelationHistory history = new CorrelationHistory();
-        history.addAnalysisStep("Test","testPlanFilepath","replayTraceFilepath");
-        assertEquals("testPlanFilepath", history.getLastTestPlanFilepath());
-        assertEquals("replayTraceFilepath", history.getLastReplayTraceFilepath());
+        history.addAnalysisStep("Test","Recording"+ File.separator+"testPlanFilepath","Replay"+ File.separator+"replayTraceFilepath");
+        assertEquals("Recording"+ File.separator+"testPlanFilepath", history.getLastTestPlanFilepath());
+        assertEquals("Replay"+ File.separator+"replayTraceFilepath", history.getLastReplayTraceFilepath());
     }
 
     @Test
@@ -117,9 +117,9 @@ public class CorrelationHistoryTest extends CorrelationHistoryBaseTest{
 
     @Test
     public void shouldGetOriginalRecordingFilepathWhenNoStepAdded() throws IOException {
-        String testPlanFilepath = "testPlanFilepath";
+        String testPlanFilepath = "Recording"+ File.separator+"testPlanFilepath";
         CorrelationHistory.setSaveCurrentTestPlan(() -> testPlanFilepath);
-        String recordingFilepath = "recordingFilepath";
+        String recordingFilepath = "Recording"+ File.separator+"recordingFilepath";
         CorrelationHistory.setRecordingFilePathSupplier(() -> recordingFilepath);
 
         CorrelationHistory history = new CorrelationHistory();
@@ -128,9 +128,9 @@ public class CorrelationHistoryTest extends CorrelationHistoryBaseTest{
 
     @Test
     public void shouldGetOriginalRecordingTraceWhenNoStepAdded() throws IOException {
-        String testPlanFilepath = "testPlanFilepath";
+        String testPlanFilepath = "Recording"+ File.separator+"testPlanFilepath";
         CorrelationHistory.setSaveCurrentTestPlan(() -> testPlanFilepath);
-        String recordingFilepath = "recordingFilepath";
+        String recordingFilepath = "Recording"+ File.separator+"recordingFilepath";
         CorrelationHistory.setRecordingFilePathSupplier(() -> recordingFilepath);
 
         CorrelationHistory history = new CorrelationHistory();
@@ -155,11 +155,11 @@ public class CorrelationHistoryTest extends CorrelationHistoryBaseTest{
 
     @Test
     public void stepShouldAddCurrentTestPlanWhenAddCurrentTestPlan() throws IOException {
-        Supplier<String> stringSupplier = () -> "testPlanFilepath";
+        Supplier<String> stringSupplier = () -> "Recording"+ File.separator+"testPlanFilepath";
         CorrelationHistory.setSaveCurrentTestPlan(stringSupplier);
         CorrelationHistory.Step step = new CorrelationHistory.Step("Hello World");
         step.addCurrentTestPlan();
-        assertEquals("testPlanFilepath",step.getTestPlanFilepath());
+        assertEquals("Recording"+ File.separator+"testPlanFilepath",step.getTestPlanFilepath());
     }
 
     @Test

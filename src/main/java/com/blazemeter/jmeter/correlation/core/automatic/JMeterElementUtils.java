@@ -2,6 +2,8 @@ package com.blazemeter.jmeter.correlation.core.automatic;
 
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.helger.commons.annotation.VisibleForTesting;
+import com.jayway.jsonpath.InvalidPathException;
+import com.jayway.jsonpath.JsonPath;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -155,7 +157,7 @@ public class JMeterElementUtils {
     try {
       convertSubTree(testPlan);
       SaveService.saveTree(testPlan,
-              Files.newOutputStream(Paths.get(name)));
+          Files.newOutputStream(Paths.get(name)));
       LOG.info("Test Plan's Snapshot saved to {}", name);
       return name;
     } catch (IOException e) {
@@ -166,7 +168,7 @@ public class JMeterElementUtils {
 
   public static String saveTestPlanSnapshot() {
     return saveTestPlanConverted(getTreeModel().getTestPlan(),
-            FileManagementUtils.getSnapshotFileName());
+        FileManagementUtils.getSnapshotFileName());
   }
 
   public static String saveTestPlan(HashTree testPlan, String filename) {
@@ -241,7 +243,7 @@ public class JMeterElementUtils {
     return configuration.getIgnoredHeaders().stream().anyMatch(key::equalsIgnoreCase);
   }
 
-  static boolean isJson(String value) {
+  public static boolean isJson(String value) {
     try {
       new JSONObject(value);
     } catch (JSONException ex) {
@@ -466,6 +468,73 @@ public class JMeterElementUtils {
     }
   }
 
+  public static boolean canBeString(Object value) {
+    return value instanceof String || value instanceof Boolean || value instanceof Integer
+        || value instanceof Float || value instanceof Double || value instanceof Long;
+  }
+
+  public static boolean classIsNumberOrBoolean(Class toClass) {
+    return toClass.equals(Boolean.class)
+        || toClass.equals(Integer.class)
+        || toClass.equals(Float.class)
+        || toClass.equals(Double.class)
+        || toClass.equals(Long.class);
+  }
+
+  public static String toJsonString(Object value) {
+    if (value instanceof net.minidev.json.JSONArray) {
+      return ((net.minidev.json.JSONArray) value).toJSONString();
+    } else if (value instanceof String) {
+      return (String) value;
+    } else if (canBeString(value)) {
+      return value.toString();
+    } else {
+      return null;
+    }
+  }
+
+  public static Object getJsonValue(String jsonpath, String input) {
+    Object value = null;
+    try {
+      value = JsonPath.read(input, jsonpath);
+    } catch (InvalidPathException e) {
+      // JsonPath use exception when jsonpath does not match
+      // Remember, If the match does not occur it does not matter
+      // Only those places when matches, the value matched is what matter.
+      // The evaluation is over all the fields of all request, take care about add log error here
+    }
+    return value;
+  }
+
+  public static Pair<Class, ArrayList<String>> jsonFindMatches(String input, String jsonpath) {
+    Object result = null;
+    ArrayList<String> matches = new ArrayList<>();
+    try {
+      result = JsonPath.read(input, jsonpath);
+    } catch (InvalidPathException e) {
+      // When no match, no report error, only no return any data
+    }
+    if (result == null) {
+      return Pair.of(null, matches);
+    } else if (result instanceof net.minidev.json.JSONArray) {
+      net.minidev.json.JSONArray results = (net.minidev.json.JSONArray) result;
+      for (Object value : results) {
+        matches.add(toJsonString(value));
+      }
+    } else if (canBeString(result)) {
+      matches.add(toJsonString(result));
+    } else if (result instanceof Map) {
+      LOG.warn(
+          "Valued returned by JSONPath is a json object and not a text value, " +
+              "return value is null");
+      return Pair.of(result.getClass(), matches);
+    } else {
+      LOG.warn(
+          "Valued returned by JSONPath is not supported, return value is null");
+    }
+    return Pair.of(result != null ? result.getClass() : null, matches);
+  }
+
   /**
    * Obtains the HTTPArgument from a JMeterProperty element.
    * Note: this method requires that the JMeterProperty is an instance of HTTPArgument.
@@ -639,7 +708,7 @@ public class JMeterElementUtils {
    *
    * @param path The file path of the JMeter test plan to load.
    * @return A HashTree representing the structure of the loaded JMeter test plan.
-   *         If an error occurs during loading, this method will return null.
+   * If an error occurs during loading, this method will return null.
    */
   public static HashTree getTestPlan(String path) {
     HashTree hashTree = new HashTree();
@@ -1105,9 +1174,9 @@ public class JMeterElementUtils {
   }
 
   /*
-  * Reminder: This method is not properly working (or at least the generated nodes
-  *  are not properly working)
-  * */
+   * Reminder: This method is not properly working (or at least the generated nodes
+   *  are not properly working)
+   * */
   public static List<JMeterTreeNode> getSamplerNodes(HashTree testPlan) {
     /*
     Reminder: We commented this code because we have the theory that
@@ -1139,4 +1208,5 @@ public class JMeterElementUtils {
     }
     return model;
   }
+
 }

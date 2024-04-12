@@ -4,6 +4,7 @@ import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.gui.common.HelperDialog;
+import com.blazemeter.jmeter.correlation.gui.common.RulePartType;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIcon;
 import com.blazemeter.jmeter.correlation.gui.common.ThemedIconLabel;
 import com.google.common.annotations.VisibleForTesting;
@@ -36,6 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import org.apache.jorphan.gui.ComponentUtil;
 
 public class CorrelationRulePartPanel extends JPanel {
 
@@ -54,7 +56,6 @@ public class CorrelationRulePartPanel extends JPanel {
   private final JLabel helper = new ThemedIconLabel("help.png");
   private final List<Component> listAdvancedComponents = new ArrayList<>();
   private HelperDialog helperDialog;
-  private String description = "";
   private Runnable fieldsListener;
   private JPanel advancedPanel;
   private JLabel collapsibleIcon;
@@ -150,7 +151,6 @@ public class CorrelationRulePartPanel extends JPanel {
     }
 
     removeComponents();
-    this.description = getSelectedItem().getDescription();
     getSelectedItem().getParamsDefinition().forEach(p -> {
       Component field = buildField(p);
       if (p.isAdvanced()) {
@@ -252,8 +252,12 @@ public class CorrelationRulePartPanel extends JPanel {
       @Override
       public void mouseClicked(MouseEvent mouseEvent) {
         helperDialog = new HelperDialog(CorrelationRulePartPanel.this);
-        helperDialog.setTitle("Selector Information");
-        helperDialog.updateDialogContent(description);
+        CorrelationRulePartTestElement<?> selectedItem = getSelectedItem();
+        String helperTitle =
+            selectedItem.getDisplayName() + " " + RulePartType.fromComponent(selectedItem);
+        helperDialog.setTitle(helperTitle);
+        helperDialog.updateDialogContent(selectedItem.getDescription());
+        ComponentUtil.centerComponentInWindow(helperDialog);
         helperDialog.setVisible(true);
       }
     });

@@ -5,8 +5,8 @@
 .tg .tg-0lax {text-align:left;vertical-align:top}
 
 </style>
-<b>Regex Correlation Replacement</b>
-<p>Use the Regular Expression (RegEx) match the value that will be replaced. Will apply to all the matches as long as
+<b>JSON Correlation Replacement</b>
+<p>Use the JSONPath Expression match the value that will be replaced. Will apply to all the matches as long as
     the obtained value is stored.</p>
 <br>
 <table class="tg">
@@ -19,9 +19,9 @@
     </thead>
     <tbody>
     <tr>
-        <td>RegEx</td>
-        <td>Regular Expression used to do the matching</td>
-        <td>param="(.+?)"</td>
+        <td>JSON</td>
+        <td>JSONPath Expression used to do the matching</td>
+        <td>$.jsonpath.expression</td>
     </tr>
     <tr>
         <td>Replacement String</td>
@@ -40,6 +40,7 @@
     </tr>
     </tbody>
 </table>
+<p>JMeter use JSONPath syntax from <a href="https://github.com/json-path/JsonPath">Jayway JsonPath</a>. Use the Jayway JsonPath syntax documentation as a reference.</p>
 <p>For more information about Replacements and how to use them, check the Documentation at <a
         href="https://blazemeter.github.io/CorrelationRecorder/guide/correlation-rules.html#list-of-correlation-replacements">List
     of Correlation Replacements</a></p>

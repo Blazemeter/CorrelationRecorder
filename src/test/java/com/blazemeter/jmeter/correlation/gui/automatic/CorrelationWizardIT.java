@@ -7,6 +7,7 @@ import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Repository;
 
 import java.awt.Container;
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.JUnitSoftAssertions;
@@ -29,7 +30,7 @@ public class CorrelationWizardIT {
     wizard = new CorrelationWizard();
     wizard.setVersionsSupplier(() ->
         generateTemplatesWithVersions(Arrays.asList("id1", "id2", "id3"), "repId1"));
-    CorrelationHistory.setSaveCurrentTestPlan(() -> "test");
+    CorrelationHistory.setSaveCurrentTestPlan(() -> "Recording"+ File.separator+"test");
     CorrelationHistory history = new CorrelationHistory();
     wizard.setHistory(history);
     wizard.setRepositoriesSupplier(CorrelationWizardIT::getMockedRepository);

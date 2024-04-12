@@ -151,7 +151,7 @@ public class AnalysisReporter {
       }
 
       if (part instanceof CorrelationExtractor) {
-        RegexCorrelationExtractor<?> extractor = (RegexCorrelationExtractor<?>) part;
+        CorrelationExtractor<?> extractor = (CorrelationExtractor<?>) part;
         for (ReportEntry entry : report.entries) {
           ExtractionSuggestion extraction = new ExtractionSuggestion(extractor, entry.getSampler());
           extraction.setValue(entry.value);
@@ -161,7 +161,7 @@ public class AnalysisReporter {
           suggestion.addExtractionSuggestion(extraction);
         }
       } else {
-        RegexCorrelationReplacement<?> replacement = (RegexCorrelationReplacement<?>) part;
+        CorrelationReplacement<?> replacement = (CorrelationReplacement<?>) part;
         for (ReportEntry entry : report.entries) {
           ReplacementSuggestion replacementSuggestion
               = new ReplacementSuggestion(replacement,

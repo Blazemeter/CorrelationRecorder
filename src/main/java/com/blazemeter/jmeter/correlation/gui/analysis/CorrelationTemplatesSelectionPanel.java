@@ -183,7 +183,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
 
     informationPane.setText(TemplateVersionUtils
         .getInformationAsHTLM(focusedVersion, false, canUse,
-        model.getRepositoryDisplayName(focusedVersion.getRepositoryId())));
+            model.getRepositoryDisplayName(focusedVersion.getRepositoryId())));
     informationPane.setCaretPosition(0); // Scroll to the top
   }
 
@@ -342,9 +342,15 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
           = repManager.getTemplatesAndProperties(templates);
 
       if (templatesAndProperties == null || templatesAndProperties.isEmpty()) {
-
+        // Get all the templates and properties for the local repository and filter the selected
         templatesAndProperties = config
-            .getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, true);
+            .getCorrelationTemplatesAndPropertiesByRepositoryName(repositoryName, true)
+            .entrySet()
+            .stream()
+            .filter(templateEntry -> templates.stream().anyMatch(t ->
+                templateEntry.getKey().getId().equals(t.getName()) &&
+                    templateEntry.getKey().getVersion().equals(t.getVersion())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
       }
 
       for (Map.Entry<Template, TemplateProperties> templateEntry

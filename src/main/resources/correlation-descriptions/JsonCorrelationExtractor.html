@@ -6,8 +6,8 @@
 
 </style>
 
-<b>Json Correlation Extractor</b>
-<p>Use the Regular Expression (RegEx) to get the values from the response</p>
+<b>JSON Correlation Extractor</b>
+<p>Use the JSONPath Expression to get the values from the response</p>
 <br>
 <table class="tg">
     <thead>
@@ -19,9 +19,9 @@
     </thead>
     <tbody>
     <tr>
-        <td>RegEx</td>
-        <td>Regular Expression used to do the matching</td>
-        <td>param="(.+?)"</td>
+        <td>JSON</td>
+        <td>JSONPath Expression used to do the matching</td>
+        <td>$.jsonpath.expression"</td>
     </tr>
     <tr>
         <td>Match Number</td>
@@ -29,13 +29,8 @@
         <td>1</td>
     </tr>
     <tr>
-        <td>Group Number</td>
-        <td>determines the group from where the information will be taken, based on the RegEx</td>
-        <td>1</td>
-    </tr>
-    <tr>
         <td>Target</td>
-        <td>determines where the RegEx will be applied</td>
+        <td>determines where the JSONPath will be applied</td>
         <td>Response's Body</td>
     </tr>
     <tr>
@@ -45,8 +40,9 @@
     </tr>
     </tbody>
 </table>
+<p>JMeter use JSONPath syntax from <a href="https://github.com/json-path/JsonPath">Jayway JsonPath</a>. Use the Jayway JsonPath syntax documentation as a reference.</p>
 <p>For more information about Extractors and how to use them, check the Documentation at <a
-        href="https://github.com/Blazemeter/CorrelationRecorder/blob/master/README.md#list-of-correlation-extractors">List
+        href="https://blazemeter.github.io/CorrelationRecorder/guide/correlation-rules.html#list-of-correlation-extractors">List
     Correlation Extractors</a></p>
 
 

@@ -8,6 +8,7 @@ import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtracto
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.XmlCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
 import com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor;
@@ -25,6 +26,8 @@ public class CorrelationComponentsRegistryTest {
       new RegexCorrelationExtractor<>();
   private static final RegexCorrelationReplacement<?> REGEX_REPLACEMENT =
       new RegexCorrelationReplacement<>();
+  private static final JsonCorrelationReplacement<?> JSON_REPLACEMENT =
+          new JsonCorrelationReplacement<>();
   private static final SiebelRowCorrelationExtractor SIEBEL_EXTRACTOR_EXTENSION =
       new SiebelRowCorrelationExtractor();
   private static final SiebelRowIdCorrelationReplacement SIEBEL_REPLACEMENT_EXTENSION =
@@ -50,7 +53,7 @@ public class CorrelationComponentsRegistryTest {
         .buildActiveReplacementRulePart();
     registry.updateActiveComponents(REGEX_EXTRACTOR.getClass().getCanonicalName(),
         new ArrayList<>());
-    assertThat(initialReplacements).isEqualTo((registry.buildActiveReplacementRulePart()));
+    assertThat(initialReplacements.toString()).isEqualTo((registry.buildActiveReplacementRulePart()).toString());
   }
 
   @Test
@@ -157,7 +160,6 @@ public class CorrelationComponentsRegistryTest {
     assertThat(activeExtractor).isEqualTo(Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR,
         new RegexCorrelationExtractor<>(),
         new JsonCorrelationExtractor<>(),
-        new XmlCorrelationExtractor<>(),
         CorrelationComponentsRegistry.MORE_EXTRACTOR));
   }
 
@@ -165,9 +167,9 @@ public class CorrelationComponentsRegistryTest {
   public void shouldGetDefaultAllowedReplacementsWhenGetAllowedReplacements() {
     List<CorrelationRulePartTestElement<?>> expectedDefaultAllowedReplacements = Arrays
         .asList(CorrelationComponentsRegistry.NONE_REPLACEMENT, REGEX_REPLACEMENT,
-            CorrelationComponentsRegistry.MORE_REPLACEMENT);
-    assertThat(expectedDefaultAllowedReplacements).isEqualTo(
-        registry.buildActiveReplacementRulePart());
+                JSON_REPLACEMENT, CorrelationComponentsRegistry.MORE_REPLACEMENT);
+    assertThat(expectedDefaultAllowedReplacements.toString()).isEqualTo(
+        registry.buildActiveReplacementRulePart().toString());
   }
 
   @Test

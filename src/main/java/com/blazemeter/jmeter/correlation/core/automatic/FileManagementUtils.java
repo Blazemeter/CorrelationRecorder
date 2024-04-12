@@ -58,6 +58,12 @@ public class FileManagementUtils {
   private static Path getPathInBin(String name) {
     return Paths.get(JMeterUtils.getJMeterBinDir(), name);
   }
+  
+  public static String getRelativeFatherPath(String fullPathStr) {
+    Path fullPath = Paths.get(fullPathStr);
+    return fullPath.getParent().toString() + File.separator + 
+            fullPath.getFileName().toString();
+  }
 
   public static void makeReplayResultsFolder() {
     makeFolderAtBin(REPLAY_FOLDER);
