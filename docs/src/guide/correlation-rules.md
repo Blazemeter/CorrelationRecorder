@@ -131,7 +131,7 @@ This extractor comes installed, by default, in the plugin, and it receives 4 fie
 ![Regex Correlation Extractor](./assets/regex-correlation-extractor.png)
 
 1. *RegEx*: which corresponds to the Regular Expression that will be used to perform the extraction.
-1. *Match Number*: In the case that the Regex matches more than once in the response, this number will indicate which one of all of them it's going to be extracted.
+1. *Match Number*: In the case that the Regex matches more than once in the response, this number will indicate which one of all of them it's going to be extracted. Use the value `-1` when you need to retrieve all matched values from the expressions.
 1. *Match Group*: In the case that the Regex contains, more than one group, this field indicates which one of those is going to be considered to do the extraction, once the Regex its matched. Only use positive numbers.
 1. *Target*: Which field to check the regular expression against.
     * *The following fields can be checked: (from JMeter documentation):*
@@ -143,8 +143,96 @@ This extractor comes installed, by default, in the plugin, and it receives 4 fie
     * *URL*
     * *Response Code* - e.g. 200
     * *Response Message* - e.g. OK
-1. *Multivalued*: The multi-valuation is useful when we want to match multiple appearances of our regex in a response. Variables extracted with multivalued are non-overwritable and additionally they have a specific format.  See [Variable Generation](#variable-generation) for case usages and variable formats.
+1. *Multivalued*: Multiple valuation is useful when we want to separate each unique value as a particular variant name from different responses. Variables extracted with multivalued are non-overwritable and additionally they have a specific format.  See [Variable Generation](#variable-generation) for case usages and variable formats.
    In case the Regex Extractor is not matched, during a Replay of a Recorded flow, the replaced value will be `<Reference Variable Name> + "_NOT_FOUND"`.
+
+**JSON**
+
+JSON stands for JavaScript Object Notation, and relies on the use of JSONPath Expressions to find where the dynamic variable might found.
+
+When the JSONPath its matched, a JSONPath Extractor will be added to the sample when:
+
+1. The JSONPath is matched, based on the configured properties
+2. The matched value is not repeated
+
+This extractor comes installed, by default, in the plugin, and it receives 4 fields to be able to work properly:
+
+![JSON Correlation Extractor](./assets/json-correlation-extractor.png)
+
+1. *JSON*: which corresponds to the JSONPath Expression that will be used to perform the extraction.
+1. *Match Number*: In the case that the JSONPath matches more than once in the response, this number will indicate which one of all of them it's going to be extracted. Use the value `-1` when you need to retrieve all matched values from the expressions.
+1. *Target*: Which field to check the regular expression against.
+    * *The following fields can be checked: (from JMeter documentation):*
+    * *Body* - the body of the response, e.g. the content of a web-page (excluding headers)
+1. *Multivalued*: Multiple valuation is useful when we want to separate each unique value as a particular variant name from different responses. Variables extracted with multivalued are non-overwritable and additionally they have a specific format.  See [Variable Generation](#variable-generation) for case usages and variable formats.
+   In case the JSONPath Extractor is not matched, during a Replay of a Recorded flow, the replaced value will be `<Reference Variable Name> + "_NOT_FOUND"`.
+
+JMeter use JSONPath syntax from [Jayway JsonPath](https://github.com/json-path/JsonPath) Use the Jayway JsonPath syntax documentation as a reference.
+
+Jayway JsonPath is a java port based on [Stefan Goessner's original JSONPath implementation](https://goessner.net/articles/JsonPath/).
+
+It is possible to find multiple examples of JSONPath expressions on the websites mentioned above or on the Internet.
+
+JMeter allows you to evaluate JSONPaths in the Sample results of the ViewResult using the view "JSON Path Tester". However, it is possible to use some other tools on the Internet that facilitate the evaluation and testing of JSONPath, such as the site [jsonpath.com](https://jsonpath.com/)
+
+**JSONPath Example**
+
+An example will be provided below that will allow you to visually understand some general concepts of the JSONPath syntax.
+
+```json
+{ "store": {
+    "book": [
+      { "category": "reference",
+        "author": "Nigel Rees",
+        "title": "Sayings of the Century",
+        "price": 8.95
+      },
+      { "category": "fiction",
+        "author": "Evelyn Waugh",
+        "title": "Sword of Honour",
+        "price": 12.99
+      },
+      { "category": "fiction",
+        "author": "Herman Melville",
+        "title": "Moby Dick",
+        "isbn": "0-553-21311-3",
+        "price": 8.99
+      },
+      { "category": "fiction",
+        "author": "J. R. R. Tolkien",
+        "title": "The Lord of the Rings",
+        "isbn": "0-395-19395-8",
+        "price": 22.99
+      }
+    ],
+    "bicycle": {
+      "color": "red",
+      "price": 399
+    }
+  }
+}
+```
+
+Some JSONPath query expressions and their expected result.
+
+| JSONPath                    | Intended result                                                   |
+|-----------------------------|-------------------------------------------------------------------|
+| $.store.book[*].author      | the authors of all books in the store                             |
+| $..author                   | all authors                                                       |
+| $.store.*                   | all things in store, which are some books and a red bicycle       |
+| $.store..price              | the prices of everything in the store                             |
+| $..book[2]                  | the third book                                                    |
+| $..book[2].author           | the third book's author                                           |
+| $..book[2].publisher        | empty result: the third book does not have a "publisher" member   |
+| $..book[-1]                 | the last book in order                                            |
+| $..book[0,1] or $..book[:2] | the first two books                                               |
+| $..book[?@.isbn]            | all books with an ISBN number                                     | 
+| $..book[?@.price<10]        | all books cheaper than 10                                         |
+| $..*                        | all member values and array elements contained in the input value |
+
+The IETF group in charge of creating Internet standards in February 2024 completed its work on the creation of RFC 9535 associated with JSONPath.
+You can consult the RFC documentation in case you require more details about JSONPath
+https://datatracker.ietf.org/doc/rfc9535/
 
 **SiebelRow**
 
@@ -191,39 +279,39 @@ This section will be divided into cases, from simple and common cases to unusual
 
 ### Extract specific match from the response (overridable)
 
-|  | Description |
-|---|---|
-| Objective | extract the second appearance of a character chain included on the response that matches the given regex |
-| Configuration | need to specify a variable name (the variable stored will use it), regex, desired match number and no need to check for multi-valued |
-| Visualization |![extractor_configuration_visualization](./assets/extraction-specific-match-overwritable.png) |
-| Overall | value will be stored in a JMeter variable, with the exact name as the value introduced on the reference variable name field. **If a variable exists (from previous extractions) the variable will be overwritten with new match value** |
+|               | Description                                                                                                                                                                                                                             |
+|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Objective     | extract the second appearance of a character chain included on the response that matches the given regex                                                                                                                                |
+| Configuration | need to specify a variable name (the variable stored will use it), regex, desired match number and no need to check for multi-valued                                                                                                    |
+| Visualization | ![extractor_configuration_visualization](./assets/extraction-specific-match-overwritable.png)                                                                                                                                           |
+| Overall       | value will be stored in a JMeter variable, with the exact name as the value introduced on the reference variable name field. **If a variable exists (from previous extractions) the variable will be overwritten with new match value** |
 
 ### Extract specific match from a response (not overridable)
-|  | Description |
-|---|---|
-| Objective | extract a certain value from a specific match number on the response. The value will be saved in a non-overwritable variable. | 
-| Configuration | variable name, regex, desired match number and **multivalue must be selected** | 
-| Visualization | ![extractor_configuration_visualization](./assets/extraction-specific-match-non-overwritable.png) |
-| Overall | value will be extracted and stored in a variable with the following convention: E.g: `var#34` <ul><li>**var**: reference variable name</li><li>**#34**: represents the variable count number</li></ul> Note: this variable will endure the whole execution | 
+|               | Description                                                                                                                                                                                                                                                |
+|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Objective     | extract a certain value from a specific match number on the response. The value will be saved in a non-overwritable variable.                                                                                                                              | 
+| Configuration | variable name, regex, desired match number and **multivalue must be selected**                                                                                                                                                                             | 
+| Visualization | ![extractor_configuration_visualization](./assets/extraction-specific-match-non-overwritable.png)                                                                                                                                                          |
+| Overall       | value will be extracted and stored in a variable with the following convention: E.g: `var#34` <ul><li>**var**: reference variable name</li><li>**#34**: represents the variable count number</li></ul> Note: this variable will endure the whole execution | 
 
 ### Extract multiple variables that can be overwritten
 
-|  | Description |
-|---|---|
-| Objective | extract all values that match the regex on the response |
-| Configuration | variable name, regex, **match number needs to be lower than 0** (E.g: -1). No need for multi-valued. |
-| Visualization | ![extractor_configuration_visualization](./assets/extraction-multiple-overwritable.png) |
-| Overall | a new variable will be created to store every match found on the response. If the variable already exists, it will be overwritten. The format of this type of variable consists of a prefix (reference variable name) with an underscore followed by the integer which represents the match number of the extracted value. E.g: **ID_1** <br> **Important**: If variables are been extracted in previous responses, for instance, 5 matches (`ID_1, ID_2,..., ID_5`), when another response arrives with new matches, these variables will not just be overwritten, will be deleted. If the new response matches thrice, then the resultant variables will be `ID_1, ID_2, ID_3`. Previous variables `ID_4` and `ID_5` will no longer exist. |
+|               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Objective     | extract all values that match the regex on the response                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Configuration | variable name, regex, **match number needs to be lower than 0** (E.g: -1). No need for multi-valued.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Visualization | ![extractor_configuration_visualization](./assets/extraction-multiple-overwritable.png)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Overall       | a new variable will be created to store every match found on the response. If the variable already exists, it will be overwritten. The format of this type of variable consists of a prefix (reference variable name) with an underscore followed by the integer which represents the match number of the extracted value. E.g: **ID_1** <br> **Important**: If variables are been extracted in previous responses, for instance, 5 matches (`ID_1, ID_2,..., ID_5`), when another response arrives with new matches, these variables will not just be overwritten, will be deleted. If the new response matches thrice, then the resultant variables will be `ID_1, ID_2, ID_3`. Previous variables `ID_4` and `ID_5` will no longer exist. |
 
 
 ### Extract multiple variables that can NOT be overwritten
 
-|  | Description |
-|------|---|
-| Objective | extract all values that match the regex on the response and store them immutably |
-| Configuration | variable name, regex, **match number needs to be lower than 0** (E.g: -1). **_Multi-valued needs to be checked_** |
-| Visualization | ![extractor_configuration_visualization](./assets/extraction-multiple-non-overwritable.png) |
-| Overall | a new variable will be created to store every match found on the response. This type of extractions have a particular format name. E.g:  `myVar#2_1` Where: <ul><li>**myVar**: reference variable name</li><li>**#2**: hash followed by the variable count number</li><li>**\_1**: number of match in that response</li></ul><br>New JMeter variables are created (with the format showed above) every time a response arrives, and the regex matches more than twice.<br> Note: if the response contains one match, and optimization is done. Therefore, the generated variable will be like in section  _Extract specific match from a response (not overwritable)_ |
+|               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Objective     | extract all values that match the regex on the response and store them immutably                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Configuration | variable name, regex, **match number needs to be lower than 0** (E.g: -1). **_Multi-valued needs to be checked_**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Visualization | ![extractor_configuration_visualization](./assets/extraction-multiple-non-overwritable.png)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Overall       | a new variable will be created to store every match found on the response. This type of extractions have a particular format name. E.g:  `myVar#2_1` Where: <ul><li>**myVar**: reference variable name</li><li>**#2**: hash followed by the variable count number</li><li>**\_1**: number of match in that response</li></ul><br>New JMeter variables are created (with the format showed above) every time a response arrives, and the regex matches more than twice.<br> Note: if the response contains one match, and optimization is done. Therefore, the generated variable will be like in section  _Extract specific match from a response (not overwritable)_ |
 
 ## Variable Replacement
 
@@ -251,52 +339,52 @@ Now that we have a basic idea of a replacement, lets explain the most complex an
 >  Below is shown all the possible scenarios. Each scenario contains an *Objective* which will explain the problem we want to achieve. *Pre-loaded variables* will set us in a current variable context, in consideration of generating those variables is mandatory to read the section [variable-generation](#variable-generation). *Context* will provide all necessary information for the scenario, as a global configuration will work under the domain `www.my-market-place.com`. The *Visualization* will show the configuration made on the replacement in order to achieve the desired result.
 
 ### Replace single parameter for a variable in request
-|                      | Description                                                                                                                                                                                                                         |  
-|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|  
+|                      | Description                                                                                                                                                                                                                         |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Objective            | replace a parameter of a request for a JMeter Variable.                                                                                                                                                                             |
-| Pre-loaded variables | `ID` = 2                                                                                                                                                                                                                            | 
-| Context              | Request is `/cart.html?product_id=2`                                                                                                                                                                                                | 
-| Visualization        | ![single_parameter_replacement](./assets/single-parameter-replacement.png)                                                                                                                                 |  
+| Pre-loaded variables | `ID` = 2                                                                                                                                                                                                                            |
+| Context              | Request is `/cart.html?product_id=2`                                                                                                                                                                                                |
+| Visualization        | ![single_parameter_replacement](./assets/single-parameter-replacement.png)                                                                                                                                                          |
 | Overall              | Once the regex matches on the request, the matched value will be `2`. Then it will compare the matched value against all the variables stored. When the matched value equals any variable stored, the replacement will be triggered |
 | Replacement result   | `www.my-market-place.com/cart.html?product_id=${ID}`                                                                                                                                                                                |
 
 ### Replace multiple parameters for variables in request
-|                      | Description                                                                                                                                                                       |  
-|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|  
+|                      | Description                                                                                                                                                                       |
+|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Objective            | replace multiple parameters of a request for JMeter Variables.                                                                                                                    |
-| Pre-loaded variables | `ID_1` = 2, `ID_2` = 3, `ID_3` = 4,  `ID_SESSION` = rP/tHk<tsR!v>                                                                                                                 | 
-| Context              | Request is `/cart.html?product_id=2&product_id=4`                                                                                                                                 | 
-| Visualization        | ![multiple_parameter_replacement](./assets/multiple-parameter-replacement.png)                                                                           |  
+| Pre-loaded variables | `ID_1` = 2, `ID_2` = 3, `ID_3` = 4,  `ID_SESSION` = rP/tHk<tsR!v>                                                                                                                 |
+| Context              | Request is `/cart.html?product_id=2&product_id=4`                                                                                                                                 |
+| Visualization        | ![multiple_parameter_replacement](./assets/multiple-parameter-replacement.png)                                                                                                    |  
 | Overall              | For this multi replacement, the regex will match twice (two appearances of `product_id`), therefore, each matched value will be replaced for the variables containing same value. |
 | Replacement result   | `www.my-market-place.com/cart.html?product_id=${ID_1}&product_id=${ID_3}`                                                                                                         |
 
 ### Replace a parameter for the result of a variable transformation in request
-|                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |  
-|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|  
+|                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Objective            | replace a parameter in request that uses a pre-loaded variable but transformed.                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Pre-loaded variables | `ID` = 2,  `ID_SESSION` = rP/tHk<tsR!v>                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | 
-| Context              | Request is `/index.html?session=rP%2FtHk%3CtsR%21v%3E`. In this particular case, the session id is extracted decoded (*ID_SESSION* value) , but on the request it is encoded. Therefore, the stored variable will be different to the matched value on the request. Because of that, we need to use the field `replacementString` in order to make that transformation. For this example we are using a JMeter Function called [urlencode](https://jmeter.apache.org/usermanual/functions.html#__urlencode) | 
-| Visualization        | ![single-transformed-replacement](./assets/single-transformed-replacement.png)                                                                                                                                                                                                                                                                                                                                                                                                     |  
+| Pre-loaded variables | `ID` = 2,  `ID_SESSION` = rP/tHk<tsR!v>                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Context              | Request is `/index.html?session=rP%2FtHk%3CtsR%21v%3E`. In this particular case, the session id is extracted decoded (*ID_SESSION* value) , but on the request it is encoded. Therefore, the stored variable will be different to the matched value on the request. Because of that, we need to use the field `replacementString` in order to make that transformation. For this example we are using a JMeter Function called [urlencode](https://jmeter.apache.org/usermanual/functions.html#__urlencode) |
+| Visualization        | ![single-transformed-replacement](./assets/single-transformed-replacement.png)                                                                                                                                                                                                                                                                                                                                                                                                                              |  
 | Overall              | Since the replacement string is not empty, the plugin will execute (if executable, could also be a literal) the content. The result of the execution will be used to compare against the regex replacement matched value. When those values match, the replacement is made by placing the content of replacementString on the request.                                                                                                                                                                      |
 | Replacement result   | `www.my-market-place.com/index.html?session=${__urlencode(${ID_SESSION})}`                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ### Replace multiple parameters for the result of a variable transformation in request
-|                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |  
-|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|  
+|                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Objective            | replace a parameter in request that uses pre-loaded variables but transformed.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Pre-loaded variables | `prod_1=red car`,  `prod_2=blue car`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 
-| Context              | Request is `delete.html?identifier=red+car&indetifier=blue+car`. In this case, we have to replace two parameters of the request. The value that will be placed on the request, needs to be encoded. Since the pre-loaded variables are not encoded, we need to make a transformation                                                                                                                                                                                                                                         | 
-| Visualization        | ![multiple-transformed-replacement](./assets/multiple-transformed-replacement.png)                                                                                                                                                                                                                                                                                                                                                                                                                  |  
+| Pre-loaded variables | `prod_1=red car`,  `prod_2=blue car`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Context              | Request is `delete.html?identifier=red+car&indetifier=blue+car`. In this case, we have to replace two parameters of the request. The value that will be placed on the request, needs to be encoded. Since the pre-loaded variables are not encoded, we need to make a transformation                                                                                                                                                                                                                                         |
+| Visualization        | ![multiple-transformed-replacement](./assets/multiple-transformed-replacement.png)                                                                                                                                                                                                                                                                                                                                                                                                                                           |  
 | Overall              | Similar to the previous scenario, in order to proper replace for variables, we have to make a transformation, that will be done by calling the [__urlencode](https://jmeter.apache.org/usermanual/functions.html#__urlencod) function provided by JMeter. Since the pre-loaded variables are result of a multiple extraction. The replacement string will have the variable name without the suffix. The plugin automatically will detect that and it will access to all the stored values for that reference variable name. |
 | Replacement result   | `www.my-market-place.com/index.html?identifier=${__urlencode(${prod_1})}&identifier=${__urlencode(${prod_2})}`                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ### Replace single parameter ignoring matched value
-|                      | Description                                                                                                                                                                                                                                                                                                                                                                        |  
-|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|  
+|                      | Description                                                                                                                                                                                                                                                                                                                                                                        |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Objective            | replace a parameter in request that uses pre-loaded variables but transformed.                                                                                                                                                                                                                                                                                                     |
 | Pre-loaded variables | No variables used for this case                                                                                                                                                                                                                                                                                                                                                    | 
 | Context              | Request is `/main.html?time=1516540541624`. This request contains a parameter which is the current time in milliseconds, therefore, if we had that value stored in a variable it will not work, since we need to set a request with the current time. Therefore we will use the function [__time()](https://jmeter.apache.org/usermanual/functions.html#__time) provided by JMeter | 
-| Visualization        | ![ignore_value_replacement](./assets/ignore-value-replacement.png)                                                                                                                                                                                                                                                                                        |  
+| Visualization        | ![ignore_value_replacement](./assets/ignore-value-replacement.png)                                                                                                                                                                                                                                                                                                                 |  
 | Overall              | It is not possible to compare values in order to achieve our objective, therefore we need to set the current time neglecting the previous value. For that reason the ignore value is checked, it will not execute and compare the replacement string content.                                                                                                                      |
 | Replacement result   | `www.my-market-place.com/main.html?time=${__time()}`                                                                                                                                                                                                                                                                                                                               |
 
@@ -308,9 +396,19 @@ In case none of the following Replacements fits the desired behavior your applic
 
 **Regex**
 
-Similarly to the *Correlation Extractor Regex*, this one also receives a Regular Expression in order to find where the stored value is going to be replaced. Additionally, if a regex extractor with multivalued was added, the replacement will be applied automatically. It will look for a variable with same value as the request match in order to make the replacement. In short, no need to configure replacement to work with a multi-value or single-value.
+Similarly to the *Regex Correlation Extractor*, this one also receives a Regular Expression in order to find where the stored value is going to be replaced. Additionally, if a regex extractor with multivalued was added, the replacement will be applied automatically. It will look for a variable with same value as the request match in order to make the replacement. In short, no need to configure replacement to work with a multi-value or single-value.
 
 ![Regex Correlation Replacement](./assets/regex-correlation-replacement.png)
+
+**JSON**
+
+Similarly to the *JSON Correlation Extractor*, this one also receives a JSONPath Expression in order to find where the stored value is going to be replaced. Additionally, if a JSONPath extractor with multivalued was added, the replacement will be applied automatically. It will look for a variable with same value as the request match in order to make the replacement. In short, no need to configure replacement to work with a multi-value or single-value.
+
+![JSON Correlation Replacement](./assets/json-correlation-replacement.png)
+
+For examples of using JSONPath expressions, refer to the *JSON Correlation Extractor* documentation.
+
+The logic behind **Replacement string** and **Ignore value** is the same as *Regex Correlation Replacement*. Go to the documentation related to **Variable Replacement** for usage examples.
 
 **Siebel Counter**
 
