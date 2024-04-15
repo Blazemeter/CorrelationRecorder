@@ -159,7 +159,7 @@ This extractor comes installed, by default, in the plugin, and it receives 4 fie
 ![Regex Correlation Extractor](./assets/regex-correlation-extractor.png)
 
 1. *RegEx*: which corresponds to the Regular Expression that will be used to perform the extraction.
-1. *Match Number*: In the case that the Regex matches more than once in the response, this number will indicate which one of all of them it's going to be extracted.
+1. *Match Number*: In the case that the Regex matches more than once in the response, this number will indicate which one of all of them it's going to be extracted. Use the value `-1` when you need to retrieve all matched values from the expressions.
 1. *Match Group*: In the case that the Regex contains, more than one group, this field indicates which one of those is going to be considered to do the extraction, once the Regex its matched. Only use positive numbers.
 1. *Target*: Which field to check the regular expression against.
     * *The following fields can be checked: (from JMeter documentation):*
@@ -171,8 +171,96 @@ This extractor comes installed, by default, in the plugin, and it receives 4 fie
     * *URL*
     * *Response Code* - e.g. 200
     * *Response Message* - e.g. OK
-1. *Multivalued*: The multi-valuation is useful when we want to match multiple appearances of our regex in a response. Variables extracted with multivalued are non-overwritable and additionally they have a specific format.  See [Variable Generation](#variable-generation) for case usages and variable formats.
+1. *Multivalued*: Multiple valuation is useful when we want to separate each unique value as a particular variant name from different responses. Variables extracted with multivalued are non-overwritable and additionally they have a specific format.  See [Variable Generation](#variable-generation) for case usages and variable formats.
    In case the Regex Extractor is not matched, during a Replay of a Recorded flow, the replaced value will be `<Reference Variable Name> + "_NOT_FOUND"`.
+
+**JSON**
+
+JSON stands for JavaScript Object Notation, and relies on the use of JSONPath Expressions to find where the dynamic variable might found.
+
+When the JSONPath its matched, a JSONPath Extractor will be added to the sample when:
+
+1. The JSONPath is matched, based on the configured properties
+2. The matched value is not repeated
+
+This extractor comes installed, by default, in the plugin, and it receives 4 fields to be able to work properly:
+
+![JSON Correlation Extractor](./assets/json-correlation-extractor.png)
+
+1. *JSON*: which corresponds to the JSONPath Expression that will be used to perform the extraction.
+1. *Match Number*: In the case that the JSONPath matches more than once in the response, this number will indicate which one of all of them it's going to be extracted. Use the value `-1` when you need to retrieve all matched values from the expressions.
+1. *Target*: Which field to check the regular expression against.
+   * *The following fields can be checked: (from JMeter documentation):*
+   * *Body* - the body of the response, e.g. the content of a web-page (excluding headers)
+1. *Multivalued*: Multiple valuation is useful when we want to separate each unique value as a particular variant name from different responses. Variables extracted with multivalued are non-overwritable and additionally they have a specific format.  See [Variable Generation](#variable-generation) for case usages and variable formats.
+   In case the JSONPath Extractor is not matched, during a Replay of a Recorded flow, the replaced value will be `<Reference Variable Name> + "_NOT_FOUND"`.
+
+JMeter use JSONPath syntax from [Jayway JsonPath](https://github.com/json-path/JsonPath) Use the Jayway JsonPath syntax documentation as a reference.
+
+Jayway JsonPath is a java port based on [Stefan Goessner's original JSONPath implementation](https://goessner.net/articles/JsonPath/).
+
+It is possible to find multiple examples of JSONPath expressions on the websites mentioned above or on the Internet.
+
+JMeter allows you to evaluate JSONPaths in the Sample results of the ViewResult using the view "JSON Path Tester". However, it is possible to use some other tools on the Internet that facilitate the evaluation and testing of JSONPath, such as the site [jsonpath.com](https://jsonpath.com/)
+
+**JSONPath Example**
+
+An example will be provided below that will allow you to visually understand some general concepts of the JSONPath syntax.
+
+```json
+{ "store": {
+    "book": [
+      { "category": "reference",
+        "author": "Nigel Rees",
+        "title": "Sayings of the Century",
+        "price": 8.95
+      },
+      { "category": "fiction",
+        "author": "Evelyn Waugh",
+        "title": "Sword of Honour",
+        "price": 12.99
+      },
+      { "category": "fiction",
+        "author": "Herman Melville",
+        "title": "Moby Dick",
+        "isbn": "0-553-21311-3",
+        "price": 8.99
+      },
+      { "category": "fiction",
+        "author": "J. R. R. Tolkien",
+        "title": "The Lord of the Rings",
+        "isbn": "0-395-19395-8",
+        "price": 22.99
+      }
+    ],
+    "bicycle": {
+      "color": "red",
+      "price": 399
+    }
+  }
+}
+```
+
+Some JSONPath query expressions and their expected result.
+
+| JSONPath                    | Intended result                                                   |
+|-----------------------------|-------------------------------------------------------------------|
+| $.store.book[*].author      | the authors of all books in the store                             |
+| $..author                   | all authors                                                       |
+| $.store.*                   | all things in store, which are some books and a red bicycle       |
+| $.store..price              | the prices of everything in the store                             |
+| $..book[2]                  | the third book                                                    |
+| $..book[2].author           | the third book's author                                           |
+| $..book[2].publisher        | empty result: the third book does not have a "publisher" member   |
+| $..book[-1]                 | the last book in order                                            |
+| $..book[0,1] or $..book[:2] | the first two books                                               |
+| $..book[?@.isbn]            | all books with an ISBN number                                     | 
+| $..book[?@.price<10]        | all books cheaper than 10                                         |
+| $..*                        | all member values and array elements contained in the input value |
+
+The IETF group in charge of creating Internet standards in February 2024 completed its work on the creation of RFC 9535 associated with JSONPath.
+You can consult the RFC documentation in case you require more details about JSONPath
+https://datatracker.ietf.org/doc/rfc9535/
 
 **SiebelRow**
 
@@ -339,6 +427,16 @@ In case none of the following Replacements fits the desired behavior your applic
 Similarly to the *Correlation Extractor Regex*, this one also receives a Regular Expression in order to find where the stored value is going to be replaced. Additionally, if a regex extractor with multivalued was added, the replacement will be applied automatically. It will look for a variable with same value as the request match in order to make the replacement. In short, no need to configure replacement to work with a multi-value or single-value.
 
 ![Regex Correlation Replacement](./assets/regex-correlation-replacement.png)
+
+**JSON**
+
+Similarly to the *JSON Correlation Extractor*, this one also receives a JSONPath Expression in order to find where the stored value is going to be replaced. Additionally, if a JSONPath extractor with multivalued was added, the replacement will be applied automatically. It will look for a variable with same value as the request match in order to make the replacement. In short, no need to configure replacement to work with a multi-value or single-value.
+
+![JSON Correlation Replacement](./assets/json-correlation-replacement.png)
+
+For examples of using JSONPath expressions, refer to the *JSON Correlation Extractor* documentation.
+
+The logic behind **Replacement string** and **Ignore value** is the same as *Regex Correlation Replacement*. Go to the documentation related to **Variable Replacement** for usage examples.
 
 **Siebel Counter**
 
