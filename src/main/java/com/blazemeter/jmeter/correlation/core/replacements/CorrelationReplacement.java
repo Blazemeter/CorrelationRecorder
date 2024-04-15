@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.ConfigTestElement;
+import org.apache.jmeter.engine.util.CompoundVariable;
 import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
@@ -48,9 +50,28 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
 
   protected static final String PROPERTIES_PREFIX =
       "CorrelationRule.CorrelationReplacement.";
+  public static final String REPLACEMENT_STRING_PROPERTY_NAME = PROPERTIES_PREFIX +
+      "replacementString";
+  public static final String REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME = PROPERTIES_PREFIX +
+      "ignoreValue";
   protected static final String REGEX_DEFAULT_VALUE = "param=\"(.+?)\"";
+
+  protected static final String REPLACEMENT_STRING_DEFAULT_VALUE = "";
+
+  protected static final String FUNCTION_REF_PREFIX = "${"; //$NON-NLS-1$
+  /**
+   * Functions are wrapped in ${ and }.
+   */
+  protected static final String FUNCTION_REF_SUFFIX = "}"; //$NON-NLS-1$
+
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationReplacement.class);
+
   protected String variableName;
+
+  protected String replacementString = REPLACEMENT_STRING_DEFAULT_VALUE;
+
+  protected Function<String, String> expressionEvaluator =
+      (expression) -> new CompoundVariable(expression).execute();
 
 
   /**
@@ -243,4 +264,26 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * @param ruleTestElement CorrelationRuleTestElement that contains the values
    */
   public abstract void update(CorrelationRuleTestElement ruleTestElement);
+
+  Function<String, String> replaceExpressionProvider() {
+    return s -> replacementString == null
+        || !java.util.regex.Pattern.compile("(\\$\\{.+?})").matcher(replacementString).matches()
+        || replacementString.isEmpty()
+        ? FUNCTION_REF_PREFIX + s + FUNCTION_REF_SUFFIX : s;
+  }
+
+  String computeStringReplacement(String varName) {
+    String rawReplacementString = buildReplacementStringForMultivalued(varName);
+    String computed = expressionEvaluator.apply(rawReplacementString);
+    LOG.debug("Result of {} was {}", rawReplacementString, computed);
+    return computed;
+  }
+
+  String buildReplacementStringForMultivalued(String varNameMatch) {
+    if (replacementString != null && replacementString.contains(variableName)) {
+      return replacementString.replace(variableName, varNameMatch);
+    }
+    return replacementString;
+  }
+
 }

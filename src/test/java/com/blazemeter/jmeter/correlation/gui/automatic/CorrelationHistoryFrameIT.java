@@ -96,5 +96,27 @@ public class CorrelationHistoryFrameIT extends CorrelationHistoryBaseTest {
         frame.button("zipSaveButton").click();
         frame.optionPane().requireMessage(Pattern.compile("History zipped at: \n.*"));
     }
+    @Test
+    public void shouldCreateCheckpointWhenButtonIsClicked() {
+        String testPlanFilepath = "Recording" + File.separator+ "testPlanFilepath";
+        CorrelationHistory.setSaveCurrentTestPlan(() -> testPlanFilepath);
+        String recordingFilepath = "Recording" + File.separator+ "recordingFilepath";
+        CorrelationHistory.setRecordingFilePathSupplier(() -> recordingFilepath);
+
+        frame.button("createIterationButton").click();
+
+        assertEquals(4, frame.table("historyTable").rowCount());
+    }
+    @Test
+    public void shouldEditHistoryIterationValues() {
+        frame.table("historyTable").cell(row(0).column(2)).doubleClick()
+                .enterValue("new value");
+        frame.table("historyTable").cell(row(0).column(3)).doubleClick()
+                .enterValue("new value");
+
+        assertEquals("new value", frame.table("historyTable").valueAt(row(0).column(2)));
+        assertEquals("new value", frame.table("historyTable").valueAt(row(0).column(3)));
+    }
+
 
 }

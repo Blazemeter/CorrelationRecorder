@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core.extractors;
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
+import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationRuleSerializationPropertyFilter;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.fasterxml.jackson.annotation.JsonFilter;
@@ -10,7 +11,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.AbstractTestElement;
@@ -42,6 +48,10 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
   protected static final String TARGET_FIELD_NAME = EXTRACTOR_PREFIX + "target";
   protected static final String TARGET_FIELD_DESCRIPTION = "Target";
   protected static final String REGEX_DEFAULT_VALUE = "param=\"(.+?)\"";
+  protected static final String DEFAULT_EXTRACTOR_SUFFIX = "_NOT_FOUND";
+
+  private static final Function<String, Pattern> VARIABLE_PATTERN_PROVIDER =
+      (variableName) -> Pattern.compile(variableName + "_(\\d|matchNr)");
   private static final Logger LOG = LoggerFactory
       .getLogger(CorrelationRuleSerializationPropertyFilter.class);
   public transient String variableName;
@@ -156,4 +166,24 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
   public List<AbstractTestElement> createPostProcessors(String variableName, int i) {
     return new ArrayList<>();
   }
+
+  protected void clearJMeterVariables(JMeterVariables vars) {
+    Set<Map.Entry<String, Object>> entries = new HashSet<>(vars.entrySet());
+    entries.forEach(e -> {
+      if (VARIABLE_PATTERN_PROVIDER.apply(variableName).matcher(e.getKey()).matches()) {
+        vars.remove(e.getKey());
+      }
+    });
+  }
+
+  /**
+   * Used to provide information about the extraction of values from the response.
+   * This method would be used, when we are performing an analysis, regardless
+   * of the mode of the recording (i.e. whether we are recording or doing
+   * static analysis).
+   */
+  protected void analyze(String value, Object affectedElement, String varName) {
+    AnalysisReporter.report(this, value, affectedElement, varName, target.name());
+  }
+
 }

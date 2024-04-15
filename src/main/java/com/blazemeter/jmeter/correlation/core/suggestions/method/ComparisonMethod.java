@@ -88,7 +88,7 @@ public class ComparisonMethod implements CorrelationMethod {
    */
   private static ExtractionSuggestion generateCandidateExtractor(SampleResult result,
                                                                  Appearances appearance,
-                                                                 CorrelationExtractor<?> extractor,
+                                                                 CorrelationExtractor extractor,
                                                                  StructureType structureType,
                                                                  String name) {
     ExtractionSuggestion suggestion = new ExtractionSuggestion(extractor, result);

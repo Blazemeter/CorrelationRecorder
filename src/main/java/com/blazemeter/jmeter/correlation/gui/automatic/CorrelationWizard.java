@@ -292,10 +292,6 @@ public class CorrelationWizard extends JDialog {
     history.addStep(step);
   }
 
-  public void addStep(CorrelationHistory.Step step) {
-    history.addStep(step);
-  }
-
   public void setHistory(CorrelationHistory history) {
     this.history = history;
   }

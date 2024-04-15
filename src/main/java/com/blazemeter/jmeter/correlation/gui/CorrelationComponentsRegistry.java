@@ -10,9 +10,9 @@ import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.extractors.XmlCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -45,10 +45,10 @@ public class CorrelationComponentsRegistry {
   private final Set<Class<?>> customExtractors = new HashSet<>();
   private final Set<Class<?>> customReplacements = new HashSet<>();
   private final List<Class<?>> defaultExtractors =
-      Arrays.asList(RegexCorrelationExtractor.class, JsonCorrelationExtractor.class,
-          XmlCorrelationExtractor.class);
-  private final List<Class<?>> defaultReplacements = Collections
-      .singletonList(RegexCorrelationReplacement.class);
+      Arrays.asList(RegexCorrelationExtractor.class, JsonCorrelationExtractor.class);
+  private final List<Class<?>> defaultReplacements =
+          Arrays.asList(RegexCorrelationReplacement.class,
+                  JsonCorrelationReplacement.class);
   private final List<String> deprecatedComponents = Collections.singletonList(
       FunctionCorrelationReplacement.class.getCanonicalName());
 

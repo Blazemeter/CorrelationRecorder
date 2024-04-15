@@ -1,6 +1,5 @@
 package com.blazemeter.jmeter.correlation.core.automatic.extraction.method;
 
-import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractorTest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,6 +35,6 @@ public class ComparableJMeterVariables extends JMeterVariables {
 
   @Override
   public boolean equals(Object obj) {
-    return vars.equals(((RegexCorrelationExtractorTest.ComparableJMeterVariables) obj).vars);
+    return vars.equals(((ComparableJMeterVariables) obj).vars);
   }
 }

@@ -11,7 +11,7 @@ public class ExtractionSuggestion {
   private List<CorrelationExtractor<?>> extractors = new ArrayList<>();
 
   //TODO:Remove the single extractor and only use the list
-  private RegexCorrelationExtractor<?> extractor;
+  private CorrelationExtractor<?> extractor;
   private SampleResult sampleResult;
   private String value;
   private String name;
@@ -25,18 +25,13 @@ public class ExtractionSuggestion {
     this.sampleResult = sampleResult;
   }
 
-  public ExtractionSuggestion(RegexCorrelationExtractor<?> extractor, SampleResult sampleResult) {
-    this.extractor = extractor;
-    this.sampleResult = sampleResult;
-  }
-
-  public ExtractionSuggestion(RegexCorrelationExtractor<?> extractor, HTTPSamplerBase sampler) {
+  public ExtractionSuggestion(CorrelationExtractor<?> extractor, HTTPSamplerBase sampler) {
     this.extractor = extractor;
     this.sampler = sampler;
     this.comesFromSampleResult = false;
   }
 
-  public RegexCorrelationExtractor<?> getExtractor() {
+  public CorrelationExtractor<?> getExtractor() {
     return extractor;
   }
 

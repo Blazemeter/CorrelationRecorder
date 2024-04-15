@@ -9,11 +9,12 @@ import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.apache.jmeter.engine.util.CompoundVariable;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
@@ -37,28 +38,16 @@ import org.slf4j.LoggerFactory;
 public class RegexCorrelationReplacement<T extends BaseCorrelationContext> extends
     CorrelationReplacement<T> {
 
-  public static final String REPLACEMENT_STRING_PROPERTY_NAME = PROPERTIES_PREFIX +
-      "replacementString";
-  public static final String REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME = PROPERTIES_PREFIX +
-      "ignoreValue";
   protected static final String REPLACEMENT_REGEX_PROPERTY_NAME = PROPERTIES_PREFIX + "regex";
   protected static final String REPLACEMENT_REGEX_PROPERTY_DESCRIPTION =
       "Regular expression " + "replacement";
-  protected static final String FUNCTION_REF_PREFIX = "${"; //$NON-NLS-1$
-  /**
-   * Functions are wrapped in ${ and }.
-   */
-  protected static final String FUNCTION_REF_SUFFIX = "}"; //$NON-NLS-1$
   private static final Logger LOG = LoggerFactory.getLogger(RegexCorrelationReplacement.class);
   private static final boolean IGNORE_VALUE_DEFAULT = false;
-  private static final String REPLACEMENT_STRING_DEFAULT_VALUE = "";
+
   protected String regex = REGEX_DEFAULT_VALUE;
   protected boolean ignoreValue = IGNORE_VALUE_DEFAULT;
-  protected String replacementString = REPLACEMENT_STRING_DEFAULT_VALUE;
-  private Function<String, String> expressionEvaluator =
-      (expression) -> new CompoundVariable(expression).execute();
+
   private Object currentSampler;
-  private String currentVariableName = "";
 
   /**
    * Default constructor added in order to satisfy the JSON conversion.
@@ -197,6 +186,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
       LOG.warn("Malformed pattern: {}", regex, e);
       throw e;
     }
+    HashSet<Pair<String, String>> valuesReplaced = new HashSet();
 
     PatternMatcherInput patternMatcherInput = new PatternMatcherInput(input);
     int beginOffset = patternMatcherInput.getBeginOffset();
@@ -215,6 +205,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
         String varName = varNr == 0 ? variableName : variableName + "#" + varNr;
         String varMatchesCount = vars.get(varName + "_matchNr");
         literalMatched = match.group(1);
+        String currentVariableName = "";
         String replaceExpression = null;
         if (varMatchesCount == null) {
           if (vars.get(varName) != null && vars.get(varName).equals(literalMatched)
@@ -237,6 +228,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
           if (replaceExpression != null) {
             result = replaceMatch(result, patternMatcherInput, match,
                 beginOffset, inputBuffer, replaceExpression);
+            valuesReplaced.add(Pair.of(literalMatched, currentVariableName));
           }
         } else {
           int matchNr = Integer.parseInt(varMatchesCount);
@@ -257,6 +249,8 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
             if (replaceExpression != null) {
               result = replaceMatch(result, patternMatcherInput, match,
                   beginOffset, inputBuffer, expressionProvider.apply(replaceExpression));
+
+              valuesReplaced.add(Pair.of(literalMatched, currentVariableName));
             }
             varMatch++;
           }
@@ -275,33 +269,14 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
       return input;
     }
 
-    analysis(literalMatched);
+    for (Pair<String, String> valueReplaced : valuesReplaced) {
+      analysis(valueReplaced.getLeft(), valueReplaced.getRight());
+    }
     if (!AnalysisReporter.canCorrelate()) {
       return input;
     }
 
     return replacedInput;
-  }
-
-  private Function<String, String> replaceExpressionProvider() {
-    return s -> replacementString == null
-        || !java.util.regex.Pattern.compile("(\\$\\{.+?})").matcher(replacementString).matches()
-        || replacementString.isEmpty()
-        ? FUNCTION_REF_PREFIX + s + FUNCTION_REF_SUFFIX : s;
-  }
-
-  private String computeStringReplacement(String varName) {
-    String rawReplacementString = buildReplacementStringForMultivalued(varName);
-    String computed = expressionEvaluator.apply(rawReplacementString);
-    LOG.debug("Result of {} was {}", rawReplacementString, computed);
-    return computed;
-  }
-
-  private String buildReplacementStringForMultivalued(String varNameMatch) {
-    if (replacementString != null && replacementString.contains(variableName)) {
-      return replacementString.replace(variableName, varNameMatch);
-    }
-    return replacementString;
   }
 
   private StringBuilder replaceMatch(StringBuilder result, PatternMatcherInput patternMatcherInput,
@@ -358,7 +333,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     ignoreValue = testElem.getPropertyAsBoolean(REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME);
   }
 
-  private void analysis(String literalMatched) {
+  private void analysis(String literalMatched, String currentVariableName) {
     AnalysisReporter.report(this, literalMatched, currentSampler, currentVariableName);
   }
 

@@ -1,22 +1,22 @@
 package com.blazemeter.jmeter.correlation.core.automatic;
 
-import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import org.apache.jmeter.testelement.TestElement;
 
 public class ReplacementSuggestion {
-  private final RegexCorrelationReplacement<?> replacementSuggestion;
+  private final CorrelationReplacement<?> replacementSuggestion;
   private final TestElement usage;
   private String source;
   private String value;
   private String name;
 
-  public ReplacementSuggestion(RegexCorrelationReplacement<?> replacementSuggestion,
+  public ReplacementSuggestion(CorrelationReplacement<?> replacementSuggestion,
                                TestElement usage) {
     this.replacementSuggestion = replacementSuggestion;
     this.usage = usage;
   }
 
-  public RegexCorrelationReplacement<?> getReplacementSuggestion() {
+  public CorrelationReplacement<?> getReplacementSuggestion() {
     return replacementSuggestion;
   }
 

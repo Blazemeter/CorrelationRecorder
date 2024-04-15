@@ -12,13 +12,8 @@ import com.blazemeter.jmeter.correlation.gui.CorrelationRuleTestElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.regex.Pattern;
 import org.apache.jmeter.extractor.RegexExtractor;
 import org.apache.jmeter.extractor.gui.RegexExtractorGui;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
@@ -50,12 +45,10 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
   protected static final String DEFAULT_MATCH_NUMBER_NAME = "match number";
   protected static final String MULTIVALUED_DESCRIPTION = "Multivalued";
   protected static final boolean DEFAULT_MULTIVALUED = false;
-  private static final Function<String, Pattern> VARIABLE_PATTERN_PROVIDER =
-      (variableName) -> Pattern.compile(variableName + "_(\\d|matchNr)");
+
   private static final Logger LOG = LoggerFactory.getLogger(RegexCorrelationExtractor.class);
   private static final String REGEX_EXTRACTOR_GUI_CLASS = RegexExtractorGui.class.getName();
   private static final int DEFAULT_MATCH_NUMBER = 1;
-  private static final String DEFAULT_REGEX_EXTRACTOR_SUFFIX = "_NOT_FOUND";
   protected boolean multiValued;
   protected String regex;
   protected int matchNr;
@@ -250,15 +243,6 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
 
   }
 
-  private void clearJMeterVariables(JMeterVariables vars) {
-    Set<Entry<String, Object>> entries = new HashSet<>(vars.entrySet());
-    entries.forEach(e -> {
-      if (VARIABLE_PATTERN_PROVIDER.apply(variableName).matcher(e.getKey()).matches()) {
-        vars.remove(e.getKey());
-      }
-    });
-  }
-
   private void addVarAndChildPostProcessor(String match, String variableName,
                                            RegexExtractor postProcessor) {
     if (AnalysisReporter.canCorrelate()) {
@@ -287,7 +271,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     regexExtractor.setRegex(regex);
     regexExtractor.setTemplate("$" + groupNr + "$");
     regexExtractor.setMatchNumber(matchNr);
-    regexExtractor.setDefaultValue(varName + DEFAULT_REGEX_EXTRACTOR_SUFFIX);
+    regexExtractor.setDefaultValue(varName + DEFAULT_EXTRACTOR_SUFFIX);
     regexExtractor.setUseField(target.getCode());
     regexExtractor.setScopeAll();
     return regexExtractor;
@@ -300,16 +284,6 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     matchNr = getMatchNumber(testElem);
     groupNr = getGroupNumber(testElem);
     multiValued = isMultiValued(testElem);
-  }
-
-  /**
-   * Used to provide information about the extraction of values from the response.
-   * This method would be used, when we are performing an analysis, regardless
-   * of the mode of the recording (i.e. whether we are recording or doing
-   * static analysis).
-   */
-  public void analyze(String value, Object affectedElement, String varName) {
-    AnalysisReporter.report(this, value, affectedElement, varName, target.name());
   }
 
   /**
@@ -368,7 +342,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
     regexExtractor.setRegex(regex);
     regexExtractor.setTemplate("$" + groupNr + "$");
     regexExtractor.setMatchNumber(matchNr);
-    regexExtractor.setDefaultValue(variableName + DEFAULT_REGEX_EXTRACTOR_SUFFIX);
+    regexExtractor.setDefaultValue(variableName + DEFAULT_EXTRACTOR_SUFFIX);
     regexExtractor.setUseField(target.getCode());
     regexExtractor.setScopeAll();
     return Collections.singletonList(regexExtractor);
