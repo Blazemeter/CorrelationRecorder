@@ -30,3 +30,17 @@ We are aware that there is an issue where, if you click "No" when the Automatic 
  method may not trigger the analysis. 
 
 We recommend selecting "Yes" when the wizard prompts you to generate suggestions to avoid this issue.
+
+## 3. GUI crash and console error logging null pointer. 
+We have identified an issue with java 1.8 primarily happening on macOS when using this plugin.
+ We have fixed the issue in the table renderer, but there can still be some cases where this might happen. 
+ In case you are getting a GUI crash and null pointer references in jmeter console, you might want to consider
+ upgrading java version.
+
+If you are getting this error or a similar one:
+``` 
+ java.lang.NullPointerException: null 
+ at com.blazemeter.jmeter.correlation.gui.RulesTableGui$CustomCellRenderer.getTableCellRendererComponent(RulesTableGui.java:178) ~[jmeter-bzm-correlation-recorder-2.2.1.jar:?]
+  at javax.swing.JTable$AccessibleJTable.getAccessibleChild(JTable.java:7037) ~[?:1.8.0_345]
+```
+We recommend using java 11 or higher.

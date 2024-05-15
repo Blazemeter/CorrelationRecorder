@@ -1,7 +1,6 @@
 ---
-sidebar: auto
 prev: /guide/before-recording.md
-next: /guide/custom-extensions/
+next: /guide/best-practices.md
 ---
 
 # Concepts

@@ -57,16 +57,40 @@ module.exports = {
         link: '/guide/troubleshooting.md',
      }
     ],
-    sidebar: {
+    sidebar:{
       '/guide/': [
-        {
-          title: 'Guide',
-          collapsable: false,
-          children: [
-            ''
-          ]
-        }
-      ],
+          {
+            title: 'Guide',
+            collapsable: true,
+            children: [
+              '/guide/',
+              '/guide/installation-guide.md',
+              '/guide/using-the-plugin.md',
+              '/guide/correlation-process.md',
+              '/guide/after-recording.md',
+              '/guide/before-recording.md',
+              '/guide/concepts.md',
+              '/guide/best-practices.md',
+              '/guide/troubleshooting.md'
+
+            ]
+          },
+          {
+              title: 'Templates',
+              collapsable: true,
+              children: [
+                '/guide/templates/',
+                '/guide/templates/create.md'
+              ]
+          },
+          {
+              title: 'Custom Extensions',
+              collapsable: true,
+              children: [
+                '/guide/custom-extensions/',
+              ]
+          }
+        ],
     }
   },
 

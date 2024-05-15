@@ -1,5 +1,4 @@
 ---
-sidebar: auto
 next: /guide/correlation-process.md
 prev: /guide/installation-guide.md
 ---
