@@ -1,3 +1,7 @@
+---
+next: /guide/templates/create.md
+---
+
 # Correlation Templates
 
 The Templates are part of the core functionalities of the Correlation Recorder Plugin. They are the structure that groups a set of Correlation Rules inside the Plugin for various uses.

@@ -1,5 +1,4 @@
 ---
-sidebar: auto
 next: /guide/installation-guide.md
 ---
 

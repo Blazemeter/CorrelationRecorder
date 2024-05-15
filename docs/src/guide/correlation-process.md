@@ -1,7 +1,6 @@
 ---
-sidebar: auto
-next: /guide/best-practices.md
-prev: /guide/installation-configuration.md
+next: /guide/after-recording.md
+prev: /guide/using-the-plugin.md
 ---
 
 # Correlation Process

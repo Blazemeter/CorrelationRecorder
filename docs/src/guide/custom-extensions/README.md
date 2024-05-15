@@ -1,7 +1,5 @@
 ---
-sidebar : auto
-prev: /guide/concepts.md
-next: /guide/
+prev: /guide/templates/create.md
 ---
 
 # Custom Extensions

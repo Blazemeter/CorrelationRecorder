@@ -1,5 +1,4 @@
 ---
-sidebar: auto
 next: /guide/before-recording.md
 prev: /guide/correlation-process.md
 ---

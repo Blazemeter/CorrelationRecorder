@@ -1,6 +1,5 @@
 ---
-sidebar: auto
-next: /guide/
+next: /guide/templates/
 prev: /guide/best-practices.md
 ---
 

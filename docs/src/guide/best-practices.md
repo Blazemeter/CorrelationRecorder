@@ -1,7 +1,6 @@
 ---
-sidebar: auto
 next: /guide/troubleshooting.md
-prev: /guide/correlation-process.md
+prev: /guide/concepts.md
 ---
 
 # Best Practices

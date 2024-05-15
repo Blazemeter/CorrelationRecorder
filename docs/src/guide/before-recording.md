@@ -1,5 +1,4 @@
 ---
-sidebar: auto
 next: /guide/concepts.md
 prev: /guide/after-recording.md
 ---

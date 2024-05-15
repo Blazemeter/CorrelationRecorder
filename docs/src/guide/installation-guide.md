@@ -1,5 +1,4 @@
 ---
-sidebar: auto
 next: /guide/using-the-plugin.md
 prev: /guide/
 ---
