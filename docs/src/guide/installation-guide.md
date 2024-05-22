@@ -39,7 +39,7 @@ you can also do it manually. This section will cover both methods.
 Once JMeter restarts, the Correlation Recorder plugin will be installed.
 
 ### Manually
-1. Go to the [Correlation Recorder plugin page](https://jmeter-plugins.org/wiki/CorrelationRecorder/) and download the
+1. Go to the [Correlation Recorder plugin page](https://jmeter-plugins.org/?search=BlazeMeter%20-%20Correlation%20Recorder%20Plugin) and download the
    latest version of the plugin, with the dependencies.
 2. Place the Plugin jar in the ext folder of your JMeter installation. The ext folder is usually located in
    `<JMeter_Home>/lib/ext`.
