@@ -57,6 +57,9 @@ public class GroupsTableGui extends NonStringValuedTableGui<GroupPanel> {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                    boolean hasFocus, int row, int column) {
       Component component;
+      if (value == null) {
+        return null;
+      }
       if (value instanceof JTextField) {
         component = (JTextField) value;
         component.setPreferredSize(

@@ -4,6 +4,7 @@ import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.helger.commons.annotation.VisibleForTesting;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -29,6 +30,7 @@ import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.util.JMeterUtils;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +51,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   private Map<String, List<Appearances>> appearanceMap;
 
   private Map<String, HTTPSamplerProxy> requestsMap;
+  private ResultFileParser resultFileParser;
 
   public ResultsExtraction(Configuration configuration) {
     this.configuration = configuration;
@@ -122,7 +125,8 @@ public class ResultsExtraction implements AppearancesExtraction {
       sampler.setDoMultipartPost(true);
     } else if (type.equals(ContentType.APPLICATION_FORM_URLENCODED.getMimeType())) {
       parameters = getParametersFromFormUrlEncodedBody(httpResult, contentType);
-    } else if (type.equals(ContentType.APPLICATION_JSON.getMimeType())) {
+    } else if (type.equals(ContentType.APPLICATION_JSON.getMimeType()) || JMeterElementUtils.isJson(
+        httpResult.getQueryString())) {
       isJson = true;
       parameters = getParametersFromJsonBody(httpResult, contentType);
     } else {
@@ -157,16 +161,10 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private static List<Pair<String, String>> getParametersFromJsonBody(HTTPSampleResult httpResult,
-                                                                      ContentType contentType) {
+      ContentType contentType) {
     String body = httpResult.getQueryString();
-
-    List<Pair<String, Object>> list = JMeterElementUtils.extractDataParametersFromJson(body);
     List<Pair<String, String>> parameters = new ArrayList<>();
-    for (Pair<String, Object> pair : list) {
-      if (!(pair.getValue() instanceof JSONArray)) {
-        parameters.add(Pair.of(pair.getKey(), pair.getValue().toString()));
-      }
-    }
+    parameters.add(Pair.of("", body));
     return parameters;
   }
 
@@ -228,12 +226,15 @@ public class ResultsExtraction implements AppearancesExtraction {
 
   private static List<Pair<String, String>> getParameterListFromQuery(HTTPSampleResult httpResult) {
     String queryString = httpResult.getQueryString();
+    if (JMeterElementUtils.isJson(queryString)) {
+      return new ArrayList<>();
+    }
     URL url = httpResult.getURL();
     String query = url.getQuery() != null ? url.getQuery() : "";
 
     List<Pair<String, String>> parameterList = new ArrayList<>();
     String[] parameters = new String[0];
-    if (query != null && !query.isEmpty()) {
+    if (!query.isEmpty()) {
       parameters = query.split(JMeterElementUtils.URL_PARAM_SEPARATOR);
     }
 
@@ -272,17 +273,16 @@ public class ResultsExtraction implements AppearancesExtraction {
   @Override
   public Map<String, List<Appearances>> extractAppearanceMap(String filepath) {
     appearanceMap = new HashMap<>();
-    ResultFileParser resultFileParser = new ResultFileParser(configuration);
+    resultFileParser = getResultFileParser();
     List<SampleResult> results = resultFileParser.loadFromFile(new File(filepath), true);
 
     extractAppearancesFromResults(results);
+    resultFileParser = null;
     return appearanceMap;
   }
 
-  public Map<String, List<Appearances>> extractAppearanceMap(List<SampleResult> results) {
-    appearanceMap = new HashMap<>();
-    extractAppearancesFromResults(results);
-    return appearanceMap;
+  private ResultFileParser getResultFileParser() {
+    return resultFileParser == null ? new ResultFileParser(configuration) : resultFileParser;
   }
 
   private void extractAppearancesFromResults(List<SampleResult> results) {
@@ -296,22 +296,36 @@ public class ResultsExtraction implements AppearancesExtraction {
           sourceRequest = requestsMap.get(result.getSampleLabel());
         }
         samplersExtractor.extractParametersFromHttpSampler(sourceRequest);
-        extractParametersFromHeaderStrings(result.getResponseHeaders(), sourceRequest, "Response");
-        extractParametersFromHeaderStrings(httpSampleResult.getRequestHeaders(), sourceRequest,
-            "Request");
-
-        /*
-        * If the content type of the response is a JSON, we could parse the Response
-        * and store the values in the appearanceMap using
-        * source=Sources.RESPONSE_BODY_JSON (Response Body JSON)
-        */
+        extractAppearancesFromSampleResult(httpSampleResult, sourceRequest);
       }
     }
   }
 
+  private void extractAppearancesFromSampleResult(HTTPSampleResult httpSampleResult,
+      HTTPSamplerProxy sourceRequest) {
+    extractParametersFromHeaderStrings(httpSampleResult.getResponseHeaders(), sourceRequest,
+        "Response");
+    extractParametersFromHeaderStrings(httpSampleResult.getRequestHeaders(), sourceRequest,
+        "Request");
+    String body = httpSampleResult.getResponseDataAsString();
+    if (JMeterElementUtils.isJson(body)) {
+      extractAppearancesFromJson(body, sourceRequest);
+    }
+  }
+
+  private void extractAppearancesFromJson(String json, HTTPSamplerProxy sourceRequest) {
+    if (JMeterElementUtils.isJsonArray(json)) {
+      utils.extractParametersFromJsonArray(new JSONArray(json), appearanceMap, sourceRequest, "",
+          Sources.RESPONSE_BODY_JSON);
+      return;
+    }
+    utils.extractParametersFromJson(new JSONObject(json), appearanceMap, sourceRequest,
+        Sources.RESPONSE_BODY_JSON);
+  }
+
   private void extractParametersFromHeaderStrings(String headerString,
-                                                  HTTPSamplerProxy sourceRequest,
-                                                  String headerSource) {
+      HTTPSamplerProxy sourceRequest,
+      String headerSource) {
     String[] headerLines = headerString.split("\\n", 0);
     for (String headerLine : headerLines) {
       if (headerLine.indexOf(":") > 0) {
@@ -345,7 +359,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private void registerHeaderCookie(String headerValue, HTTPSamplerProxy sourceRequest,
-                                    String headerSource) {
+      String headerSource) {
     String[] fields = headerValue.split(";");
 
     String name = "";
@@ -397,7 +411,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private void registerHeaderSubParameters(String headerName, String headerValue,
-                                           HTTPSamplerProxy sourceRequest, String headerSource) {
+      HTTPSamplerProxy sourceRequest, String headerSource) {
     String[] fields = headerValue.split(";");
     for (int i = 0; i < fields.length; i++) {
       String field = fields[i];
@@ -421,5 +435,10 @@ public class ResultsExtraction implements AppearancesExtraction {
 
   public void setRequestsMap(Map<String, HTTPSamplerProxy> requestsMap) {
     this.requestsMap = requestsMap;
+  }
+
+  @VisibleForTesting
+  public void setResultFileParser(ResultFileParser resultFileParser) {
+    this.resultFileParser = resultFileParser;
   }
 }

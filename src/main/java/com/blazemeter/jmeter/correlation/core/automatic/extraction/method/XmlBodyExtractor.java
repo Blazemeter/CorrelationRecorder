@@ -31,7 +31,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class XmlBodyExtractor extends BodyExtractor {
+public class XmlBodyExtractor extends Extractor {
 
   private static final Logger LOG = LoggerFactory.getLogger(XmlBodyExtractor.class);
 
@@ -129,7 +129,7 @@ public class XmlBodyExtractor extends BodyExtractor {
 
   @Override
   public List<CorrelationExtractor<?>> getCorrelationExtractors(SampleResult response, String value,
-                                                                String name) {
+      String name) {
     List<Integer> indexes =
         ExtractorGenerator.getIndexes(value, response.getResponseDataAsString());
     List<CorrelationExtractor<?>> extractors = new ArrayList<>();

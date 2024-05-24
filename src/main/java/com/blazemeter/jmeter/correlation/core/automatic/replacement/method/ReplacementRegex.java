@@ -1,5 +1,6 @@
-package com.blazemeter.jmeter.correlation.core.automatic;
+package com.blazemeter.jmeter.correlation.core.automatic.replacement.method;
 
+import com.blazemeter.jmeter.correlation.core.automatic.Sources;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.jmeter.util.JMeterUtils;
@@ -37,12 +38,6 @@ public class ReplacementRegex {
       case Sources.REQUEST:
       case Sources.REQUEST_HEADER_FIELDS:
         regex = cleanName + ": ([^&]+)";
-        break;
-      case Sources.REQUEST_BODY_JSON_NUMERIC:
-        regex = "\"" + cleanName + "\":([0-9]+)";
-        break;
-      case Sources.REQUEST_BODY_JSON:
-        regex = "\"" + cleanName + "\":\"([^&]+?)\"";
         break;
       case Sources.REQUEST_URL:
         regex = "(?:\\?|&)" + cleanName + "=(.+?)(?:&|$)";

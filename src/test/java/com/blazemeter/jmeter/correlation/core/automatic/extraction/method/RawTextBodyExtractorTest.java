@@ -6,6 +6,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.when;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
+import com.blazemeter.jmeter.correlation.core.automatic.Configuration;
 import com.blazemeter.jmeter.correlation.core.automatic.ExtractorGenerator;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
@@ -24,10 +25,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class BodyExtractorTest {
+public class RawTextBodyExtractorTest {
 
   private static final String REFERENCE_NAME = "Reference Name";
-  private BodyExtractor bodyExtractor;
+  private RawTextBodyExtractor rawExtractor;
   private ComparableJMeterVariables vars;
   private BaseCorrelationContext context;
   @Mock
@@ -37,7 +38,7 @@ public class BodyExtractorTest {
 
   @Before
   public void setUp() throws Exception {
-    bodyExtractor = new BodyExtractor();
+    rawExtractor = new RawTextBodyExtractor(new Configuration());
     vars = new ComparableJMeterVariables();
     context = new BaseCorrelationContext();
   }
@@ -50,7 +51,7 @@ public class BodyExtractorTest {
     when(result.getResponseDataAsString()).thenReturn(response);
 
     List<CorrelationExtractor<?>> extractors =
-        bodyExtractor.getCorrelationExtractors(result, value, name);
+        rawExtractor.getCorrelationExtractors(result, value, name);
     System.out.println("extractors: " + extractors.size());
 
     assertNotNull(extractors);
@@ -65,7 +66,7 @@ public class BodyExtractorTest {
     when(result.getResponseDataAsString()).thenReturn(response);
 
     List<CorrelationExtractor<?>> extractors =
-        bodyExtractor.getCorrelationExtractors(result, value, name);
+        rawExtractor.getCorrelationExtractors(result, value, name);
 
     for (CorrelationExtractor<?> extractor : extractors) {
       if (!(extractor instanceof RegexCorrelationExtractor)) {
@@ -103,8 +104,7 @@ public class BodyExtractorTest {
     String name = "X-WP-Nonce";
     String filename = "/responses/html/responseWithTwoBodyNonces.html";
     when(result.getResponseDataAsString()).thenReturn(TestUtils.getFileContent(filename, getClass()));
-    BodyExtractor extractor = new BodyExtractor();
-    List<CorrelationExtractor<?>> extractors = extractor.getCorrelationExtractors(result, value, name);
+    List<CorrelationExtractor<?>> extractors = rawExtractor.getCorrelationExtractors(result, value, name);
     assertThat(extractors).hasSize(2);
   }
 

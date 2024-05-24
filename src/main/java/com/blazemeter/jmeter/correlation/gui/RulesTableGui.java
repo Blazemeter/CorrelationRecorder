@@ -44,8 +44,9 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
       public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                      boolean hasFocus, int row, int column) {
         PlaceHolderTextField field = (PlaceHolderTextField) value;
-        boolean displayPlaceHolder = field.getText().isEmpty();
-        setValue(displayPlaceHolder ? field.getPlaceHolder() : field.getText());
+        boolean displayPlaceHolder = field == null || field.getText().isEmpty();
+        String placeholder =  field != null ? field.getPlaceHolder() : "";
+        setValue(displayPlaceHolder ? placeholder : field.getText());
 
         //PlaceHolder text should look like disabled
         boolean displayEnabled = (groupEnabled && list.get(row).isEnabled()
@@ -172,7 +173,9 @@ public class RulesTableGui extends NonStringValuedTableGui<RuleTableRow> {
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                    boolean hasFocus, int row, int column) {
-
+      if (value == null) {
+        return null;
+      }
       CorrelationRulePartPanel rulePartPanel = (CorrelationRulePartPanel) value;
       Component component = rulePartPanel;
       component.setPreferredSize(

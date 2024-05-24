@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testResults version="1.2">
+<httpSample t="3" it="0" lt="2" ct="1" ts="1714151290339" s="true" lb="/api/token-5" rc="200" rm="OK" tn="Thread Group 1-1" dt="text" de="" by="1237" sby="111" sc="1" ec="0" ng="1" na="1" hn="192.168.1.11">
+  <sample t="1" it="0" lt="0" ct="0" ts="1714151290341" s="true" lb="/api/token-5-0" rc="200" rm="OK" tn="Thread Group 1-1" dt="text" de="UTF-8" by="1010" sby="0" sc="1" ec="0" ng="1" na="1" hn="192.168.1.11">
+    <responseHeader class="java.lang.String"></responseHeader>
+    <requestHeader class="java.lang.String"></requestHeader>
+    <responseData class="java.lang.String">SamplerProperties:
+HTTPSampler.contentEncoding=UTF-8
+HTTPSampler.cookie_manager=org.apache.jmeter.protocol.http.control.CookieManager@8773409f
+HTTPSampler.domain=localhost
+HTTPSampler.follow_redirects=true
+HTTPSampler.header_manager=org.apache.jmeter.protocol.http.control.HeaderManager@e670ac8e
+HTTPSampler.implementation=
+HTTPSampler.method=GET
+HTTPSampler.path=/api/token
+HTTPSampler.port=2525
+HTTPSampler.postBodyRaw=false
+HTTPSampler.protocol=http
+HTTPSampler.use_keepalive=true
+HTTPsampler.Arguments=
+TestElement.enabled=true
+TestElement.gui_class=org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui
+TestElement.name=/api/token-5
+TestElement.test_class=org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy
+
+JMeterVariables:
+JMeterThread.last_sample_ok=true
+JMeterThread.pack=org.apache.jmeter.threads.SamplePackage@7969f77b
+START.HMS=123546
+START.MS=1714059346360
+START.YMD=20240425
+TESTSTART.MS=1714151290292
+__jm__Thread Group__idx=0
+__jmeter.U_T__=Thread Group 1-1
+__jmv_SAME_USER=true
+
+</responseData>
+    <responseFile class="java.lang.String"></responseFile>
+    <samplerData class="java.lang.String">SamplerProperties
+JMeterVariables
+</samplerData>
+  </sample>
+  <responseHeader class="java.lang.String">HTTP/1.1 200 OK
+Content-Type: application/json
+Matched-Stub-Id: 8fcc3635-2878-4fbd-8f8d-04cb9b23f966
+Transfer-Encoding: chunked
+Server: Jetty(9.2.28.v20190418)
+</responseHeader>
+  <requestHeader class="java.lang.String">Connection: keep-alive
+User-Agent: Java-http-client/11.0.23
+Host: localhost:2525
+</requestHeader>
+  <responseData class="java.lang.String">{&quot;token&quot;: &quot;a45de3b0-68ef-4b9b-acc1-51b242f71419&quot;}</responseData>
+  <responseFile class="java.lang.String"></responseFile>
+  <cookies class="java.lang.String"></cookies>
+  <method class="java.lang.String">GET</method>
+  <queryString class="java.lang.String"></queryString>
+  <java.net.URL>http://localhost:2525/api/token</java.net.URL>
+</httpSample>
+<httpSample t="2" it="0" lt="2" ct="0" ts="1714151290342" s="false" lb="/api/data-6" rc="400" rm="Bad Request" tn="Thread Group 1-1" dt="text" de="" by="1252" sby="212" sc="1" ec="1" ng="1" na="1" hn="192.168.1.11">
+  <sample t="0" it="0" lt="0" ct="0" ts="1714151290344" s="true" lb="/api/data-6-0" rc="200" rm="OK" tn="Thread Group 1-1" dt="text" de="UTF-8" by="1059" sby="0" sc="1" ec="0" ng="1" na="1" hn="192.168.1.11">
+    <responseHeader class="java.lang.String"></responseHeader>
+    <requestHeader class="java.lang.String"></requestHeader>
+    <responseData class="java.lang.String">SamplerProperties:
+HTTPSampler.contentEncoding=UTF-8
+HTTPSampler.cookie_manager=org.apache.jmeter.protocol.http.control.CookieManager@8773409f
+HTTPSampler.domain=localhost
+HTTPSampler.follow_redirects=true
+HTTPSampler.header_manager=org.apache.jmeter.protocol.http.control.HeaderManager@d37b1d1
+HTTPSampler.implementation=
+HTTPSampler.method=POST
+HTTPSampler.path=/api/data
+HTTPSampler.port=2525
+HTTPSampler.postBodyRaw=true
+HTTPSampler.protocol=http
+HTTPSampler.use_keepalive=true
+HTTPsampler.Arguments=={&quot;token&quot;: &quot;165ec9bd-df8b-45b3-bd3b-e42ad535bb91&quot;}()
+TestElement.enabled=true
+TestElement.gui_class=org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui
+TestElement.name=/api/data-6
+TestElement.test_class=org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy
+
+JMeterVariables:
+JMeterThread.last_sample_ok=true
+JMeterThread.pack=org.apache.jmeter.threads.SamplePackage@19460834
+START.HMS=123546
+START.MS=1714059346360
+START.YMD=20240425
+TESTSTART.MS=1714151290292
+__jm__Thread Group__idx=0
+__jmeter.U_T__=Thread Group 1-1
+__jmv_SAME_USER=true
+
+</responseData>
+    <responseFile class="java.lang.String"></responseFile>
+    <samplerData class="java.lang.String">SamplerProperties
+JMeterVariables
+</samplerData>
+  </sample>
+  <responseHeader class="java.lang.String">HTTP/1.1 400 Bad Request
+Content-Type: plain/text
+Matched-Stub-Id: 18784549-ef7e-426a-9fe6-118e82cfe384
+Transfer-Encoding: chunked
+Server: Jetty(9.2.28.v20190418)
+</responseHeader>
+  <requestHeader class="java.lang.String">Connection: keep-alive
+Content-Type: application/json
+User-Agent: Java-http-client/11.0.23
+Content-Length: 49
+Host: localhost:2525
+</requestHeader>
+  <responseData class="java.lang.String">Invalid token</responseData>
+  <responseFile class="java.lang.String"></responseFile>
+  <cookies class="java.lang.String"></cookies>
+  <method class="java.lang.String">POST</method>
+  <queryString class="java.lang.String">{&quot;token&quot;: &quot;165ec9bd-df8b-45b3-bd3b-e42ad535bb91&quot;}</queryString>
+  <java.net.URL>http://localhost:2525/api/data</java.net.URL>
+</httpSample>
+
+</testResults>

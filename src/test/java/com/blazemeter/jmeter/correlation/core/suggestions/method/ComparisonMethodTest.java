@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core.suggestions.method;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
+
 import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
@@ -12,7 +13,6 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.FileManagementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplacementSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ResultFileParser;
-import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
@@ -39,6 +39,7 @@ import us.abstracta.jmeter.javadsl.core.engines.JmeterEnvironment;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ComparisonMethodTest extends ReplacementTest {
+
   @Rule
   public JUnitSoftAssertions softly = new JUnitSoftAssertions();
   @Mock
@@ -103,7 +104,7 @@ public class ComparisonMethodTest extends ReplacementTest {
   }
 
   private void loadAndMockIfPresent(String path, String filename,
-                                    Map<String, List<Appearances>> context) {
+      Map<String, List<Appearances>> context) {
     loadMap(path, filename)
         .ifPresent(map -> when(context)
             .thenReturn((HashMap<String, List<Appearances>>) map));
@@ -143,8 +144,10 @@ public class ComparisonMethodTest extends ReplacementTest {
 
     ReplacementSuggestion replacementSuggestion = replacements.get(0);
 
-    RegexCorrelationReplacement<BaseCorrelationContext> replacer = new RegexCorrelationReplacement<>();
-    RegexCorrelationReplacement<?> replacement = (RegexCorrelationReplacement) replacementSuggestion.getReplacementSuggestion();
+    RegexCorrelationReplacement<BaseCorrelationContext> replacer =
+        new RegexCorrelationReplacement<>();
+    RegexCorrelationReplacement<?> replacement =
+        (RegexCorrelationReplacement) replacementSuggestion.getReplacementSuggestion();
     replacer.setParams(replacement.getParams());
     replacer.setContext(correlationContext);
     replacer.setVariableName(REFERENCE_NAME);

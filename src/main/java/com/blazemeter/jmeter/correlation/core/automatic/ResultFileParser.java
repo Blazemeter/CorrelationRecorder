@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.reporters.ResultCollector;
 import org.apache.jmeter.samplers.SampleEvent;
@@ -86,12 +87,15 @@ public class ResultFileParser {
       HTTPSampleResult httpSampleResult = (HTTPSampleResult) sample;
       SampleResult[] subResults = httpSampleResult.getSubResults();
       if (subResults.length > 0) {
-        results.addAll(Arrays.asList(subResults));
-        if (isDebugEnabled) {
-          LOG.debug("HTTPSampleResult '{}' with {} subResults added", sample.getSampleLabel(),
-              subResults.length);
+        List<HTTPSampleResult> childs =
+            Arrays.stream(subResults)
+                .filter(s -> s instanceof HTTPSampleResult)
+                .map(s -> (HTTPSampleResult) s)
+                .collect(Collectors.toList());
+        if (!childs.isEmpty()) {
+          results.addAll(childs);
+          return;
         }
-        return;
       }
 
       results.add(sample);

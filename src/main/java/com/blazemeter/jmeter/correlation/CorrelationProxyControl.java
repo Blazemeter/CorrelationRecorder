@@ -61,7 +61,6 @@ import javax.swing.SwingUtilities;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.modifiers.JSR223PreProcessor;
-import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.RecordingController;
 import org.apache.jmeter.protocol.http.proxy.Daemon;
 import org.apache.jmeter.protocol.http.proxy.ProxyControl;
@@ -349,7 +348,7 @@ public class CorrelationProxyControl extends ProxyControl implements
       proxy.setTestElements(children.toArray(new TestElement[0]));
 
       List<TestElementProperty> headers =
-          (ArrayList<TestElementProperty>) ((HeaderManager) proxy.getSampler().getHeaderManager())
+          (ArrayList<TestElementProperty>) proxy.getSampler().getHeaderManager()
               .getHeaders().getObjectValue();
 
       // WA, this allow to evade the Authorization Manager creation
@@ -382,8 +381,16 @@ public class CorrelationProxyControl extends ProxyControl implements
         }
       }
     }
+    HTTPSamplerBase sampler = proxy.getSampler();
+    if (sampler != null) {
+      sampler.setProperty("TestPlan.comments", "ORIGINAL_NAME USED BY CR, DON'T DELETE." +
+              " Prepend addition comments if necessary.;ORIGINAL_NAME=" + sampler.getName());
+    }
+    // Ideal solution would be an invisible field or something like the following,
+    // but it is not being saved to testplan
+    // sampler.setProperty("TestPlan.crname", sampler.getName());
 
-    super.deliverSampler(proxy.getSampler(), proxy.getTestElements(), proxy.getResult());
+    super.deliverSampler(sampler, proxy.getTestElements(), proxy.getResult());
 
     /*
      * This forces the sampler to be added to the TestPlan.

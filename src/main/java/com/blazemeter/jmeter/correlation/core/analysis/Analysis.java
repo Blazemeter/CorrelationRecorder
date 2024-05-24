@@ -6,6 +6,7 @@ import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
+import com.blazemeter.jmeter.correlation.core.suggestions.method.AnalysisMethod;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import java.util.ArrayList;
@@ -15,13 +16,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.apache.jmeter.exceptions.IllegalUserActionException;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.TestElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,35 +87,6 @@ public class Analysis {
     return run(selectedTemplates, tracePath, true);
   }
 
-  private static void run(List<SampleResult> sampleResults,
-                          List<JMeterTreeNode> samplerNodes,
-                          CorrelationEngine engine,
-                          List<HTTPSamplerProxy> samplers) {
-
-    for (int i = 0; i < sampleResults.size(); i++) {
-      List<TestElement> children = new ArrayList<>();
-      JMeterTreeNode node = samplerNodes.get(i);
-      int initialChildCount = node.getChildCount();
-      for (int j = 0; j < initialChildCount; j++) {
-        children.add((TestElement) ((JMeterTreeNode) node.getChildAt(j)).getUserObject());
-      }
-      engine.process(samplers.get(i), children, sampleResults.get(i), "");
-      if (initialChildCount == children.size()) {
-        continue;
-      }
-      JMeterTreeModel model = getCurrentJMeterTreeModel();
-      for (int j = initialChildCount; j < children.size(); j++) {
-        TestElement child = children.get(j);
-        try {
-          model.addComponent(child, node);
-        } catch (IllegalUserActionException e) {
-          LOG.error("Error while adding the child '{}' to the element '{}'",
-              child.getName(), node.getName(), e);
-        }
-      }
-    }
-  }
-
   private CorrelationProxyControl getProxyControl(JMeterTreeModel model) {
     List<JMeterTreeNode> proxyNodes = getCorrelationProxyControllers(model);
     if (proxyNodes.isEmpty()) {
@@ -168,7 +138,7 @@ public class Analysis {
     List<SampleResult> sampleResults = resultsSupplier.get();
     List<JMeterTreeNode> samplerNodes = nodesSupplier.get();
 
-    run(sampleResults, samplerNodes, engine, samplers);
+    AnalysisMethod.run(sampleResults, samplerNodes, engine, samplers);
   }
 
   private static JMeterTreeModel getCurrentJMeterTreeModel() {

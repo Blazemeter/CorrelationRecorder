@@ -1,0 +1,17 @@
+[
+  {
+    "session": {
+      "token": "randomToken1"
+    }
+  },
+  {
+    "session": {
+      "token": "randomToken2"
+    }
+  },
+  {
+    "session": {
+      "token": "randomToken3"
+    }
+  }
+]
