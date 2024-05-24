@@ -110,6 +110,8 @@ public class JMeterTestUtils {
     private String responseHeaders = "RESPONSE_HEADERS";
     private String requestHeaders = "REQUEST_HEADERS";
     private String contentType = ContentType.TEXT_HTML.toString();
+    private String queryString = "";
+    private String httpMethod = "GET";
 
     /**
      * Constructor for the SampleResultBuilder class.
@@ -190,6 +192,26 @@ public class JMeterTestUtils {
     }
 
     /**
+     * Sets the query of the HTTPSampleResult.
+     * @param queryString the query to be set.
+     * @return the current SampleResultBuilder instance.
+     */
+    public SampleResultBuilder setQueryString(String queryString) {
+      this.queryString = queryString;
+      return this;
+    }
+
+    /**
+     * Sets the http method of the HTTPSampleResult.
+     * @param httpMethod the http method to be set.
+     * @return the current SampleResultBuilder instance.
+     */
+    public SampleResultBuilder setHttpMethod(String httpMethod) {
+      this.httpMethod = httpMethod;
+      return this;
+    }
+
+    /**
      * Builds the HTTPSampleResult with the set parameters.
      * @return a new HTTPSampleResult instance.
      * @throws MalformedURLException if the test URL is not properly formatted.
@@ -204,6 +226,8 @@ public class JMeterTestUtils {
       sampleResult.setRequestHeaders(requestHeaders);
       sampleResult.setResponseData(responseBody, HTTPSampleResult.DEFAULT_HTTP_ENCODING);
       sampleResult.setContentType(contentType);
+      sampleResult.setQueryString(queryString);
+      sampleResult.setHTTPMethod(httpMethod);
       return sampleResult;
     }
   }

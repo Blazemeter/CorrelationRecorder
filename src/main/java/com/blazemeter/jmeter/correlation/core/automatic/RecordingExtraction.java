@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RecordingExtraction implements AppearancesExtraction {
+
   private static final Logger LOG = LoggerFactory.getLogger(RecordingExtraction.class);
   private final JMeterElementUtils utils;
   private final Map<String, List<Appearances>> appearanceMap;
@@ -120,23 +121,22 @@ public class RecordingExtraction implements AppearancesExtraction {
   }
 
   public void storeValue(HTTPSamplerBase sampler, String key, String value) {
-    if (JMeterElementUtils.isJson(value)) {
+    if (key.isEmpty() && JMeterElementUtils.isJson(value)) {
       try {
         if (JMeterElementUtils.isJsonArray(value)) {
-          utils.extractParametersFromJsonArray(new JSONArray(value), appearanceMap, sampler,
-              2, key);
+          utils.extractParametersFromJsonArray(new JSONArray(value), appearanceMap, sampler, key,
+              Sources.REQUEST_BODY_JSON);
           return;
         }
 
         JSONObject jsonObject = new JSONObject(value);
-        utils.extractParametersFromJson(jsonObject, appearanceMap, sampler, 2);
+        utils.extractParametersFromJson(jsonObject, appearanceMap, sampler,
+            Sources.REQUEST_BODY_JSON);
       } catch (JSONException e) {
         LOG.trace("There was an error while extracting JSON values for {}. ", value, e);
       }
     } else if (utils.isParameterized(value)) {
       LOG.warn("Parameterized value: '" + key + "'='" + value + "'");
-    } else if (sampler.getPostBodyRaw()) {
-      utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_BODY_JSON);
     } else {
       utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_ARGUMENTS);
     }
@@ -160,7 +160,7 @@ public class RecordingExtraction implements AppearancesExtraction {
   }
 
   public AbstractMap.SimpleImmutableEntry<String, String> splitQueryParameter(String it,
-                                                                              String charset)
+      String charset)
       throws UnsupportedEncodingException {
     final int idx = it.indexOf("=");
     final String key = idx > 0 ? it.substring(0, idx) : it;

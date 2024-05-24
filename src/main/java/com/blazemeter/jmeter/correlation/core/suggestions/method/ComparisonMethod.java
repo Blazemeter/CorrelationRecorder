@@ -5,15 +5,15 @@ import com.blazemeter.jmeter.correlation.core.automatic.Configuration;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.DynamicElement;
 import com.blazemeter.jmeter.correlation.core.automatic.ExtractionSuggestion;
-import com.blazemeter.jmeter.correlation.core.automatic.ReplacementRegex;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplacementSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ResponseAnalyzer;
 import com.blazemeter.jmeter.correlation.core.automatic.Sources;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.StructureType;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.LocationType;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.method.ExtractorFactory;
+import com.blazemeter.jmeter.correlation.core.automatic.replacement.method.ReplacementContext;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.CorrelationContext;
 import com.helger.commons.annotation.VisibleForTesting;
@@ -31,11 +31,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The ComparisonMethod class implements the CorrelationMethod interface and provides
- * methods for generating correlation suggestions by comparing the parameters of the
- * requests and responses of the recording and replaying.
+ * The ComparisonMethod class implements the CorrelationMethod interface and provides methods for
+ * generating correlation suggestions by comparing the parameters of the requests and responses of
+ * the recording and replaying.
  */
 public class ComparisonMethod implements CorrelationMethod {
+
   private static final Logger LOG = LoggerFactory.getLogger(ComparisonMethod.class);
   private final Function<SampleResult, String> getLabel = SampleResult::getSampleLabel;
   private final Function<SampleResult, String> resultQueryString
@@ -50,13 +51,11 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method checks if a CorrelationSuggestion has orphan elements.
-   * A CorrelationSuggestion has orphan elements if it has no extraction suggestions
-   * or no replacement suggestions.
-   * Extraction suggestions are used to extract values from responses, while replacement
-   * suggestions are used to replace values in requests.
-   * If a CorrelationSuggestion has orphan elements, it means that it is incomplete and
-   * cannot be used for correlation.
+   * This method checks if a CorrelationSuggestion has orphan elements. A CorrelationSuggestion has
+   * orphan elements if it has no extraction suggestions or no replacement suggestions. Extraction
+   * suggestions are used to extract values from responses, while replacement suggestions are used
+   * to replace values in requests. If a CorrelationSuggestion has orphan elements, it means that it
+   * is incomplete and cannot be used for correlation.
    *
    * @param suggestion the CorrelationSuggestion to check for orphan elements.
    * @return true if the CorrelationSuggestion has orphan elements, false otherwise.
@@ -67,30 +66,27 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method generates an ExtractionSuggestion for a given appearance in a SampleResult.
-   * An ExtractionSuggestion represents a suggestion for extracting a value from a response.
-   * The method first creates a new ExtractionSuggestion with the given CorrelationExtractor
-   * and SampleResult.
-   * Then, it sets the source of the ExtractionSuggestion to the name of the structure type.
-   * It also sets the value and name of the ExtractionSuggestion to the value and name of the
-   * appearance.
+   * This method generates an ExtractionSuggestion for a given appearance in a SampleResult. An
+   * ExtractionSuggestion represents a suggestion for extracting a value from a response. The method
+   * first creates a new ExtractionSuggestion with the given CorrelationExtractor and SampleResult.
+   * Then, it sets the source of the ExtractionSuggestion to the name of the structure type. It also
+   * sets the value and name of the ExtractionSuggestion to the value and name of the appearance.
    * Finally, it returns the populated ExtractionSuggestion.
    *
-   * @param result the SampleResult to use for generating the ExtractionSuggestion.
-   * @param appearance the Appearances to use for setting the value and name of the
-   *                   ExtractionSuggestion.
-   * @param extractor the CorrelationExtractor to use for creating the
-   *                             ExtractionSuggestion.
+   * @param result        the SampleResult to use for generating the ExtractionSuggestion.
+   * @param appearance    the Appearances to use for setting the value and name of the
+   *                      ExtractionSuggestion.
+   * @param extractor     the CorrelationExtractor to use for creating the ExtractionSuggestion.
    * @param structureType the StructureType to use for setting the source of the
    *                      ExtractionSuggestion.
-   * @param name the name to set for the ExtractionSuggestion.
+   * @param name          the name to set for the ExtractionSuggestion.
    * @return the populated ExtractionSuggestion.
    */
   private static ExtractionSuggestion generateCandidateExtractor(SampleResult result,
-                                                                 Appearances appearance,
-                                                                 CorrelationExtractor extractor,
-                                                                 StructureType structureType,
-                                                                 String name) {
+      Appearances appearance,
+      CorrelationExtractor extractor,
+      StructureType structureType,
+      String name) {
     ExtractionSuggestion suggestion = new ExtractionSuggestion(extractor, result);
     suggestion.setSource(structureType.name());
     suggestion.setValue(appearance.getValue());
@@ -99,16 +95,14 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method generates correlation suggestions by comparing the parameters of the
-   * requests and responses of the recording and replaying.
-   * It first checks if the context is an instance of ComparisonContext. If it is not,
-   * it logs an error and returns an empty list.
-   * Then, it sets the context and results fields and retrieves the recording and replay
-   * maps from the context.
-   * If either the recording or replay map is empty, it logs a warning and returns an empty list.
-   * Otherwise, it creates a new DynamicElementHandler and generates a list of dynamic
-   * elements by comparing the replay and recording maps.
-   * It then loads the dynamic elements into the suggestions list and returns it.
+   * This method generates correlation suggestions by comparing the parameters of the requests and
+   * responses of the recording and replaying. It first checks if the context is an instance of
+   * ComparisonContext. If it is not, it logs an error and returns an empty list. Then, it sets the
+   * context and results fields and retrieves the recording and replay maps from the context. If
+   * either the recording or replay map is empty, it logs a warning and returns an empty list.
+   * Otherwise, it creates a new DynamicElementHandler and generates a list of dynamic elements by
+   * comparing the replay and recording maps. It then loads the dynamic elements into the
+   * suggestions list and returns it.
    *
    * @param context the CorrelationContext to use for generating suggestions.
    * @return a list of correlation suggestions.
@@ -132,19 +126,17 @@ public class ComparisonMethod implements CorrelationMethod {
       return new ArrayList<>();
     }
     DynamicElementHandler handler = new DynamicElementHandler(this.context);
-    List<DynamicElement> dynamicElements = handler.getDynamicElements(replayMap, recordingMap);
+    List<DynamicElement> dynamicElements = handler.getDynamicElements(recordingMap, replayMap);
     dynamicElements.forEach(this::loadFromDynamicElements);
     return suggestions;
   }
 
   /**
-   * This method loads dynamic elements into the suggestions list.
-   * It first creates a new CorrelationSuggestion from the replay candidate.
-   * Then, it populates the suggestion with the replay candidate's data.
-   * If the suggestion has orphan elements (i.e., elements that are not matched in both the
-   * recording and replaying),
-   * it adds the suggestion to the orphanSuggestions list and returns.
-   * Otherwise, it adds the suggestion to the suggestions list.
+   * This method loads dynamic elements into the suggestions list. It first creates a new
+   * CorrelationSuggestion from the replay candidate. Then, it populates the suggestion with the
+   * replay candidate's data. If the suggestion has orphan elements (i.e., elements that are not
+   * matched in both the recording and replaying), it adds the suggestion to the orphanSuggestions
+   * list and returns. Otherwise, it adds the suggestion to the suggestions list.
    *
    * @param replayCandidate the DynamicElement to load into the suggestions list.
    */
@@ -162,42 +154,41 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method populates a CorrelationSuggestion with extraction and replacement suggestions.
-   * It first adds multivalued extraction suggestions to the CorrelationSuggestion by
-   * comparing the element's appearances
-   * with the results and the valueToReferenceName map.
-   * Then, it adds multivalued replacement suggestions to the CorrelationSuggestion in
-   * the same way.
-   * Finally, it returns the populated CorrelationSuggestion.
+   * This method populates a CorrelationSuggestion with extraction and replacement suggestions. It
+   * first adds multivalued extraction suggestions to the CorrelationSuggestion by comparing the
+   * element's appearances with the results and the valueToReferenceName map. Then, it adds
+   * multivalued replacement suggestions to the CorrelationSuggestion in the same way. Finally, it
+   * returns the populated CorrelationSuggestion.
    *
-   * @param element the DynamicElement to use for generating the extraction and replacement
-   *                suggestions.
+   * @param element    the DynamicElement to use for generating the extraction and replacement
+   *                   suggestions.
    * @param suggestion the CorrelationSuggestion to populate with the generated suggestions.
    * @return the populated CorrelationSuggestion.
    */
   private CorrelationSuggestion populateSuggestion(DynamicElement element,
-                                                   CorrelationSuggestion suggestion) {
+      CorrelationSuggestion suggestion) {
     addMultivaluedExtractor(element, suggestion, results, valueToReferenceName);
     addMultivaluedReplacement(element, suggestion, valueToReferenceName);
     return suggestion;
   }
 
   /**
-   * This method adds multivalued extraction suggestions to a CorrelationSuggestion.
-   * It iterates over the results and for each result, it adds extraction suggestions for
-   * both the original and other appearances of the element.
-   * The extraction suggestions are added by comparing the element's appearances with the
-   * results and the valueToReferenceName map.
+   * This method adds multivalued extraction suggestions to a CorrelationSuggestion. It iterates
+   * over the results and for each result, it adds extraction suggestions for both the original and
+   * other appearances of the element. The extraction suggestions are added by comparing the
+   * element's appearances with the results and the valueToReferenceName map.
    *
-   * @param element the DynamicElement to use for generating the extraction suggestions.
-   * @param suggestion the CorrelationSuggestion to add the extraction suggestions to.
-   * @param results a list of SampleResults to use for generating the extraction suggestions.
-   * @param valueToReferenceName a map of values to reference names to use for generating
-   *                             the extraction suggestions.
+   * @param element              the DynamicElement to use for generating the extraction
+   *                             suggestions.
+   * @param suggestion           the CorrelationSuggestion to add the extraction suggestions to.
+   * @param results              a list of SampleResults to use for generating the extraction
+   *                             suggestions.
+   * @param valueToReferenceName a map of values to reference names to use for generating the
+   *                             extraction suggestions.
    */
   private void addMultivaluedExtractor(DynamicElement element,
-                                       CorrelationSuggestion suggestion, List<SampleResult> results,
-                                       Map<String, String> valueToReferenceName) {
+      CorrelationSuggestion suggestion, List<SampleResult> results,
+      Map<String, String> valueToReferenceName) {
 
     for (SampleResult result : results) {
       //We use both the "original" and the "other" appearances since the map can come from either
@@ -210,30 +201,27 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method adds extraction suggestions to a CorrelationSuggestion.
-   * It iterates over the appearances and for each appearance, it checks if the number of
-   * appearances exceeds the maximum allowed.
-   * If it does, it logs a warning and returns.
-   * If the sampler that uses the value is reached or if the value is in use, it continues
-   * to the next appearance.
-   * It then creates a ResponseAnalyzer and identifies the argument location and structure type.
-   * If the location type is unknown, it logs a debug message and continues to the next
-   * appearance.
-   * It then gets the correlation extractors for the location type and structure type.
-   * If there are no extractors, it continues to the next appearance.
-   * For each extractor, it generates an extraction suggestion and if the suggestion is not
-   * repeated, it adds it to the CorrelationSuggestion.
-   * It also adds the result to the appearances of the CorrelationSuggestion and maps
-   * the appearance value to the extraction parameter name if it is not already mapped.
+   * This method adds extraction suggestions to a CorrelationSuggestion. It iterates over the
+   * appearances and for each appearance, it checks if the number of appearances exceeds the maximum
+   * allowed. If it does, it logs a warning and returns. If the sampler that uses the value is
+   * reached or if the value is in use, it continues to the next appearance. It then creates a
+   * ResponseAnalyzer and identifies the argument location and structure type. If the location type
+   * is unknown, it logs a debug message and continues to the next appearance. It then gets the
+   * correlation extractors for the location type and structure type. If there are no extractors, it
+   * continues to the next appearance. For each extractor, it generates an extraction suggestion and
+   * if the suggestion is not repeated, it adds it to the CorrelationSuggestion. It also adds the
+   * result to the appearances of the CorrelationSuggestion and maps the appearance value to the
+   * extraction parameter name if it is not already mapped.
    *
    * @param valueToReferenceName a map of values to reference names.
-   * @param suggestion the CorrelationSuggestion to add the extraction suggestions to.
-   * @param result the SampleResult to use for generating the extraction suggestions.
-   * @param appearances a list of Appearances to use for generating the extraction suggestions.
+   * @param suggestion           the CorrelationSuggestion to add the extraction suggestions to.
+   * @param result               the SampleResult to use for generating the extraction suggestions.
+   * @param appearances          a list of Appearances to use for generating the extraction
+   *                             suggestions.
    */
   private void addExtractorSuggestions(Map<String, String> valueToReferenceName,
-                                       CorrelationSuggestion suggestion, SampleResult result,
-                                       List<Appearances> appearances) {
+      CorrelationSuggestion suggestion, SampleResult result,
+      List<Appearances> appearances) {
 
     for (Appearances appearance : appearances) {
       String name = suggestion.getParamName();
@@ -260,7 +248,7 @@ public class ComparisonMethod implements CorrelationMethod {
       }
 
       StructureType structureType = analyzer.identifyStructureType(result, locationType);
-      List<CorrelationExtractor<?>> extractors = new ExtractorFactory()
+      List<CorrelationExtractor<?>> extractors = new ExtractorFactory(context.getConfiguration())
           .getExtractor(locationType, structureType)
           .getCorrelationExtractors(result, appearance.getValue(), name);
 
@@ -285,10 +273,9 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method converts a list of Appearances into a string representation.
-   * It first creates a map of appearance values to their counts.
-   * Then, it converts the map into a string where each entry is in the format "value (count)".
-   * The entries are separated by commas.
+   * This method converts a list of Appearances into a string representation. It first creates a map
+   * of appearance values to their counts. Then, it converts the map into a string where each entry
+   * is in the format "value (count)". The entries are separated by commas.
    *
    * @param appearances a list of Appearances to convert into a string.
    * @return a string representation of the list of Appearances.
@@ -310,14 +297,13 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method checks if a given value is used in the query string of a SampleResult.
-   * It first retrieves the query string of the SampleResult.
-   * Then, it checks if the query string contains the encoded or raw value.
-   * If the query string contains either the encoded or raw value, it returns true.
-   * Otherwise, it returns false.
+   * This method checks if a given value is used in the query string of a SampleResult. It first
+   * retrieves the query string of the SampleResult. Then, it checks if the query string contains
+   * the encoded or raw value. If the query string contains either the encoded or raw value, it
+   * returns true. Otherwise, it returns false.
    *
    * @param result the SampleResult to check for the value.
-   * @param value the value to check for in the query string.
+   * @param value  the value to check for in the query string.
    * @return true if the query string contains the encoded or raw value, false otherwise.
    */
   private boolean valueInUse(SampleResult result, String value) {
@@ -328,14 +314,12 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method checks if the current SampleResult is the one that uses the value of the
-   * dynamic element.
-   * It does this by comparing the label of the SampleResult with the names of the TestElements
-   * in the appearances list.
-   * If the label of the SampleResult is found in the names of the TestElements, it returns true.
-   * Otherwise, it returns false.
+   * This method checks if the current SampleResult is the one that uses the value of the dynamic
+   * element. It does this by comparing the label of the SampleResult with the names of the
+   * TestElements in the appearances list. If the label of the SampleResult is found in the names of
+   * the TestElements, it returns true. Otherwise, it returns false.
    *
-   * @param result the SampleResult to check for usage of the dynamic element.
+   * @param result      the SampleResult to check for usage of the dynamic element.
    * @param appearances a list of TestElements that use the dynamic element.
    * @return true if the SampleResult uses the dynamic element, false otherwise.
    */
@@ -348,22 +332,20 @@ public class ComparisonMethod implements CorrelationMethod {
 
   /**
    * This method checks if a given replacement suggestion is already present in the list of
-   * replacement suggestions
-   * of a CorrelationSuggestion.
-   * It iterates over the existing replacement suggestions and compares each one to the given
-   * replacement suggestion.
-   * If a match is found, it sets the repeated flag to true and breaks the loop.
-   * Finally, it returns the value of the repeated flag.
+   * replacement suggestions of a CorrelationSuggestion. It iterates over the existing replacement
+   * suggestions and compares each one to the given replacement suggestion. If a match is found, it
+   * sets the repeated flag to true and breaks the loop. Finally, it returns the value of the
+   * repeated flag.
    *
-   * @param suggestion the CorrelationSuggestion containing the list of replacement
-   *                   suggestions to check.
+   * @param suggestion            the CorrelationSuggestion containing the list of replacement
+   *                              suggestions to check.
    * @param replacementSuggestion the replacement suggestion to check for in the list.
    * @return true if the replacement suggestion is already present in the list, false otherwise.
    */
   private boolean isRepeated(CorrelationSuggestion suggestion,
-                             RegexCorrelationReplacement<?> replacementSuggestion) {
-    List<ReplacementSuggestion> replacementSuggestions = suggestion.getReplacementSuggestions();
+      CorrelationReplacement<?> replacementSuggestion) {
     boolean repeated = false;
+    List<ReplacementSuggestion> replacementSuggestions = suggestion.getReplacementSuggestions();
     for (ReplacementSuggestion existing : replacementSuggestions) {
       String s = existing.toString();
       if (s.equals(replacementSuggestion.toString())) {
@@ -376,20 +358,18 @@ public class ComparisonMethod implements CorrelationMethod {
 
   /**
    * This method checks if a given extraction suggestion is already present in the list of
-   * extraction suggestions
-   * of a CorrelationSuggestion.
-   * It iterates over the existing extraction suggestions and compares each one to the given
-   * extraction suggestion.
-   * If a match is found, it sets the repeated flag to true and breaks the loop.
-   * Finally, it returns the value of the repeated flag.
+   * extraction suggestions of a CorrelationSuggestion. It iterates over the existing extraction
+   * suggestions and compares each one to the given extraction suggestion. If a match is found, it
+   * sets the repeated flag to true and breaks the loop. Finally, it returns the value of the
+   * repeated flag.
    *
-   * @param suggestion the CorrelationSuggestion containing the list of extraction suggestions
-   *                   to check.
+   * @param suggestion           the CorrelationSuggestion containing the list of extraction
+   *                             suggestions to check.
    * @param extractionSuggestion the extraction suggestion to check for in the list.
    * @return true if the extraction suggestion is already present in the list, false otherwise.
    */
   private boolean isRepeated(CorrelationSuggestion suggestion,
-                             ExtractionSuggestion extractionSuggestion) {
+      ExtractionSuggestion extractionSuggestion) {
     boolean repeated = false;
     for (ExtractionSuggestion existing : suggestion.getExtractionSuggestions()) {
       if (existing.toString().equals(extractionSuggestion.toString())) {
@@ -401,23 +381,22 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method adds multivalued replacement suggestions to a CorrelationSuggestion.
-   * It first retrieves the original and other appearances from the DynamicElement.
-   * The original and other appearances are used because the element could be generated from
-   * a recording (original) or a replay (other).
-   * Then, it adds replacement suggestions to the CorrelationSuggestion for both the original
-   * and other appearances.
-   * The replacement suggestions are added by comparing the appearances with the
-   * valueToReferenceName map.
+   * This method adds multivalued replacement suggestions to a CorrelationSuggestion. It first
+   * retrieves the original and other appearances from the DynamicElement. The original and other
+   * appearances are used because the element could be generated from a recording (original) or a
+   * replay (other). Then, it adds replacement suggestions to the CorrelationSuggestion for both the
+   * original and other appearances. The replacement suggestions are added by comparing the
+   * appearances with the valueToReferenceName map.
    *
-   * @param element the DynamicElement to use for generating the replacement suggestions.
-   * @param suggestion the CorrelationSuggestion to add the replacement suggestions to.
+   * @param element              the DynamicElement to use for generating the replacement
+   *                             suggestions.
+   * @param suggestion           the CorrelationSuggestion to add the replacement suggestions to.
    * @param valueToReferenceName a map of values to reference names to use for generating the
    *                             replacement suggestions.
    */
   private void addMultivaluedReplacement(DynamicElement element,
-                                         CorrelationSuggestion suggestion,
-                                         Map<String, String> valueToReferenceName) {
+      CorrelationSuggestion suggestion,
+      Map<String, String> valueToReferenceName) {
 
     List<Appearances> originalAppearances = element.getOriginalAppearance();
     List<Appearances> otherAppearances = element.getOtherAppearance();
@@ -428,46 +407,40 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method adds replacement suggestions to a CorrelationSuggestion.
-   * It iterates over the appearances and for each appearance, it checks if the reference name is
-   * null or if the source contains the response.
-   * If either condition is true, it continues to the next appearance.
-   * It then iterates over the list of TestElements in the appearance and for each TestElement,
-   * it generates a replacement suggestion.
-   * If the replacement suggestion is repeated, it continues to the next TestElement.
-   * Otherwise, it creates a new ReplacementSuggestion, sets its source, value, and name,
-   * and adds it to the CorrelationSuggestion.
-   * It also adds the TestElement to the usages of the CorrelationSuggestion.
+   * This method adds replacement suggestions to a CorrelationSuggestion. It iterates over the
+   * appearances and for each appearance, it checks if the reference name is null or if the source
+   * contains the response. If either condition is true, it continues to the next appearance. It
+   * then iterates over the list of TestElements in the appearance and for each TestElement, it
+   * generates a replacement suggestion. If the replacement suggestion is repeated, it continues to
+   * the next TestElement. Otherwise, it creates a new ReplacementSuggestion, sets its source,
+   * value, and name, and adds it to the CorrelationSuggestion. It also adds the TestElement to the
+   * usages of the CorrelationSuggestion.
    *
-   * @param suggestion the CorrelationSuggestion to add the replacement suggestions to.
+   * @param suggestion           the CorrelationSuggestion to add the replacement suggestions to.
    * @param valueToReferenceName a map of values to reference names.
-   * @param originalAppearances a list of Appearances to use for generating the replacement
-   *                            suggestions.
+   * @param originalAppearances  a list of Appearances to use for generating the replacement
+   *                             suggestions.
    */
   private void addReplacementSuggestions(CorrelationSuggestion suggestion,
-                                         Map<String, String> valueToReferenceName,
-                                         List<Appearances> originalAppearances) {
+      Map<String, String> valueToReferenceName,
+      List<Appearances> originalAppearances) {
     String name = suggestion.getParamName();
     for (Appearances appearance : originalAppearances) {
       String referenceName = valueToReferenceName.get(appearance.getValue());
       if (referenceName == null) {
         continue;
       }
-
       String source = appearance.getSource();
-      if (source.contains(Sources.RESPONSE)) {
+      if (source.contains(Sources.RESPONSE) || source.contains(Sources.RESPONSE_BODY_JSON_NUMERIC)
+          || source.contains(Sources.RESPONSE_BODY_JSON)) {
         continue;
       }
-
       for (TestElement usage : appearance.getList()) {
-        String regex = ReplacementRegex.match(name, source);
-        RegexCorrelationReplacement<?> replacement
-            = generateReplacementSuggestion(referenceName, regex);
-
-        if (isRepeated(suggestion, replacement)) {
+        CorrelationReplacement<?> replacement = ReplacementContext.getStrategy(source)
+            .generateReplacement(usage, appearance, referenceName);
+        if (replacement == null || isRepeated(suggestion, replacement)) {
           continue;
         }
-
         ReplacementSuggestion replacementSug = new ReplacementSuggestion(replacement, usage);
         replacementSug.setSource(source);
         replacementSug.setValue(appearance.getValue());
@@ -479,29 +452,9 @@ public class ComparisonMethod implements CorrelationMethod {
   }
 
   /**
-   * This method generates a RegexCorrelationReplacement object with the given value name and
-   * regex.
-   * A RegexCorrelationReplacement object represents a replacement suggestion that uses a
-   * regular expression.
-   * The value name is set as the variable name of the replacement suggestion.
-   * The regex is used to match the parameter name in the source of the replacement suggestion.
-   *
-   * @param valueName the name of the value to set as the variable name of the replacement
-   *                  suggestion.
-   * @param regex the regular expression to use for matching the parameter name in the source.
-   * @return a RegexCorrelationReplacement object with the given value name and regex.
-   */
-  private RegexCorrelationReplacement<?> generateReplacementSuggestion(String valueName,
-                                                                       String regex) {
-    RegexCorrelationReplacement<?> replacement = new RegexCorrelationReplacement<>(regex);
-    replacement.setVariableName(valueName);
-    return replacement;
-  }
-
-  /**
-   * This method retrieves the Configuration object from the current ComparisonContext.
-   * The Configuration object contains the settings and parameters used for generating
-   * correlation suggestions.
+   * This method retrieves the Configuration object from the current ComparisonContext. The
+   * Configuration object contains the settings and parameters used for generating correlation
+   * suggestions.
    *
    * @return the Configuration object from the current ComparisonContext.
    */
@@ -509,11 +462,9 @@ public class ComparisonMethod implements CorrelationMethod {
     return this.context.getConfiguration();
   }
 
-
   /**
-   * This method sets the ComparisonContext for this instance.
-   * The ComparisonContext contains the recording and replay maps used for generating
-   * correlation suggestions.
+   * This method sets the ComparisonContext for this instance. The ComparisonContext contains the
+   * recording and replay maps used for generating correlation suggestions.
    *
    * @param context the ComparisonContext to set.
    */

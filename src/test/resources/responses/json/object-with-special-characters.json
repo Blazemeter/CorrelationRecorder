@@ -1,0 +1,9 @@
+  {
+    "URL$": {
+      "test": "a-value",
+      "test.com":  {
+        "..internal.token=:": "randomToken1"
+      },
+      "com": "a-value"
+    }
+  }

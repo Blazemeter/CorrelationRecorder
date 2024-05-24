@@ -14,6 +14,7 @@ import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationHistoryFrame;
 import com.blazemeter.jmeter.correlation.gui.common.StringUtils;
 import com.blazemeter.jmeter.correlation.gui.templates.TemplateSaveFrame;
 import com.blazemeter.jmeter.correlation.gui.templates.TemplatesManagerFrame;
+import com.blazemeter.jmeter.correlation.gui.templates.UpdateRepositoriesWorker;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -32,6 +33,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 import org.apache.http.entity.ContentType;
 import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
@@ -71,7 +73,7 @@ public class RulesContainer extends JPanel implements ActionListener {
   private Consumer<Boolean> enableCorrelationConsumer;
 
   public RulesContainer(CorrelationTemplatesRegistryHandler correlationTemplatesRegistryHandler,
-                        Runnable modelUpdater) {
+      Runnable modelUpdater) {
     this.modelUpdater = modelUpdater;
     templatesRegistryHandler = correlationTemplatesRegistryHandler;
     repositoriesRegistryHandler =
@@ -162,12 +164,11 @@ public class RulesContainer extends JPanel implements ActionListener {
         groupsContainer.doGroupsUIRefresh();
         break;
       case SAVE:
-        if (templateFrame == null) {
-          templateFrame = new TemplateSaveFrame(templatesRegistryHandler,
-              repositoriesRegistryHandler,
-              getSnapshotBufferedImage(), this::updateLoadedTemplate, this);
+        if (isRepositoriesInitialized()) {
+          initializeRepositories();
+          break;
         }
-        displaySaveTemplateFrame();
+        save();
         break;
       case LOAD:
         if (loadFrame == null) {
@@ -195,6 +196,19 @@ public class RulesContainer extends JPanel implements ActionListener {
     }
   }
 
+  private boolean isRepositoriesInitialized() {
+    return repositoriesRegistryHandler.getCorrelationRepositories().isEmpty();
+  }
+
+  private void save() {
+    if (templateFrame == null) {
+      templateFrame = new TemplateSaveFrame(templatesRegistryHandler,
+          repositoriesRegistryHandler,
+          getSnapshotBufferedImage(), this::updateLoadedTemplate, this);
+    }
+    displaySaveTemplateFrame();
+  }
+
   private void displayCorrelationWizard() {
     onWizardDisplay.run();
   }
@@ -219,6 +233,25 @@ public class RulesContainer extends JPanel implements ActionListener {
       templateFrame.updateLastLoadedTemplate(loadedTemplates.get(loadedTemplates.size() - 1));
     }
     templateFrame.showFrame();
+  }
+
+  private void initializeRepositories() {
+    UpdateRepositoriesWorker worker = new UpdateRepositoriesWorker() {
+      @Override
+      protected Boolean doInBackground() {
+        return repositoriesRegistryHandler.refreshRepositories(
+            repositoriesRegistryHandler.getConfigurationRoute(),
+            this::setProgress, this::publish);
+      }
+    };
+
+    worker.addPropertyChangeListener(evt -> {
+      if (evt.getPropertyName().equals("state") && evt.getNewValue()
+          .equals(SwingWorker.StateValue.DONE)) {
+        save();
+      }
+    });
+    worker.execute();
   }
 
   public List<RulesGroup> getRulesGroups() {

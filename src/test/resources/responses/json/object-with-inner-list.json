@@ -1,0 +1,16 @@
+{
+  "sessions": [
+    {
+      "sessionID": 10,
+      "token": "randomToken1"
+    },
+    {
+      "sessionID": 20,
+      "token": "randomToken2"
+    },
+    {
+      "sessionID": 30,
+      "token": "randomToken3"
+    }
+  ]
+}

@@ -79,6 +79,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * This class is responsible for the creation of the JMeter test plan.
  */
 public class JMeterElementUtils {
+
   protected static final String URL_PARAM_SEPARATOR = "&";
   protected static final String URL_PARAM_VALUE_SEPARATOR = "=";
   private static final Logger LOG = LoggerFactory.getLogger(JMeterElementUtils.class);
@@ -97,7 +98,7 @@ public class JMeterElementUtils {
   }
 
   private static void extractElementsByCondition(HashTree tree, List<TestElement> elementsList,
-                                                 Predicate<TestElement> condition) {
+      Predicate<TestElement> condition) {
     for (Object o : new LinkedList<>(tree.list())) {
       TestElement item = (TestElement) o;
       if (condition.test(item)) {
@@ -188,8 +189,8 @@ public class JMeterElementUtils {
   }
 
   /**
-   * Returns a normalized test plan tree, which allows to properly save it into a file.
-   * Note: this method also removes all the disabled elements from the tree.
+   * Returns a normalized test plan tree, which allows to properly save it into a file. Note: this
+   * method also removes all the disabled elements from the tree.
    *
    * @param model the JMeter tree model to be normalized.
    * @return the normalized test plan tree with the proper structure.
@@ -206,7 +207,7 @@ public class JMeterElementUtils {
    * @param testPlan the HashTree object to be converted.
    * @return a fully functional JMeterTreeModel instance.
    * @throws IllegalUserActionException when some elements of the JMeterTreeNode are not an
-   *                                    AbstractConfigGui and no instance of TestPlan subTree.
+   * AbstractConfigGui and no instance of TestPlan subTree.
    */
   public static JMeterTreeModel convertToTreeModel(HashTree testPlan)
       throws IllegalUserActionException {
@@ -357,7 +358,7 @@ public class JMeterElementUtils {
 
   //TODO: We need to improve this method to extract the parameters from a JSON
   protected void extractParametersFromJson(JSONObject json, Map<String,
-      List<Appearances>> parameterMap, TestElement sampler, int level) {
+      List<Appearances>> parameterMap, TestElement sampler, String source) {
     Iterator<String> keys = json.keys();
     while (keys.hasNext()) {
       String key = keys.next();
@@ -374,30 +375,29 @@ public class JMeterElementUtils {
         }
 
         if (isJsonObject(valueString)) {
-          extractParametersFromJson(new JSONObject(valueString), parameterMap, sampler,
-              level + 1);
+          extractParametersFromJson(new JSONObject(valueString), parameterMap, sampler, source);
           continue;
         }
 
         if (isJsonArray(valueString)) {
-          extractParametersFromJsonArray(new JSONArray(valueString), parameterMap, sampler,
-              level + 1, key);
+          extractParametersFromJsonArray(new JSONArray(valueString), parameterMap, sampler, key,
+              source);
           continue;
         }
 
-        addToMap(parameterMap, key, valueString, sampler, Sources.REQUEST_BODY_JSON);
+        addToMap(parameterMap, key, valueString, sampler, source);
         continue;
       }
 
       if (value instanceof JSONObject) {
-        extractParametersFromJson(json.getJSONObject(key), parameterMap, sampler,
-            level + 1);
+        extractParametersFromJson(json.getJSONObject(key), parameterMap, sampler, source);
       } else if (value instanceof JSONArray) {
-        extractParametersFromJsonArray(json.getJSONArray(key), parameterMap, sampler,
-            level + 1, key);
+        extractParametersFromJsonArray(json.getJSONArray(key), parameterMap, sampler, key, source);
       } else if (value instanceof Integer || value instanceof Double || value instanceof Long
           || value instanceof Float) {
-        addToMap(parameterMap, key, value.toString(), sampler, Sources.REQUEST_BODY_JSON_NUMERIC);
+        addToMap(parameterMap, key, value.toString(), sampler,
+            source.equals(Sources.RESPONSE_BODY_JSON) ? Sources.RESPONSE_BODY_JSON_NUMERIC
+                : Sources.REQUEST_BODY_JSON_NUMERIC);
       } else if (value == JSONObject.NULL) {
         LOG.warn("Null value detected: " + key);
         continue;
@@ -426,7 +426,7 @@ public class JMeterElementUtils {
             continue;
           }
 
-          extractParametersFromJson(jsonObject, parameterMap, sampler, level + 1);
+          extractParametersFromJson(jsonObject, parameterMap, sampler, source);
         } else {
           addToMap(parameterMap, key, stringValue, sampler, Sources.REQUEST_BODY_JSON);
         }
@@ -435,18 +435,15 @@ public class JMeterElementUtils {
   }
 
   public void extractParametersFromJsonArray(JSONArray array, Map<String,
-      List<Appearances>> parameterMap, TestElement sampler,
-                                             int level, String key) {
+      List<Appearances>> parameterMap, TestElement sampler, String key, String source) {
     for (int i = 0; i < array.length(); i++) {
       Object item = array.get(i);
       if (item instanceof JSONObject) {
-        extractParametersFromJson((JSONObject) item, parameterMap, sampler, level + 1);
+        extractParametersFromJson((JSONObject) item, parameterMap, sampler, source);
       } else if (item instanceof JSONArray) {
-        extractParametersFromJsonArray((JSONArray) item, parameterMap, sampler,
-            level + 1, key);
+        extractParametersFromJsonArray((JSONArray) item, parameterMap, sampler, key, source);
       } else if (isJson(item.toString())) {
-        extractParametersFromJson(new JSONObject(item.toString()), parameterMap, sampler,
-            level + 1);
+        extractParametersFromJson(new JSONObject(item.toString()), parameterMap, sampler, source);
       } else if (item instanceof Boolean) {
         if (configuration.shouldIgnoreBooleanValues()) {
           continue;
@@ -536,8 +533,8 @@ public class JMeterElementUtils {
   }
 
   /**
-   * Obtains the HTTPArgument from a JMeterProperty element.
-   * Note: this method requires that the JMeterProperty is an instance of HTTPArgument.
+   * Obtains the HTTPArgument from a JMeterProperty element. Note: this method requires that the
+   * JMeterProperty is an instance of HTTPArgument.
    *
    * @param property the JMeterProperty element to be converted.
    * @return the HTTPArgument element.
@@ -565,11 +562,10 @@ public class JMeterElementUtils {
 
   /**
    * Returns the CollectionProperty associated to the HTTPSamplerProxy contained in a
-   * JMeterTreeNode.
-   * Note: this method requires that the JMeterTreeNode is a HTTPSamplerBase instance.
+   * JMeterTreeNode. Note: this method requires that the JMeterTreeNode is a HTTPSamplerBase
+   * instance.
    *
-   * @param requestElement the JMeterTreeNode element from which the collection will be
-   *                       obtained.
+   * @param requestElement the JMeterTreeNode element from which the collection will be obtained.
    * @return the CollectionProperty associated to the HTTPSamplerProxy.
    */
   public static CollectionProperty getHttpArguments(JMeterTreeNode requestElement) {
@@ -578,7 +574,7 @@ public class JMeterElementUtils {
   }
 
   protected void addToMap(Map<String, List<Appearances>> parametersMap, String key,
-                          String value, TestElement sampler, String source) {
+      String value, TestElement sampler, String source) {
     // if the value length is smaller than the minimum length, we don't add it to the map
     if (value.length() <= configuration.getMinLength()) {
       return;
@@ -660,13 +656,13 @@ public class JMeterElementUtils {
   /**
    * Adds a new PostProcessor to the JMeter's tree node.
    *
-   * @param destNode      the node to add the PostProcessor to.
+   * @param destNode the node to add the PostProcessor to.
    * @param postProcessor the PostProcessor to add.
-   * @param model         the JMeter's tree model.
+   * @param model the JMeter's tree model.
    */
   public static void addPostProcessorToNode(JMeterTreeNode destNode,
-                                            AbstractTestElement postProcessor,
-                                            JMeterTreeModel model) {
+      AbstractTestElement postProcessor,
+      JMeterTreeModel model) {
     JMeterTreeNode postProcessorNode = new JMeterTreeNode();
     postProcessorNode.setUserObject(postProcessor);
 
@@ -707,8 +703,8 @@ public class JMeterElementUtils {
    * Loads a JMeter test plan from a given file path.
    *
    * @param path The file path of the JMeter test plan to load.
-   * @return A HashTree representing the structure of the loaded JMeter test plan.
-   * If an error occurs during loading, this method will return null.
+   * @return A HashTree representing the structure of the loaded JMeter test plan. If an error
+   * occurs during loading, this method will return null.
    */
   public static HashTree getTestPlan(String path) {
     HashTree hashTree = new HashTree();
@@ -829,7 +825,7 @@ public class JMeterElementUtils {
   }
 
   public ReplayReport getReplayErrors(String originalRecordingFilepath,
-                                      String originalTraceFilepath, CorrelationHistory history) {
+      String originalTraceFilepath, CorrelationHistory history) {
     ReplayReport report = new ReplayReport();
     CustomResultCollector collector = replayTestPlan(originalRecordingFilepath);
     report.setCollector(collector);
@@ -868,10 +864,9 @@ public class JMeterElementUtils {
   /**
    * Replay the test plan from the given filepath.
    *
-   * @param filepath The filepath of the test plan to replay.
-   *                 The test plan must be a JMeter test plan.
-   * @return The result collector that was used to collect the
-   * results of the replay.
+   * @param filepath The filepath of the test plan to replay. The test plan must be a JMeter test
+   * plan.
+   * @return The result collector that was used to collect the results of the replay.
    */
   @VisibleForTesting
   public CustomResultCollector replayTestPlan(String filepath) {
@@ -934,6 +929,7 @@ public class JMeterElementUtils {
   }
 
   private static HashTree addCollector(CustomResultCollector collector, HashTree testPlan) {
+    JMeter.convertSubTree(testPlan, false);
     TreeCloner cloner = cloneTree(testPlan);
     ListedHashTree clonedTree = cloner.getClonedTree();
     clonedTree.add(clonedTree.getArray()[0], collector);
@@ -973,6 +969,7 @@ public class JMeterElementUtils {
    * This class allow to have more control over the running of the test plan.
    */
   private static class NonGuiEngine extends StandardJMeterEngine {
+
     @Override
     public void runTest() {
       Thread replayThread = new Thread(this, "StandardJMeterEngine");

@@ -1,11 +1,11 @@
-const { description } = require('../../package')
-const REPO_URL= 'https://github.com/Blazemeter/CorrelationRecorder'
+const { description } = require("../../package");
+const REPO_URL = "https://github.com/Blazemeter/CorrelationRecorder";
 
 module.exports = {
   /**
    * Ref：https://v1.vuepress.vuejs.org/config/#title
    */
-  title: 'Correlation Recorder',
+  title: "Correlation Recorder",
   /**
    * Ref：https://v1.vuepress.vuejs.org/config/#description
    */
@@ -18,9 +18,12 @@ module.exports = {
    * ref：https://v1.vuepress.vuejs.org/config/#head
    */
   head: [
-    ['meta', { name: 'theme-color', content: '#00ace6' }],
-    ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
-    ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }]
+    ["meta", { name: "theme-color", content: "#00ace6" }],
+    ["meta", { name: "apple-mobile-web-app-capable", content: "yes" }],
+    [
+      "meta",
+      { name: "apple-mobile-web-app-status-bar-style", content: "black" },
+    ],
   ],
 
   /**
@@ -31,74 +34,67 @@ module.exports = {
   themeConfig: {
     repo: REPO_URL,
     editLinks: false,
-    docsDir: '',
-    editLinkText: '',
+    docsDir: "",
+    editLinkText: "",
     lastUpdated: false,
-    logo: '/images/blazemeter-labs-logo.png',
+    logo: "/images/blazemeter-labs-logo.png",
     nav: [
       {
-        text: 'Guide',
-        link: '/guide/',
+        text: "Guide",
+        link: "/guide/",
       },
       {
-        text: 'Templates',
-        link: '/guide/templates/',
+        text: "Templates",
+        link: "/guide/templates/",
       },
       {
-        text: 'Custom Extensions',
-        link: '/guide/custom-extensions/',
+        text: "Custom Extensions",
+        link: "/guide/custom-extensions/",
       },
       {
-        text: 'Contributing',
-        link: '/contributing/'
+        text: "Contributing",
+        link: "/contributing/",
       },
       {
-        text: 'FAQ',
-        link: '/guide/troubleshooting.md',
-     }
+        text: "FAQ",
+        link: "/guide/troubleshooting.md",
+      },
     ],
-    sidebar:{
-      '/guide/': [
-          {
-            title: 'Guide',
-            collapsable: true,
-            children: [
-              '/guide/',
-              '/guide/installation-guide.md',
-              '/guide/using-the-plugin.md',
-              '/guide/correlation-process.md',
-              '/guide/after-recording.md',
-              '/guide/before-recording.md',
-              '/guide/concepts.md',
-              '/guide/best-practices.md',
-              '/guide/troubleshooting.md'
+    sidebar: {
+      "/guide/": [
+        {
+          title: "Guide",
+          collapsable: true,
+          children: [
+            "/guide/",
+            "/guide/installation-guide.md",
+            "/guide/using-the-plugin.md",
+            "/guide/correlation-process.md",
+            "/guide/after-recording.md",
+            "/guide/analysis-configuration.md",
 
-            ]
-          },
-          {
-              title: 'Templates',
-              collapsable: true,
-              children: [
-                '/guide/templates/',
-                '/guide/templates/create.md'
-              ]
-          },
-          {
-              title: 'Custom Extensions',
-              collapsable: true,
-              children: [
-                '/guide/custom-extensions/',
-              ]
-          }
-        ],
-    }
+            "/guide/before-recording.md",
+            "/guide/concepts.md",
+            "/guide/best-practices.md",
+            "/guide/troubleshooting.md",
+          ],
+        },
+        {
+          title: "Templates",
+          collapsable: true,
+          children: ["/guide/templates/", "/guide/templates/create.md"],
+        },
+        {
+          title: "Custom Extensions",
+          collapsable: true,
+          children: ["/guide/custom-extensions/"],
+        },
+      ],
+    },
   },
 
   /**
    * Apply plugins，ref：https://v1.vuepress.vuejs.org/zh/plugin/
    */
-  plugins: [
-    '@vuepress/plugin-back-to-top',
-    '@vuepress/plugin-medium-zoom',
-  ]
-}
+  plugins: ["@vuepress/plugin-back-to-top", "@vuepress/plugin-medium-zoom"],
+};

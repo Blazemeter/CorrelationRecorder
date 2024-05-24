@@ -11,7 +11,9 @@ import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContex
 import com.blazemeter.jmeter.correlation.core.suggestions.context.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.jmeter.exceptions.IllegalUserActionException;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
@@ -81,32 +83,80 @@ public class AnalysisMethod implements CorrelationMethod {
     return correlationSuggestions;
   }
 
-  private static void run(List<SampleResult> sampleResults,
-                          List<JMeterTreeNode> samplerNodes,
-                          CorrelationEngine engine,
-                          List<HTTPSamplerProxy> samplers) {
-    for (int i = 0; i < sampleResults.size(); i++) {
-      List<TestElement> children = new ArrayList<>();
-      JMeterTreeNode node = samplerNodes.get(i);
-      int initialChildCount = node.getChildCount();
-      for (int j = 0; j < initialChildCount; j++) {
-        children.add((TestElement) ((JMeterTreeNode) node.getChildAt(j)).getUserObject());
-      }
-      engine.process(samplers.get(i), children, sampleResults.get(i), "");
-      if (initialChildCount == children.size()) {
-        continue;
-      }
-      JMeterTreeModel model = JMeterElementUtils.getCurrentJMeterTreeModel();
-      for (int j = initialChildCount; j < children.size(); j++) {
-        TestElement child = children.get(j);
-        try {
-          model.addComponent(child, node);
-        } catch (IllegalUserActionException e) {
-          LOG.error("Error while adding the child '{}' to the element '{}'",
-              child.getName(), node.getName(), e);
+  public static void run(List<SampleResult> sampleResults,
+                         List<JMeterTreeNode> samplerNodes,
+                         CorrelationEngine engine,
+                         List<HTTPSamplerProxy> samplers) {
+    JMeterTreeModel model = getCurrentJMeterTreeModel();
+    Map<String, Integer> indexedSamplers = getSamplersIndexedByName(samplers);
+
+    for (SampleResult sampleResult : sampleResults) {
+      // Search the sample that match with sample result
+      // Get indexed sampler if exist
+      if (indexedSamplers.containsKey(sampleResult.getSampleLabel())) {
+        Integer samplerIndex = indexedSamplers.get(sampleResult.getSampleLabel());
+        HTTPSamplerProxy samplerProxy = samplers.get(samplerIndex);
+
+        List<TestElement> children = new ArrayList<>();
+        JMeterTreeNode node = samplerNodes.get(samplerIndex);
+        Map<String, Integer> indexedChildren = getChildrenNodeByName(node);
+
+        int initialChildCount = node.getChildCount();
+        for (int j = 0; j < initialChildCount; j++) {
+          children.add((TestElement) ((JMeterTreeNode) node.getChildAt(j)).getUserObject());
+        }
+        engine.process(samplerProxy, children, sampleResult, "");
+        if (initialChildCount == children.size()) {
+          continue;
+        }
+        // When children was added, propagate the child to the tree node
+        for (int j = initialChildCount; j < children.size(); j++) {
+          TestElement child = children.get(j);
+          // check if that children not exist in the previous node data
+          // this is to avoid generating duplicate extractors
+          if (!indexedChildren.containsKey(child.getName())) {
+
+            try {
+              model.addComponent(child, node);
+            } catch (IllegalUserActionException e) {
+              LOG.error("Error while adding the child '{}' to the element '{}'",
+                  child.getName(), node.getName(), e);
+            }
+          }
         }
       }
     }
+  }
+
+  public static Map<String, Integer> getSamplersIndexedByName(
+      List<HTTPSamplerProxy> samplers) {
+    // The method is used to optimize the way how to get the index of a specific sampler by name
+    Map<String, Integer> indexedSamplers = new HashMap<>();
+    int index = 0;
+    for (HTTPSamplerProxy sampler : samplers) {
+      indexedSamplers.put(getCrName(sampler), index);
+      index += 1;
+    }
+    return indexedSamplers;
+  }
+
+  public static Map<String, Integer> getChildrenNodeByName(JMeterTreeNode node) {
+    int childCount = node.getChildCount();
+    Map<String, Integer> indexedChildren = new HashMap<>();
+    for (int index = 0; index < childCount; index++) {
+      indexedChildren.put(getCrName(((TestElement) (((JMeterTreeNode)
+          node.getChildAt(index)).getUserObject()))), index);
+    }
+    return indexedChildren;
+  }
+
+  private static String getCrName(TestElement te) {
+    String comment = te.getComment();
+    String crName = comment.substring(comment.lastIndexOf(";") + 1);
+    if (crName.contains("ORIGINAL_NAME")) {
+      return crName.substring(crName.indexOf("=") + 1);
+    }
+    return te.getName();
   }
 
   private static JMeterTreeModel getCurrentJMeterTreeModel() {

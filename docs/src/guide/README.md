@@ -5,13 +5,13 @@ next: /guide/installation-guide.md
 # User Guide
 
 Correlations Recorder it's a [JMeter's](http://jmeter.apache.org/usermanual/get-started.html) plugin that simplifies
- the process of recording for applications with Dynamic Variables by providing automatic **correlations of variables**.
+the process of recording for applications with Dynamic Variables by providing automatic **correlations of variables**.
 
 You can perform exploratory detections of dynamic variables and create **correlation rules** to correlate them
- in future recordings, or you can use the **automatic correlations** and let the plugin do the work for you. 
+in future recordings, or you can use the **automatic correlations** and let the plugin do the work for you.
 
 Regardless of the method you choose, the plugin will help you create a test script that is more reliable and
- easier to maintain.
+easier to maintain.
 
 ## Key Features
 
@@ -48,15 +48,15 @@ Here are 10 key benefits of using the JMeter's Automatic Correlation Recorder Pl
 ## System requirements
 
 The system requirements to use the plugin are pretty much the sames as a regular JMeter environment, vary depending on
- the operating system. In general terms, the requirements for each operating system are:
+the operating system. In general terms, the requirements for each operating system are:
 
 - Windows: Windows 7 or later, 1 GB of RAM (2 GB recommended), 250 MB of free disk space
 - macOS: macOS 10.10 or later, 1 GB of RAM (2 GB recommended), 250 MB of free disk space
 - Linux: kernel 2.6.26 or later, 1 GB of RAM (2 GB recommended), 250 MB of free disk space
 
 Please note that these are the minimum requirements, and higher specifications may be necessary for larger or more
- complex load testing scenarios.
+complex load testing scenarios.
 
 ::: tip
-For a better experience, we recommend the usage of JMeter 5.4.1 or later.
+For a better experience, we recommend the usage of JMeter 5.6.3 or later.
 :::

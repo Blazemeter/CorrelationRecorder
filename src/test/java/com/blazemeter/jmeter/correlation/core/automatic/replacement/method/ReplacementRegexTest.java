@@ -1,8 +1,9 @@
-package com.blazemeter.jmeter.correlation.core.automatic;
+package com.blazemeter.jmeter.correlation.core.automatic.replacement.method;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import com.blazemeter.jmeter.correlation.JMeterTestUtils;
+import com.blazemeter.jmeter.correlation.core.automatic.Sources;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,18 +49,6 @@ public class ReplacementRegexTest {
 
     regex = ReplacementRegex.match("Name", Sources.REQUEST_HEADER_FIELDS);
     assertEquals("Name: ([^&]+)", regex);
-  }
-
-  @Test
-  public void testRequestBodyJsonNumeric() {
-    String regex = ReplacementRegex.match("Name", Sources.REQUEST_BODY_JSON_NUMERIC);
-    assertEquals("\"Name\":([0-9]+)", regex);
-  }
-
-  @Test
-  public void testRequestBodyJson() {
-    String regex = ReplacementRegex.match("Name", Sources.REQUEST_BODY_JSON);
-    assertEquals("\"Name\":\"([^&]+?)\"", regex);
   }
 
   @Test

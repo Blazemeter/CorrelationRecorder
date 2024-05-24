@@ -76,7 +76,9 @@ public class CorrelationEngine {
                                    String responseFilter) {
 
     if (result != null && !result.isSuccessful()) {
-      sampler.setComment("ORIGINALLY FAILED");
+      String originalComment = sampler.getComment();
+      // Don't loose original name stored in comment if request fails to execute.
+      sampler.setComment("ORIGINALLY FAILED " + originalComment);
     }
 
     if (!this.isEnabled) {

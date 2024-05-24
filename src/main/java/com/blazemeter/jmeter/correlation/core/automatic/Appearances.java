@@ -5,10 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.jmeter.testelement.TestElement;
 
-public class Appearances  {
+public class Appearances {
 
   private String name;
   private String value;
@@ -52,6 +53,7 @@ public class Appearances  {
         ", value='" + value + '\'' +
         ", name='" + name + '\'' +
         ", appearanceList=" + list.stream()
+        .filter(Objects::nonNull)
         .map(element ->
             "name: '" + element.getPropertyAsString("TestElement.name") +
                 "', path: '" + element.getPropertyAsString("HTTPSampler.path") +
@@ -85,5 +87,23 @@ public class Appearances  {
   public static Appearances fromJSON(String json) throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
     return objectMapper.readValue(json, Appearances.class);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Appearances that = (Appearances) o;
+    return Objects.equals(name, that.name) && Objects.equals(value, that.value)
+        && Objects.equals(source, that.source) && Objects.equals(list, that.list);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, value, source, list);
   }
 }
