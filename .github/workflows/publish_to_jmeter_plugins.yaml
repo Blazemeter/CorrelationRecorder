@@ -1,0 +1,100 @@
+name: release
+on: workflow_dispatch
+
+env:
+  PLUGIN_ARTIFACT_NAME: "jmeter-bzm-correlation-recorder"
+  PLUGIN_REPOSITORY_NAME: "CorrelationRecorder"
+  JMETER_PLUGINS_PLUGIN_KEY: "bzm-siebel"
+  FILE_PATH: "site/dat/repo/blazemeter.json"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    concurrency: blazemeter_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            releases.json
+            .github/build_release_json.sh
+            .github/get_artifacts_urls.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Get latest release version
+        id: version
+        run: |
+          ls -la
+          echo "$GH_TOKEN" | gh auth login --with-token
+          echo "RELEASE_VERSION=$(gh release view -R Blazemeter/CorrelationRecorder --json name -q '.name')"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: Baraujo25/jmeter-plugins
+          path: jmeter-plugins
+          token: ${{ secrets.GH_TOKEN }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Configure Git
+        working-directory: ./jmeter-plugins
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+
+      - name: Set remotes
+        working-directory: ./jmeter-plugins
+        run: |
+          git remote set-url origin $FORKED_REPO_SSH
+          git remote add upstream $UPSTREAM_REPO_SSH
+        env:
+          FORKED_REPO_SSH: "git@github.com:Baraujo25/jmeter-plugins.git"
+          UPSTREAM_REPO_SSH: "git@github.com:Abstracta/jmeter-plugins.git"
+
+      - name: Create name for branch release
+        working-directory: ./jmeter-plugins
+        run: |
+          echo "BRANCH_NAME=$PLUGIN_ARTIFACT_NAME-v$RELEASE_VERSION" >> $GITHUB_ENV
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+
+      - name: "Create branch: ${{ env.BRANCH_NAME }}"
+        working-directory: ./jmeter-plugins
+        run: |
+          git checkout -b $BRANCH_NAME
+        env:
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+
+      - name: Update ${{ env.BRANCH_NAME }} from upstream
+        working-directory: ./jmeter-plugins
+        run: |
+          git fetch upstream
+          git merge upstream/master --allow-unrelated-histories || git merge --abort
+
+      - name: Build and save json release object
+        run: |
+          echo "NEW_VERSION_OBJECT=$(bash .github/build_release_json.sh \
+               $RELEASE_VERSION \
+               $PLUGIN_ARTIFACT_NAME \
+               $PLUGIN_REPOSITORY_NAME)" \
+               >> $GITHUB_ENV
+          echo "${{ env.NEW_VERSION_OBJECT }}"
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Update jmeter-plugins JSON File
+        working-directory: ./jmeter-plugins
+        run: |
+          jq --argjson newVersion "$NEW_VERSION_OBJECT" \
+             --arg plugin_key "$JMETER_PLUGINS_PLUGIN_KEY" \
+              'map(if .id == "$plugin_key" then .versions += $newVersion else . end)' \
+              $FILE_PATH > tmp.json
+          mv tmp.json $FILE_PATH
+      - name: Commit and push changes
+        working-directory: ./jmeter-plugins
+        run: |
+          git add $FILE_PATH
+          git commit -m "$PLUGIN_REPOSITORY_NAME v$RELEASE_VERSION release"
+          echo "push to origin"
+          git push -u origin $BRANCH_NAME
