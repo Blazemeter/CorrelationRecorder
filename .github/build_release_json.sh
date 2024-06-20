@@ -1,12 +1,9 @@
 #!/bin/bash
 
-#--------------Environment variables------------------#
 RELEASE_VERSION=$1
 PLUGIN_ARTIFACT_NAME=$2
 PLUGIN_REPOSITORY_NAME=$3
 RELEASES_FILE="releases.json"
-#-----------------------------------------------------#
-
 ARTIFACT_URLS_FILE=".github/artifact_urls.temp"
 
 get_current_version_details() {
