@@ -112,3 +112,4 @@ jobs:
             --head $FORKED_REPO_USER:$BRANCH_NAME \
             --base master \
             --repo $UPSTREAM_REPO_USER/$JMETER_PLUGINS_NAME
+            --draft
