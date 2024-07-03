@@ -7,7 +7,7 @@ RELEASES_FILE="releases.json"
 ARTIFACT_URLS_FILE=".github/artifact_urls.temp"
 
 get_current_version_details() {
-    jq --arg version "$RELEASE_VERSION" '.[] | select(.version == ($version | tonumber))' "$RELEASES_FILE"
+    jq --arg version "$RELEASE_VERSION" '.[] | select(.version == $version)' "$RELEASES_FILE"
 }
 
 get_dependencies() {
