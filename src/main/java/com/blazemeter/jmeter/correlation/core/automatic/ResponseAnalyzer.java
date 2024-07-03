@@ -7,6 +7,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.Extr
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.HeaderExtractionStrategy;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.LocationType;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import org.apache.jmeter.samplers.SampleResult;
 
@@ -17,16 +18,20 @@ import org.apache.jmeter.samplers.SampleResult;
 public class ResponseAnalyzer {
 
   private final List<ExtractionStrategy> strategies = Arrays.asList(
-      new BodyExtractionStrategy(),
       new HeaderExtractionStrategy(),
-      new CookieExtractionStrategy()
+      new CookieExtractionStrategy(),
+      new BodyExtractionStrategy()
   );
+
+  private HashMap<String, StructureType> resposeStructureTypeCache =
+      new HashMap<String, StructureType>();
 
   /**
    * Identifies the location of an argument in a response.
    * Uses a list of {@link ExtractionStrategy} to identify the location.
+   *
    * @param response The response to analyze
-   * @param value The value to search in the response
+   * @param value    The value to search in the response
    * @return The location of the argument in the response
    * @see ExtractionStrategy
    */
@@ -46,25 +51,30 @@ public class ResponseAnalyzer {
    * StructureType#XML}, {@link StructureType#RAW_TEXT} or {@link StructureType#UNKNOWN}.
    * This is particularly useful when the argument is in the body of the response and we need to
    * know the structure of the body to generate the extractor.
-   * @param response The response to analyze
+   *
+   * @param response     The response to analyze
    * @param locationType The location of the argument in the response
    * @return The structure of the argument in the response
    * @see StructureType
    */
   public StructureType identifyStructureType(SampleResult response, LocationType locationType) {
-    if (locationType == LocationType.HEADER || locationType == LocationType.COOKIE) {
-      return StructureType.RAW_TEXT;
-    } else if (locationType == LocationType.BODY) {
-      if (JMeterElementUtils.isJson(response.getResponseDataAsString())) {
-        return StructureType.JSON;
+    StructureType structureType = StructureType.UNKNOWN;
+    String responseKey = response.getSampleLabel() + ":" + locationType;
+    if (resposeStructureTypeCache.containsKey(responseKey)) {
+      return resposeStructureTypeCache.get(responseKey);
+    } else {
+      if (locationType == LocationType.HEADER || locationType == LocationType.COOKIE) {
+        return StructureType.RAW_TEXT;
+      } else if (locationType == LocationType.BODY) {
+        if (JMeterElementUtils.isJson(response.getResponseDataAsString())) {
+          structureType = StructureType.JSON;
+        } else {
+          structureType = StructureType.RAW_TEXT;
+        }
       }
-
-      if (JMeterElementUtils.isXml(response.getResponseDataAsString())) {
-        return StructureType.XML;
-      }
-
-      return StructureType.RAW_TEXT;
     }
-    return StructureType.UNKNOWN;
+    resposeStructureTypeCache.put(responseKey, structureType);
+    return structureType;
   }
+
 }

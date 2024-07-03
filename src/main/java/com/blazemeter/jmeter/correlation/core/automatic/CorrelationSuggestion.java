@@ -23,6 +23,7 @@ public class CorrelationSuggestion {
   private final List<SampleResult> appearances = new ArrayList<>();
   private final List<TestElement> usages = new ArrayList<>();
   private final List<ExtractionSuggestion> extractionSuggestions = new ArrayList<>();
+  private final List<String> extractionSuggestionsString = new ArrayList<>();
   private final List<ReplacementSuggestion> replacementSuggestions = new ArrayList<>();
   private String method = "Replay";
 
@@ -91,6 +92,7 @@ public class CorrelationSuggestion {
 
   public void addExtractionSuggestion(ExtractionSuggestion extractionSuggestion) {
     extractionSuggestions.add(extractionSuggestion);
+    extractionSuggestionsString.add(extractionSuggestion.toString());
   }
 
   public void addReplacementSuggestion(ReplacementSuggestion replacementSuggestion) {
@@ -99,6 +101,10 @@ public class CorrelationSuggestion {
 
   public List<ExtractionSuggestion> getExtractionSuggestions() {
     return extractionSuggestions;
+  }
+
+  public List<String> getExtractionSuggestionsString() {
+    return extractionSuggestionsString;
   }
 
   public List<ReplacementSuggestion> getReplacementSuggestions() {

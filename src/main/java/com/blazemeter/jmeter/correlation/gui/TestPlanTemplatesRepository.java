@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
 public class TestPlanTemplatesRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(TestPlanTemplatesRepository.class);
+  private static final String DEPRECATED_TEMPLATE_NAME = "correlation-recorder.jmx";
   private String rootFolder;
 
   public TestPlanTemplatesRepository(String rootFolder) {
@@ -45,7 +48,7 @@ public class TestPlanTemplatesRepository {
   }
 
   public void addCorrelationRecorderTemplate(String templateFileName, String templatesFolderPath,
-                                             String descriptionFileName, String templateName) {
+      String descriptionFileName, String templateName) {
     copyTemplateFile(templateFileName, templatesFolderPath);
     addTemplateDescription(descriptionFileName, templateName);
     addFailExtractorAssertion(templateFileName);
@@ -53,6 +56,7 @@ public class TestPlanTemplatesRepository {
 
   private void copyTemplateFile(String fileName, String sourcePath) {
     try {
+      removeDeprecatedTemplate(DEPRECATED_TEMPLATE_NAME);
       File dest = new File(Paths.get(rootFolder, fileName).toAbsolutePath().toString());
       String fileFromResources = getFileFromResources(sourcePath + fileName);
       if (!dest.exists() || !DigestUtils
@@ -67,6 +71,21 @@ public class TestPlanTemplatesRepository {
     }
   }
 
+  private void removeDeprecatedTemplate(
+      @SuppressWarnings("SameParameterValue") String templateName) {
+    File oldTemplate =
+        new File(Paths.get(rootFolder, templateName).toAbsolutePath().toString());
+    if (!oldTemplate.exists()) {
+      return;
+    }
+    LOG.info("[ACR] Removing old template: {}", oldTemplate.getAbsolutePath());
+    if (!oldTemplate.delete()) {
+      LOG.error("[ACR] Failed to remove old template: {}", oldTemplate.getAbsolutePath());
+      return;
+    }
+    LOG.info("[ACR] Successfully removed old template: {}", oldTemplate.getAbsolutePath());
+  }
+
   private String getFileFromResources(String fileName) throws IOException {
     InputStream inputStream = this.getClass().getResourceAsStream(fileName);
     return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
@@ -75,7 +94,7 @@ public class TestPlanTemplatesRepository {
   private void addTemplateDescription(String descTemplateName, String templateName) {
     try {
       String filePath = Paths.get(rootFolder, "templates.xml").toAbsolutePath().toString();
-      removeOldTemplate(filePath);
+      removeDeprecatedTemplatesDescription(filePath);
       if (!checkIfStringExists(filePath, "<name>" + templateName + "</name>")) {
         Path path = Paths.get(filePath);
         List<String> replacedLines = new ArrayList<>();
@@ -96,7 +115,7 @@ public class TestPlanTemplatesRepository {
     }
   }
 
-  private void removeOldTemplate(String filePath) {
+  private void removeDeprecatedTemplatesDescription(String filePath) {
 
     String content;
     try {
@@ -105,19 +124,24 @@ public class TestPlanTemplatesRepository {
       LOG.error("Error trying to read the file {}", filePath);
       return;
     }
+    List<Pattern> patterns =
+        Stream.of("Correlation Recorder", "bzm - Correlation Recorder")
+            .map(name -> Pattern.compile(
+                "(<template isTestPlan=\"true\">[\\n ]*<name>" + name + "</name>.*</template>)",
+                Pattern.DOTALL))
+            .collect(Collectors.toList());
+    for (Pattern pattern : patterns) {
+      Matcher matcher = pattern.matcher(content);
+      if (!matcher.find()) {
+        LOG.debug("Old Correlation Template not found.");
+        continue;
+      }
 
-    Matcher matcher = Pattern.compile(
-        "(<template isTestPlan=\"true\">[\\n ]*<name>Correlation Recorder</name>.*</template>)",
-        Pattern.DOTALL).matcher(content);
-    if (!matcher.find()) {
-      LOG.debug("Old Correlation Template not found.");
-      return;
-    }
-
-    try (FileWriter fileWriter = new FileWriter(filePath)) {
-      fileWriter.write(content.replace(matcher.group(), ""));
-    } catch (IOException e) {
-      LOG.error("Error trying to write the file {}", filePath);
+      try (FileWriter fileWriter = new FileWriter(filePath)) {
+        fileWriter.write(content.replace(matcher.group(), ""));
+      } catch (IOException e) {
+        LOG.error("Error trying to write the file {}", filePath);
+      }
     }
   }
 

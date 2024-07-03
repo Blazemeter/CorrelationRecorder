@@ -92,7 +92,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   private static final String TEMPLATE_PATH = "CorrelationProxyControl.templatePath";
   private static final String CORRELATION_HISTORY_ID =
       "CorrelationProxyControl.correlationHistoryId";
-  private static final String RECORDER_NAME = "bzm - Correlation Recorder";
+  private static final String RECORDER_NAME = "bzm - Auto Correlation Recorder";
   // we use reflection to be able to call these non visible methods and not have to re implement
   // them.
   private static final Method FIND_FIRST_NODE_OF_TYPE = getProxyControlMethod("findFirstNodeOfType",
@@ -291,7 +291,7 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public synchronized void deliverSampler(HTTPSamplerBase sampler, TestElement[] testElements,
-                                          SampleResult result) {
+      SampleResult result) {
     if (pendingProxies.containsKey(Thread.currentThread())) {
       pendingProxies.get(Thread.currentThread()).update(sampler, testElements, result);
     } else {
@@ -384,7 +384,7 @@ public class CorrelationProxyControl extends ProxyControl implements
     HTTPSamplerBase sampler = proxy.getSampler();
     if (sampler != null) {
       sampler.setProperty("TestPlan.comments", "ORIGINAL_NAME USED BY CR, DON'T DELETE." +
-              " Prepend addition comments if necessary.;ORIGINAL_NAME=" + sampler.getName());
+          " Prepend addition comments if necessary.;ORIGINAL_NAME=" + sampler.getName());
     }
     // Ideal solution would be an invisible field or something like the following,
     // but it is not being saved to testplan
@@ -526,13 +526,16 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public void onSaveTemplate(Builder builder) throws IOException, ConfigurationException {
-    Template template = builder
+    Template template = getTemplate(builder);
+    localConfiguration.saveTemplate(template);
+  }
+
+  public Template getTemplate(Builder builder) {
+    return builder
         .withGroups(getGroups())
         .withComponents(getCorrelationComponents())
         .withResponseFilters(getResponseFilter())
         .build();
-
-    localConfiguration.saveTemplate(template);
   }
 
   public List<RulesGroup> getGroups() {
@@ -614,7 +617,7 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private void append(String loadedComponents, List<RulesGroup> loadedGroups,
-                      String loadedFilters) {
+      String loadedFilters) {
 
     String actualComponents = getCorrelationComponents();
     setCorrelationComponents(loadedComponents.isEmpty() ? actualComponents
@@ -775,8 +778,8 @@ public class CorrelationProxyControl extends ProxyControl implements
 
   @Override
   public boolean refreshRepositories(String localConfigurationRoute,
-                                     Consumer<Integer> setProgressConsumer,
-                                     Consumer<String> setStatusConsumer) {
+      Consumer<Integer> setProgressConsumer,
+      Consumer<String> setStatusConsumer) {
     return localConfiguration.refreshRepositories(localConfigurationRoute, setProgressConsumer,
         setStatusConsumer);
   }
@@ -806,8 +809,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private void updateExtractorFromTestElement(CorrelationRuleTestElement e,
-                                              CorrelationRule correlationRule,
-                                              String referenceName) {
+      CorrelationRule correlationRule,
+      String referenceName) {
     try {
       //Only when no Extractor was selected, this method returns null
       correlationRule.setCorrelationExtractor(e.getCorrelationExtractor());
@@ -818,8 +821,8 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private void updateReplacementFromTestElement(CorrelationRuleTestElement e,
-                                                CorrelationRule correlationRule,
-                                                String referenceName) {
+      CorrelationRule correlationRule,
+      String referenceName) {
     try {
       //Only when no Replacement was selected, this method returns null
       correlationRule.setCorrelationReplacement(e.getCorrelationReplacement());

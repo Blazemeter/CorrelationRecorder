@@ -1,4 +1,4 @@
-<h4 align="center">Correlations Recorder Plugin for JMeter</h4>
+<h4 align="center">Auto Correlation Recorder Plugin for JMeter</h4>
 <p align="center">Custom implementation of Correlations</p>
 
 # Summary

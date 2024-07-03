@@ -66,7 +66,7 @@ public class CorrelationProxyControlBuilder {
 
     CorrelationProxyControl model =
         new CorrelationProxyControl(registry, repositoriesRegistry, configuration, engine);
-    model.setName("bzm - Correlation Recorder");
+    model.setName("bzm - Auto Correlation Recorder");
 
     if (target != null) {
       model.setTarget(target);

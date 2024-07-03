@@ -10,7 +10,7 @@ public class ThemedIcon {
 
   private static final Map<String, ImageIcon> CACHED_ICONS = new WeakHashMap<>();
   private static final Pattern DARK_THEME_PATTERN = Pattern
-      .compile("Intellij|HighContrastLight|HighContrastDark|Darcula|Motif|OneDark|SolarizedDark");
+      .compile("HighContrastDark|Darcula|OneDark|SolarizedDark");
 
   public static ImageIcon fromResourceName(String resourceName) {
     String resourcePath = getThemePath() + "/" + resourceName;

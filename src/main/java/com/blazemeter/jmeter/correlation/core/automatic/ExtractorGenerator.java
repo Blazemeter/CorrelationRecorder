@@ -10,8 +10,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,15 +151,26 @@ public class ExtractorGenerator {
     return indexes;
   }
 
-  public static List<Integer> getIndexes(String v, String text) {
-    if (v.isEmpty()) {
+  public static List<Integer> getIndexes(String search, String text) {
+    if (text.isEmpty()) {
       return new ArrayList<>();
     }
-
-    return IntStream.range(0, text.length() - v.length() + 1)
-        .filter(index -> text.substring(index, index + v.length()).equalsIgnoreCase(v))
-        .boxed()
-        .collect(Collectors.toList());
+    List<Integer> list = new ArrayList<>();
+    final int len = search.length();
+    final int max = text.length() - len;
+    int foundIndex = -1;
+    int i = 0;
+    while (i <= max) {
+      foundIndex = StringUtils.indexOf(text, search, i);
+      if (foundIndex != -1) {
+        list.add(foundIndex);
+        i = foundIndex;
+      } else {
+        break; // When not found, break the search by position
+      }
+      i++;
+    }
+    return list;
   }
 
   public void generateExtractors() {

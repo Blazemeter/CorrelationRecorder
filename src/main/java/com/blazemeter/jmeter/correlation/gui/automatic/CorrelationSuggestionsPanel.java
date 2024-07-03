@@ -332,18 +332,21 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   private void exportSuggestions() {
     List<CorrelationSuggestion> suggestions = exportSelectedSuggestions();
     if (suggestions.isEmpty()) {
-      JOptionPane.showMessageDialog(this,
-          "No suggestions selected. Please select at least one suggestion to "
-              + "export", "No suggestions selected",
-          JOptionPane.INFORMATION_MESSAGE);
+      showExportingMessage("No suggestions selected. Please select at least one suggestion to "
+          + "export");
       return;
     }
 
     Map<String, Set<TemplateVersion>> repositoryAndSuggestions = new HashMap<>();
+    boolean isDraft = false;
     for (CorrelationSuggestion suggestion : suggestions) {
       Template source = suggestion.getSource();
       if (source != null) { // Source null is automatic, and not null is Template based
         String repositoryId = source.getRepositoryId();
+        if ("Draft".equals(repositoryId)) {
+          isDraft = true;
+          continue;
+        }
         if (!repositoryAndSuggestions.containsKey(repositoryId)) {
           repositoryAndSuggestions.put(repositoryId, new HashSet<>());
         }
@@ -353,6 +356,45 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
 
     Set<Template> canExport = new HashSet<>();
     Set<Template> cannotExport = new HashSet<>();
+    populateTemplateExports(repositoryAndSuggestions, canExport, cannotExport);
+
+    if (!cannotExport.isEmpty()) {
+      JOptionPane.showMessageDialog(this,
+          "The suggestions generated from the following sources\n can't be exported:\n"
+              + String.join("\n", cannotExport.stream()
+              .map(RepositoryUtils::getTemplateInfo)
+              .collect(Collectors.joining("\n"))),
+          "Non-exportable templates",
+          JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    Set<CorrelationRule> rules = new HashSet<>();
+    for (CorrelationSuggestion suggestion : suggestions) {
+      Template source = suggestion.getSource();
+      // Automatic or Template based
+      if (source == null || templateContains(canExport, source)) {
+        rules.addAll(suggestion.toCorrelationRules());
+      }
+    }
+
+    exportRulesConsumer.accept(new ArrayList<>(rules));
+    if (isDraft) {
+      showExportingMessage(
+          "Draft rules weren't exported, they remain in Correlation Panel already.");
+    } else if (rules.isEmpty()) {
+      showExportingMessage("We didn't find any rules to export.");
+    } else {
+      showExportingMessage("Export successful.");
+    }
+  }
+
+  private void showExportingMessage(String message) {
+    JOptionPane.showMessageDialog(this,
+        message, "Exporting rules", JOptionPane.INFORMATION_MESSAGE);
+  }
+
+  private void populateTemplateExports(Map<String, Set<TemplateVersion>> repositoryAndSuggestions,
+      Set<Template> canExport, Set<Template> cannotExport) {
     for (Map.Entry<String, Set<TemplateVersion>> entry : repositoryAndSuggestions.entrySet()) {
       String repositoryName = entry.getKey();
       List<TemplateVersion> templates = new ArrayList<>(entry.getValue());
@@ -385,32 +427,6 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
         }
       }
     }
-
-    if (!cannotExport.isEmpty()) {
-      JOptionPane.showMessageDialog(this,
-          "The suggestions generated from the following sources\n can't be exported:\n"
-              + String.join("\n", cannotExport.stream()
-              .map(RepositoryUtils::getTemplateInfo)
-              .collect(Collectors.joining("\n"))),
-          "Non-exportable templates",
-          JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    Set<CorrelationRule> rules = new HashSet<>();
-    for (CorrelationSuggestion suggestion : suggestions) {
-      Template source = suggestion.getSource();
-      // Automatic or Template based
-      if (source == null || templateContains(canExport, source)) {
-        rules.addAll(suggestion.toCorrelationRules());
-      }
-    }
-
-    exportRulesConsumer.accept(new ArrayList<>(rules));
-    JOptionPane.showMessageDialog(this,
-        rules.isEmpty() ? "We didn't find any rules to export."
-            : "Export successful.",
-        "Exporting rules",
-        JOptionPane.INFORMATION_MESSAGE);
   }
 
   private boolean templateContains(Set<Template> list, Template toMatch) {

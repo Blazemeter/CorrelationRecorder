@@ -195,9 +195,7 @@ public class TemplatesSelectionTable extends JTable {
   }
 
   private static void setForegroundBasedOnPermissions(JTable table, int row, JComponent target) {
-    if (canUseTemplate(table, row)) {
-      target.setForeground(UIManager.getColor("Label.foreground"));
-    } else {
+    if (!canUseTemplate(table, row)) {
       target.setForeground(UIManager.getColor("Label.disabledForeground"));
     }
   }

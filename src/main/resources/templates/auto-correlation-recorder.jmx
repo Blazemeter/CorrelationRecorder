@@ -94,7 +94,7 @@
         <boolProp name="displaySystemProperties">false</boolProp>
       </DebugPostProcessor>
       <hashTree/>
-      <com.blazemeter.jmeter.correlation.CorrelationProxyControl guiclass="com.blazemeter.jmeter.correlation.CorrelationProxyControlGui" testclass="com.blazemeter.jmeter.correlation.CorrelationProxyControl" testname="bzm - Correlation Recorder" enabled="false">
+      <com.blazemeter.jmeter.correlation.CorrelationProxyControl guiclass="com.blazemeter.jmeter.correlation.CorrelationProxyControlGui" testclass="com.blazemeter.jmeter.correlation.CorrelationProxyControl" testname="bzm - Auto Correlation Recorder" enabled="false">
         <stringProp name="ProxyControlGui.port">8888</stringProp>
         <collectionProp name="ProxyControlGui.exclude_list">
           <stringProp name="1179605444">.*(?!(\.json))(\.js)(.*|$)</stringProp>

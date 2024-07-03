@@ -83,6 +83,7 @@ public class JMeterElementUtils {
   protected static final String URL_PARAM_SEPARATOR = "&";
   protected static final String URL_PARAM_VALUE_SEPARATOR = "=";
   private static final Logger LOG = LoggerFactory.getLogger(JMeterElementUtils.class);
+
   private Configuration configuration;
 
   public JMeterElementUtils() {
@@ -245,16 +246,18 @@ public class JMeterElementUtils {
   }
 
   public static boolean isJson(String value) {
-    try {
-      new JSONObject(value);
-    } catch (JSONException ex) {
-      try {
-        new JSONArray(value);
-      } catch (JSONException exception) {
-        return false;
-      }
+    boolean startJson = StringUtils.startsWithAny(
+        StringUtils.trim(StringUtils.truncate(value, 100)), "{", "[");
+    if (value.isEmpty() || !startJson) {
+      return false;
     }
-    return true;
+    boolean isJson = true;
+    try {
+      JsonPath.parse(value);
+    } catch (Exception ex) {
+      isJson = false;
+    }
+    return isJson;
   }
 
   public static boolean isXml(String xml) {

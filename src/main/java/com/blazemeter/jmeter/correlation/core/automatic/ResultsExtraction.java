@@ -62,7 +62,7 @@ public class ResultsExtraction implements AppearancesExtraction {
    * Convert string to cookie.
    *
    * @param cookieStr the cookie as a string
-   * @param url       to extract domain and path for the cookie from
+   * @param url to extract domain and path for the cookie from
    * @return list of cookies
    */
   public static List<Cookie> stringToCookie(String cookieStr, String url) {
@@ -289,14 +289,17 @@ public class ResultsExtraction implements AppearancesExtraction {
     RecordingExtraction samplersExtractor = new RecordingExtraction(configuration, appearanceMap);
     for (SampleResult result : results) {
       if (result instanceof HTTPSampleResult) {
-
-        HTTPSampleResult httpSampleResult = (HTTPSampleResult) result;
-        HTTPSamplerProxy sourceRequest = parseToHttpSampler(httpSampleResult);
-        if (requestsMap != null && requestsMap.containsKey(result.getSampleLabel())) {
-          sourceRequest = requestsMap.get(result.getSampleLabel());
+        try {
+          HTTPSampleResult httpSampleResult = (HTTPSampleResult) result;
+          HTTPSamplerProxy sourceRequest = parseToHttpSampler(httpSampleResult);
+          if (requestsMap != null && requestsMap.containsKey(result.getSampleLabel())) {
+            sourceRequest = requestsMap.get(result.getSampleLabel());
+          }
+          samplersExtractor.extractParametersFromHttpSampler(sourceRequest);
+          extractAppearancesFromSampleResult(httpSampleResult, sourceRequest);
+        } catch (Exception ex) { //Capture any exception to avoid teardown all flow
+          LOG.error("Error Extracting Parameters from result", ex);
         }
-        samplersExtractor.extractParametersFromHttpSampler(sourceRequest);
-        extractAppearancesFromSampleResult(httpSampleResult, sourceRequest);
       }
     }
   }
@@ -314,13 +317,17 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private void extractAppearancesFromJson(String json, HTTPSamplerProxy sourceRequest) {
-    if (JMeterElementUtils.isJsonArray(json)) {
-      utils.extractParametersFromJsonArray(new JSONArray(json), appearanceMap, sourceRequest, "",
+    try {
+      if (JMeterElementUtils.isJsonArray(json)) {
+        utils.extractParametersFromJsonArray(new JSONArray(json), appearanceMap, sourceRequest, "",
+            Sources.RESPONSE_BODY_JSON);
+        return;
+      }
+      utils.extractParametersFromJson(new JSONObject(json), appearanceMap, sourceRequest,
           Sources.RESPONSE_BODY_JSON);
-      return;
+    } catch (Exception ex) {
+      LOG.error("Error parsing JSON", ex);
     }
-    utils.extractParametersFromJson(new JSONObject(json), appearanceMap, sourceRequest,
-        Sources.RESPONSE_BODY_JSON);
   }
 
   private void extractParametersFromHeaderStrings(String headerString,
