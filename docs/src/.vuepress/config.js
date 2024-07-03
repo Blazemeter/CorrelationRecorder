@@ -1,16 +1,23 @@
-const { description } = require("../../package");
+const {description} = require("../../package");
 const REPO_URL = "https://github.com/Blazemeter/CorrelationRecorder";
+const BASE_PATH = buildBaseUrl();
+
+function buildBaseUrl() {
+  return process.env.CI_PAGES_URL
+      ? "/jmeter-siebel-plugin/"
+      : "/CorrelationRecorder/";
+}
 
 module.exports = {
   /**
    * Ref：https://v1.vuepress.vuejs.org/config/#title
    */
-  title: "Correlation Recorder",
+  title: "Auto Correlation Recorder",
   /**
    * Ref：https://v1.vuepress.vuejs.org/config/#description
    */
   description: description,
-  base: "/CorrelationRecorder/",
+  base: BASE_PATH,
 
   /**
    * Extra tags to be injected to the page HTML `<head>`
@@ -18,11 +25,11 @@ module.exports = {
    * ref：https://v1.vuepress.vuejs.org/config/#head
    */
   head: [
-    ["meta", { name: "theme-color", content: "#00ace6" }],
-    ["meta", { name: "apple-mobile-web-app-capable", content: "yes" }],
+    ["meta", {name: "theme-color", content: "#00ace6"}],
+    ["meta", {name: "apple-mobile-web-app-capable", content: "yes"}],
     [
       "meta",
-      { name: "apple-mobile-web-app-status-bar-style", content: "black" },
+      {name: "apple-mobile-web-app-status-bar-style", content: "black"},
     ],
   ],
 

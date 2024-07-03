@@ -4,11 +4,11 @@ sidebar: auto
 
 # Correlation Rules
 
-Correlation rules are the mechanism that allows you to define how to the Correlation Recorder will detect dynamic values, extract and replacement them in your recorded flow.
+Correlation rules are the mechanism that allows you to define how to the Auto Correlation Recorder will detect dynamic values, extract and replacement them in your recorded flow.
 
 ## Concepts
 
-A Correlation Rule consists of three elements: a **Reference variable name**, an **Extractor**, and a **Replacement**. 
+A Correlation Rule consists of three elements: a **Reference variable name**, an **Extractor**, and a **Replacement**.
 
 It's important to note that while the **Reference variable name must be defined,** it doesn't have to be unique. You can create **multiple** correlation rules with **the same name**.
 

@@ -86,7 +86,7 @@ If you want to know more about Enterprise Correlation Templates, please contact 
 
 4. Add the JTL file of the recording (if it isn't already loaded)
 
-By default, the plugin loads the JTL file that is found in the View Result Tree of the "bzm - Correlation Recorder" element.
+By default, the plugin loads the JTL file that is found in the View Result Tree of the "bzm - Auto Correlation Recorder" element.
 If you want to use a different JTL file, you can click on the "Browse" button and select the file you want to use.
 
 ::: warning

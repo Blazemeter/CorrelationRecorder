@@ -19,7 +19,7 @@ Before attempting to install the plugin, make sure you have the following prereq
 1. **JMeter**: If you haven't done so already, download and install JMeter. You can find the latest version of
    JMeter [here](https://jmeter.apache.org/download_jmeter.cgi).
 2. **JMeter Plugins Manager**: Ensure that you have installed the JMeter Plugins Manager before installing
-   the Correlation Recorder plugin. Learn how to install it in [this article.](https://jmeter-plugins.org/install/Install/)
+   the Auto Correlation Recorder plugin. Learn how to install it in [this article.](https://jmeter-plugins.org/install/Install/)
 
 These two downloads are all you need to get started.
 
@@ -28,7 +28,7 @@ These two downloads are all you need to get started.
 If you want to use the plugin with BlazeMeter, you will also need to have the following:
 
 1. A BlazeMeter account. If you don't have one, you can [sign up for free](https://accounts.blazemeter.com/).
-2. A BlazeMeter api-key. If you don't have one, you can learn how to generate it from this article [BlazeMeter Api Key](https://guide.blazemeter.com/hc/en-us/articles/13329040973073-BlazeMeter-API-keys-).
+1. A BlazeMeter api-key. If you don't have one, you can learn how to generate it from this article [BlazeMeter Api Key](https://guide.blazemeter.com/hc/en-us/articles/13329040973073-BlazeMeter-API-keys-).
 
 ## Installation
 
@@ -38,33 +38,33 @@ you can also do it manually. This section will cover both methods.
 ### With Plugin Manager
 
 1. Launch **JMeter** and open the **JMeter Plugins Manager**.
-2. In the Available Plugins tab, search and select "**BlazeMeter - Correlation Recorder Plugin**".
-3. Click the "**Apply Changes and Restart JMeter**" button and wait for the installation process to complete.
+1. In the Available Plugins tab, search and select "**BlazeMeter - Auto Correlation Recorder Plugin**".
+1. Click the "**Apply Changes and Restart JMeter**" button and wait for the installation process to complete.
 
-Once JMeter restarts, the Correlation Recorder plugin will be installed.
+Once JMeter restarts, the Auto Correlation Recorder plugin will be installed.
 
 ### Manually
 
-1. Go to the [Correlation Recorder plugin page](https://jmeter-plugins.org/?search=BlazeMeter%20-%20Correlation%20Recorder%20Plugin) and download the
+1. Go to the [Auto Correlation Recorder plugin page](https://jmeter-plugins.org/?search=BlazeMeter%20-%20Correlation%20Recorder%20Plugin) and download the
    latest version of the plugin, with the dependencies.
-2. Place the Plugin jar in the ext folder of your JMeter installation. The ext folder is usually located in
+1. Place the Plugin jar in the ext folder of your JMeter installation. The ext folder is usually located in
    `<JMeter_Home>/lib/ext`.
-3. Place the dependencies jars in the lib folder of your JMeter installation. The lib folder is usually located in
+1. Place the dependencies jars in the lib folder of your JMeter installation. The lib folder is usually located in
    `<JMeter_Home>/lib`.
-4. Restart JMeter.
+1. Restart JMeter.
 
 ## Verifying
 
 You can verify the plugin being installed by opening the Plugins Manager and checking the Installed Plugins tab. Search for
-the Correlation Recorder plugin and make sure it is listed there.
+the Auto Correlation Recorder plugin and make sure it is listed there.
 
-Another way to ensure the plugin is properly installed, is by attempting to load the Correlation Recorder template. To do so,
+Another way to ensure the plugin is properly installed, is by attempting to load the Auto Correlation Recorder template. To do so,
 follow these steps:
 
 1. Launch **JMeter** and open the **File** menu.
-2. Select the **Templates** option and then click on **Load**.
-3. Search for the **Correlation Recorder** template and click on **Open**.
-4. If the template loads successfully, the plugin is properly installed.
+1. Select the **Templates** option and then click on **Load**.
+1. Search for the **Auto Correlation Recorder** template and click on **Open**.
+1. If the template loads successfully, the plugin is properly installed.
 
 ## Updating
 
@@ -78,18 +78,18 @@ In case there is a new version of the plugin, the name of the extension will be 
 If you want to uninstall the plugin, you can do so by following these steps:
 
 1. Launch **JMeter** and open the **JMeter Plugins Manager**.
-2. In the Installed Plugins tab, search and select "**BlazeMeter - Correlation Recorder Plugin**".
-3. Uncheck the plugin and click the "**Apply Changes and Restart JMeter**" button.
-4. Wait for the uninstallation process to complete.
-5. Restart JMeter.
+1. In the Installed Plugins tab, search and select "**BlazeMeter - Auto Correlation Recorder Plugin**".
+1. Uncheck the plugin and click the "**Apply Changes and Restart JMeter**" button.
+1. Wait for the uninstallation process to complete.
+1. Restart JMeter.
 
 ## Configuration
 
-Before we jump right into recording, let's take a look at the basic configuration options available for the Correlation Recorder plugin.
+Before we jump right into recording, let's take a look at the basic configuration options available for the Auto Correlation Recorder plugin.
 
 ### Properties
 
-Here is a list of properties that you need to configure in order to use the Correlation Recorder plugin:
+Here is a list of properties that you need to configure in order to use the Auto Correlation Recorder plugin:
 
 1. Disable redirect disabling: Set the `proxy.redirect.disabling` property to false in your `user.properties` file.
    This is required for a proper and automatic correlation experience.
@@ -145,41 +145,41 @@ JMeter and configure your web browser to use that proxy.
 #### 1. **Configure JMeter Proxy**
 
 1. Open JMeter and create a new Test Plan.
-2. Right-click on the Test Plan and select "Add" > "Threads (Users)" > "Thread Group".
-3. Right-click on the Thread Group and select "Add" > "Logic Controller" > "Recording Controller".
-4. Right-click on the Recording Controller and select "Add" > "Sampler" > "HTTP(S) Test Script Recorder".
-5. In the HTTP(S) Test Script Recorder, click on the "Start" button to start the proxy server.
-6. Click on the "HTTP(S) Test Script Recorder" element in the tree view and configure the following settings:
-7. Set the "Target Controller" to the Recording Controller you created in step 3.
-8. Set the "Port" to an available port (e.g. 8888).
-9. Set the "Grouping" to "Put each group in a new transaction controller".
-10. Click on the "SSL Manager" button and create a new SSL certificate.
+1. Right-click on the Test Plan and select "Add" > "Threads (Users)" > "Thread Group".
+1. Right-click on the Thread Group and select "Add" > "Logic Controller" > "Recording Controller".
+1. Right-click on the Recording Controller and select "Add" > "Sampler" > "HTTP(S) Test Script Recorder".
+1. In the HTTP(S) Test Script Recorder, click on the "Start" button to start the proxy server.
+1. Click on the "HTTP(S) Test Script Recorder" element in the tree view and configure the following settings:
+1. Set the "Target Controller" to the Recording Controller you created in step 3.
+1. Set the "Port" to an available port (e.g. 8888).
+1. Set the "Grouping" to "Put each group in a new transaction controller".
+1. Click on the "SSL Manager" button and create a new SSL certificate.
 
 #### **2. Configure Web Browser**
 
 1. Open Chrome/Firefox/Opera and go to the settings menu.
-2. Search for "proxy" or "network settings".
-3. Under the "Proxy" section, select "Manual proxy configuration".
-4. In the "HTTP Proxy" field, enter "localhost" and the port number you set in step 6 of the JMeter configuration (e.g. 8888).
-5. Click on the "OK" button to save the settings.
+1. Search for "proxy" or "network settings".
+1. Under the "Proxy" section, select "Manual proxy configuration".
+1. In the "HTTP Proxy" field, enter "localhost" and the port number you set in step 6 of the JMeter configuration (e.g. 8888).
+1. Click on the "OK" button to save the settings.
 
 #### **3. Record Traffic**
 
 1. In JMeter, click on the "Start" button in the HTTP(S) Test Script Recorder to start recording.
-2. In your web browser, navigate to the website you want to record.
-3. Perform the actions you want to record (e.g. filling out forms, clicking links).
-4. In JMeter, click on the "Stop" button to stop recording.
+1. In your web browser, navigate to the website you want to record.
+1. Perform the actions you want to record (e.g. filling out forms, clicking links).
+1. In JMeter, click on the "Stop" button to stop recording.
 
 #### macOS
 
 ##### 1. **Configure JMeter Proxy**
 
 1. Open JMeter and create a new Test Plan.
-2. Right-click on the Test Plan and select "Add" > "Threads (Users)" > "Thread Group".
-3. Right-click on the Thread Group and select "Add" > "Logic Controller" > "Recording Controller".
-4. Right-click on the Recording Controller and select "Add" > "Sampler" > "HTTP(S) Test Script Recorder".
-5. In the HTTP(S) Test Script Recorder, click on the "Start" button to start the proxy server.
-6. Click on the "HTTP(S) Test Script Recorder" element in the tree view and configure the following settings:
+1. Right-click on the Test Plan and select "Add" > "Threads (Users)" > "Thread Group".
+1. Right-click on the Thread Group and select "Add" > "Logic Controller" > "Recording Controller".
+1. Right-click on the Recording Controller and select "Add" > "Sampler" > "HTTP(S) Test Script Recorder".
+1. In the HTTP(S) Test Script Recorder, click on the "Start" button to start the proxy server.
+1. Click on the "HTTP(S) Test Script Recorder" element in the tree view and configure the following settings:
 
 - Set the "Target Controller" to the Recording Controller you created in step 3.
 - Set the "Port" to an available port (e.g. 8888).

@@ -4,7 +4,7 @@ next: /guide/templates/create.md
 
 # Correlation Templates
 
-The Templates are part of the core functionalities of the Correlation Recorder Plugin. They are the structure that groups a set of Correlation Rules inside the Plugin for various uses.
+The Templates are part of the core functionalities of the Auto Correlation Recorder Plugin. They are the structure that groups a set of Correlation Rules inside the Plugin for various uses.
 
 In this section, you will learn about:
 
@@ -15,7 +15,7 @@ In this section, you will learn about:
 
 ## Definitions
 
-A Correlation Template, or a Template for shorts, is the structure used to group a set of Correlation Rules inside the Correlation Recorder Plugin for different purposes, such as:
+A Correlation Template, or a Template for shorts, is the structure used to group a set of Correlation Rules inside the Auto Correlation Recorder Plugin for different purposes, such as:
 
 * Sharing with coworkers
 * Analyzing the recordings
@@ -99,7 +99,7 @@ When you load a Template to the Plugin, you manually edit the configurations the
 
 To load a Template to the Plugin, you must:
 
-1. Load the Correlation Recorder Plugin
+1. Load the Auto Correlation Recorder Plugin
 2. Click on the "Load Template" button
 3. Select the Template from the list of Installed and Available (*)
 4. Click on the "Load" button
@@ -117,7 +117,7 @@ To keep your local Repository up to date, please remember to click the "Refresh"
 If anyone gave you the JSON file related to a Template, you could import it into your local Repository by adding the file to your `correlation-template` folder, located in `<JMeter>/bin/.` after that, you force a manual sync so the Plugin to index it as local.
 
 ### Delete Templates
-Currently, the Correlation Recorder Plugin does not support Deleting Templates, neither from your local Repository nor any other external repository.
+Currently, the Auto Correlation Recorder Plugin does not support Deleting Templates, neither from your local Repository nor any other external repository.
 
 You can delete your local repository Templates by manually deleting the correlation-templates folder in the bin folder inside your JMeter installation folder; however, this is not advisable, and you must do it at your own risk.
 

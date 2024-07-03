@@ -36,7 +36,7 @@ If you have Correlation Suggestions generated from your Test Plan, you can expor
 To do so, you need to:
 
 1. Make a Recording and generate Correlation Suggestions (by any method)
-2. Click on the "Export Suggestions" button in the Correlation Recorder Plugin
+2. Click on the "Export Suggestions" button in the Auto Correlation Recorder Plugin
 3. Select the Rules you want to save as a Template (eliminate the rest)
 4. Click on "Save Template" and fill in the required fields
 5. Click on "Save"
@@ -47,4 +47,4 @@ Note: If you are generating Suggestions from a Template that you have access to 
 Another way to create a Template is by loading different Templates into the Plugin and manually editing them to fit your use case. This is useful when you want to combine different Templates into a single one or when you want to create a Template from scratch.
 When you are done editing the Template, you can save it as a new one. 
 
-The Correlation Recorder Plugin do not keep track of the Templates you load, except from the last one, so you need to make sure you save them in the proper Repository.
+The Auto Correlation Recorder Plugin do not keep track of the Templates you load, except from the last one, so you need to make sure you save them in the proper Repository.

@@ -66,16 +66,16 @@ requests with the JMeter variable containing the captured value. This ensures th
 a unique value.
 
 Manual correlation can be a time-consuming process, particularly when dealing with large or complex test scenarios
-that involve multiple dynamic values. This is where Automatic Correlation recorder comes in handy.
-The Automatic Correlation recorder provides several methods for automatically detecting and correlating dynamic
+that involve multiple dynamic values. This is where Auto Correlation Recorder comes in handy.
+The Auto Correlation Recorder provides several methods for automatically detecting and correlating dynamic
 values, including the use of regular expressions and JSON Path expressions.
 
-Here are some of the Automatic Correlation methods supported by Correlation Recorder:
+Here are some of the Automatic Correlation methods supported by Auto Correlation Recorder:
 
 1. RegEx (Regular Expression) Extractor
 1. JSON Extractor
 
-By using the Automatic Correlation recorder, however, you can simplify the process of correlating dynamic values and save time when creating test scripts.
+By using the Auto Correlation Recorder, however, you can simplify the process of correlating dynamic values and save time when creating test scripts.
 
 Please take a look at previous sections in the guide, where you can learn about the different mechanisms for
 automatically correlating dynamic values, either after the recording is being done or after the whole recording
@@ -83,7 +83,7 @@ is done.
 
 ## Correlation Rule
 
-The Correlation Recorder plugin provides a powerful feature called "Correlation Rules" that simplifies the process of
+The Auto Correlation Recorder plugin provides a powerful feature called "Correlation Rules" that simplifies the process of
 making correlations in JMeter scripts. A Correlation Rule consists of three key components:
 
 Reference Variable: This variable is used to store the dynamic value that will be extracted from a response and
@@ -104,23 +104,23 @@ refer to the "Correlation Rules" section of the JMeter User Manual.
 
 ## Correlation Template
 
-The Correlation Recorder Plugin in JMeter utilizes Correlation Templates to maintain a simplified versioning of
+The Auto Correlation Recorder Plugin in JMeter utilizes Correlation Templates to maintain a simplified versioning of
 Correlation Rules and to store and organize them together. A Correlation Template includes essential information
 such as version number, name, description, and changes log.
 
-The Correlation Template serves as the foundation for the Automatic Correlation Analysis in the Correlation Recorder
+The Correlation Template serves as the foundation for the Automatic Correlation Analysis in the Auto Correlation Recorder
 Plugin. It allows the user to keep track of the version of the Correlation Rules being used for the analysis.
 This feature ensures that the user is always working with the latest version of the Correlation Rules and helps
 to maintain the accuracy of the results.
 
 Additionally, BlazeMeter provides several Correlation Templates that are designed for different technologies and
 protocols. These templates can be used to facilitate the correlation process for specific types of applications
-and make it easier for users to get started with the Correlation Recorder Plugin. To learn more about how to use
+and make it easier for users to get started with the Auto Correlation Recorder Plugin. To learn more about how to use
 Correlation Templates and benefit from this powerful feature, refer to the JMeter User Manual.
 
 ## Correlation Repository
 
-The Correlation Repository is a powerful mechanism used by the Correlation Recorder Plugin in JMeter to keep your set
+The Correlation Repository is a powerful mechanism used by the Auto Correlation Recorder Plugin in JMeter to keep your set
 of Correlation Templates up-to-date. This feature allows for continuous updates of Correlation Templates from external
 sources.
 

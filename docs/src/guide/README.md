@@ -4,7 +4,7 @@ next: /guide/installation-guide.md
 
 # User Guide
 
-Correlations Recorder it's a [JMeter's](http://jmeter.apache.org/usermanual/get-started.html) plugin that simplifies
+Auto Correlation Recorder it's a [JMeter's](http://jmeter.apache.org/usermanual/get-started.html) plugin that simplifies
 the process of recording for applications with Dynamic Variables by providing automatic **correlations of variables**.
 
 You can perform exploratory detections of dynamic variables and create **correlation rules** to correlate them
@@ -32,18 +32,18 @@ Additional Features:
 
 ## Benefits
 
-Here are 10 key benefits of using the JMeter's Automatic Correlation Recorder Plugin:
+Here are 10 key benefits of using the JMeter's Auto Correlation Recorder Plugin:
 
 1. Fast script creation
-2. Preloaded templates
-3. Hassle-free collaboration
-4. Customizable correlations
-5. Easy customization
-6. Streamlined collaboration
-7. Customizable extensions
-8. Dynamic value correlation
-9. Fast rule generation
-10. Reliable testing.
+1. Preloaded templates
+1. Hassle-free collaboration
+1. Customizable correlations
+1. Easy customization
+1. Streamlined collaboration
+1. Customizable extensions
+1. Dynamic value correlation
+1. Fast rule generation
+1. Reliable testing.
 
 ## System requirements
 

@@ -28,11 +28,11 @@ This process is repeated on each failed request until all the dynamic values are
 the dynamic values are not easy to locate, and sometimes, they might even have different values for the same argument
 within the same recording.
 
-When performing this process manually, it can be very time-consuming and frustrating. That's why we created the Correlation Recorder plugin, to automate this process and make it easier for you.
+When performing this process manually, it can be very time-consuming and frustrating. That's why we created the Auto Correlation Recorder plugin, to automate this process and make it easier for you.
 
 ## Methods of Correlation
 
-The Correlation Recorder plugin offers different methods of correlation, each one with its own advantages and disadvantages. In this section, we will cover all of them divided into two categories: Before the Recording and After the Recording.
+The Auto Correlation Recorder plugin offers different methods of correlation, each one with its own advantages and disadvantages. In this section, we will cover all of them divided into two categories: Before the Recording and After the Recording.
 
 ### Before the Recording
 
@@ -41,11 +41,13 @@ When we say 'Before the Recording,' it refers to the process between loading the
 Once you have finished configuring the rules, you can start the recording, and the plugin will automatically compare each request and response with the configured rules.
 
 Pros:
+
 - It is the most flexible method since you can configure it to your needs.
 - It is the most efficient method since it is the only one that does not require you to replay the recording.
 - It supports extensibility, allowing you to develop your own rules according to your needs.
 
 Cons:
+
 - It requires you to configure the rules before the recording is done.
 - It requires prior knowledge of potential dynamic values and how to configure the rules to extract them.
 - It requires a re-recording to test the changes made to the rules.
@@ -69,12 +71,14 @@ Let's see what each one of these methods has to offer.
 This method involves analyzing a recording using different Correlation Templates to automatically detect dynamic values. It generates a list of Correlation Suggestions based on those values and lets you choose which ones to apply in the Test Plan.
 
 Pros:
+
 - This is the most reliable method as it only correlates the dynamic values found with the rules in the Correlation Template.
 - It lets you test any set of Correlation Rules before applying them to the Test Plan.
 - You can easily roll-back changes made to the Test Plan as it stores it in a separate file.
 - It integrates with the Correlation Repository feature, allowing you to use the Correlation Templates from BlazeMeter, GitHub, or any other sources, aside from your local ones.
 
 Cons:
+
 - It still requires Rules to properly correlate the dynamic values.
 - It does not detect dynamic values that are not present in the Correlation Templates.
 
@@ -83,19 +87,21 @@ Cons:
 This method involves analyzing the results of a recording replay by comparing them with the original recording. It only focuses on the arguments of the requests that failed in the replay. By doing so, it generates a list of Correlation Suggestions based on the differences found, allowing you to select which ones to apply in the Test Plan.
 
 Pros:
+
 - It is pretty flexible since it detects dynamic values that you might not be aware of.
 - It is customizable since you can configure how the analysis is done.
 
 Cons:
+
 - It is not 100% bullet-proof since it might correlate dynamic values that are not dynamic.
 - It requires your input of which of the detected dynamic values you are interested in correlating. Otherwise, it will end up correlating values that you might not be interested in.
 
 While they both have their own advantages and disadvantages, we recommend you use the **Correlation by Using Correlation Templates** method as it is the most reliable one. With that being said, the **Correlation by Replay and Compare** method can be pretty useful when you are not sure where the dynamic values are present in the recording.
 
-In conclusion, the Correlation Process is a crucial step in JMeter testing, and the Correlation Recorder plugin provides several methods to make it easier and more efficient. By following the recommended methods, you can save time and effort and ensure a more accurate and reliable test plan.
+In conclusion, the Correlation Process is a crucial step in JMeter testing, and the Auto Correlation Recorder plugin provides several methods to make it easier and more efficient. By following the recommended methods, you can save time and effort and ensure a more accurate and reliable test plan.
 
 If you are new to JMeter, we recommend you start with the basics of recording and gradually move on to the more advanced topics of correlation. Take your time to learn and practice the different methods, and find the one that works best for your specific scenario.
 
 Also, keep in mind that correlation is not a one-time process. Dynamic values can change over time, and you may need to update your correlation rules or templates accordingly. So, make sure to regularly review and update your test plan to ensure its accuracy and reliability.
 
-In summary, the correlation process is a crucial part of JMeter testing, and the Correlation Recorder plugin provides valuable tools to make it easier and more efficient. By mastering the different methods and techniques, you can create accurate and reliable test plans that can help you identify performance issues and optimize your applications.
+In summary, the correlation process is a crucial part of JMeter testing, and the Auto Correlation Recorder plugin provides valuable tools to make it easier and more efficient. By mastering the different methods and techniques, you can create accurate and reliable test plans that can help you identify performance issues and optimize your applications.

@@ -19,9 +19,9 @@ These are the minimum requisites that you will need to start:
 # Correlation Rule Structure
 
 Before we begin with the elements that are required to create a Correlation Extension, we need to
- add the Correlation Recorder as dependency. To do that, you need to add the following to your pom.xml:
+ add the Auto Correlation Recorder as dependency. To do that, you need to add the following to your pom.xml:
 
-1. The Correlation Recorder dependency
+1. The Auto Correlation Recorder dependency
 2. The JMeter dependency
 
 An example of a basic pom.xml file would be:
