@@ -3,9 +3,9 @@ prev: /guide/after-recording.md
 next: /guide/before-recording.md
 ---
 
-# Configuring the Correlation Recorder Plugin
+# Configuring the Auto Correlation Recorder Plugin
 
-The Correlation Recorder plugin in JMeter allows you to automatically correlate dynamic values in your
+The Auto Correlation Recorder plugin in JMeter allows you to automatically correlate dynamic values in your
 HTTP requests. The plugin provides several configurations that can be customized to meet your specific needs.
 
 ## Available Configurations
@@ -95,7 +95,7 @@ With this, the plugin will ignore any request that has `example.com` in its doma
 
 ### Exclude small values
 
-Don't want the Correlation Recorder Plugin to pick up certain small values? We get it! Sometimes those tiny arguments,
+Don't want the Auto Correlation Recorder Plugin to pick up certain small values? We get it! Sometimes those tiny arguments,
 like "amount" with a value of "100", just aren't worth correlating.
 
 If you're using Automatic Correlation analysis by Correlation Templates, this particular element probably won't be
@@ -115,7 +115,7 @@ correlation.configuration.min_value_length=10
 ### Exclude certain file types from correlation
 
 Let's say that you have a web application that serves different types of files such as images, PDFs, or CSS files.
-When recording your test scenario, you notice that the Correlation Recorder plugin is also capturing some of these
+When recording your test scenario, you notice that the Auto Correlation Recorder plugin is also capturing some of these
 files as dynamic values. Since these files are not part of the application's business logic, you may want to exclude
 them from the correlation analysis.
 

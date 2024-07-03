@@ -25,7 +25,7 @@ Now, on a detailed point of view, let's talk about each one of the steps of proc
 ### Proxy
 
 #### Deliver Recorded Sampler
-For the Correlation Recorder Plugin, the Proxy is handled by `CorrelationProxyControl.java`, who receives an HTTPSamplerBase (the recorded Sampler), and the SampleResult (the request and the response), process and sends it to the CorrelationEngine to be processed.
+For the Auto Correlation Recorder Plugin, the Proxy is handled by `CorrelationProxyControl.java`, who receives an HTTPSamplerBase (the recorded Sampler), and the SampleResult (the request and the response), process and sends it to the CorrelationEngine to be processed.
 
 All that occurs in the deliverSampler method.
 

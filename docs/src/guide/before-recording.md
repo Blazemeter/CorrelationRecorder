@@ -72,7 +72,7 @@ requests, not only possible, but also easier than if you manage to do it, alone,
 
 Assuming you know [how Correlations works](#basic-concepts), lets jump into adding and configuring your rules.
 
-Go to _bzm - Correlation Recorder_ > click the Rules Tab.
+Go to _bzm - Auto Correlation Recorder_ > click the Rules Tab.
 
 You will be presented with multiple options to add, move and delete your Correlation Rules Groups, any rule that you want to add must be inside a group
 
@@ -348,7 +348,7 @@ This section will be divided into cases, from simple and common cases to unusual
 
 ## Variable Replacement
 
-The replacement of dynamic or static data in a request for JMeter Variables is one of the main objectives of the **Correlation Recorder**.
+The replacement of dynamic or static data in a request for JMeter Variables is one of the main objectives of the **Auto Correlation Recorder**.
 
 Mainly, the idea is to replace data for variables, therefore, we get a proper correlated script.
 The data we want to replace needs to match a certain regex, condition or even a criteria.

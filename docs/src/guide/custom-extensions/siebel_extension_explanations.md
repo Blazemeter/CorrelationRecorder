@@ -18,13 +18,13 @@ While the user is moving from one point of the page to another, some data is sen
 
 Those values don’t come in a format that will allow you to correlate them easily because they may vary on position, on the way they are formed, even by the separator and the values represented in them. 
 
-Because of this, the default core tooling that comes with the Correlation Recorder Plugin needed to be customized, allowing the users:
+Because of this, the default core tooling that comes with the Auto Correlation Recorder Plugin needed to be customized, allowing the users:
 
 * To stop using complex scripts at the start of recording to correlate those values
 * To ease the customization of the Correlation Rules when using this protocol
 Reduce the boilerplate to test each one of their scenarios.
 
-In the following sections, we will talk on how the Correlation Recorder handles the customization of the default set of Correlation Extractors and Correlation Replacements (Correlation Components, for short) in order to tackle the complexity of correlating dynamic data inside a Siebel CRM environment.
+In the following sections, we will talk on how the Auto Correlation Recorder handles the customization of the default set of Correlation Extractors and Correlation Replacements (Correlation Components, for short) in order to tackle the complexity of correlating dynamic data inside a Siebel CRM environment.
 
 ## Structure of the extension
 
