@@ -66,10 +66,12 @@ public class LocalConfiguration {
   private static final String JAR_FILE_SUFFIX = ".jar";
   private static final String TEMPLATES_FOLDER_PATH = "/templates/";
   private static final String LOCAL_REPOSITORIES_MANAGERS_FILE_NAME = "managers";
-  private static final String CORRELATION_RECORDER_TEST_PLAN = "correlation-recorder.jmx";
-  private static final String CORRELATION_RECORDER_TEMPLATE_DESC = "correlation-recorder-template"
+  private static final String CORRELATION_RECORDER_TEST_PLAN = "auto-correlation-recorder.jmx";
+  private static final String CORRELATION_RECORDER_TEMPLATE_DESC = "auto-correlation-recorder"
+      + "-template"
       + "-description.xml";
-  private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "bzm - Correlation Recorder";
+  private static final String CORRELATION_RECORDER_TEMPLATE_NAME = "bzm - Auto Correlation "
+      + "Recorder";
   private static final Logger LOG = LoggerFactory.getLogger(LocalConfiguration.class);
 
   @JsonIgnore

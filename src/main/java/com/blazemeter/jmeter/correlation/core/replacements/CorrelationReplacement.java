@@ -37,8 +37,8 @@ import org.slf4j.LoggerFactory;
  *
  * Contains all the methods from loading, saving and processing requests from the server.
  *
- * For a more detailed explanation on Correlation Replacements, their usages and methods, please 
- * read the 
+ * For a more detailed explanation on Correlation Replacements, their usages and methods, please
+ * read the
  * <a href="https://github.com/Blazemeter/CorrelationRecorder/blob/master/README.md">readme</a>.
  *
  * Along side {@link com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor}
@@ -96,8 +96,8 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   }
 
   /**
-   * Handles the saving of values of the Correlation Replacement into a {@link
-   * CorrelationRuleTestElement} for later storage in Test Plans and CorrelationTemplates.
+   * Handles the saving of values of the Correlation Replacement into a
+   * {@link CorrelationRuleTestElement} for later storage in Test Plans and CorrelationTemplates.
    *
    * <p>This method has to be overwritten when implementing custom Correlation Replacements,
    * otherwise, only the class name will be saved
@@ -115,14 +115,14 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    *
    * <p>Both the properties in the recorded sampler and its children will be processed
    *
-   * @param sampler  recorded sampler containing the information of the request
+   * @param sampler recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the condition is matched, components
-   *                 will be added to it to correlate the obtained values)
-   * @param result   result containing information about request and associated response from server
-   * @param vars     stored variables shared between requests during recording
+   * will be added to it to correlate the obtained values)
+   * @param result result containing information about request and associated response from server
+   * @param vars stored variables shared between requests during recording
    */
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-                      JMeterVariables vars) {
+      JMeterVariables vars) {
     replaceTestElementProperties(sampler, vars);
     for (TestElement child : children) {
       if (child instanceof ConfigTestElement) {
@@ -140,7 +140,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * Replacement, the value will be replaced in the String as <code>${referenceVariableName}</code>,
    * as many times as the logic in the condition allows it.
    *
-   * @param el   test element to check and match the properties
+   * @param el test element to check and match the properties
    * @param vars stored variables from the recording
    */
   private void replaceTestElementProperties(TestElement el, JMeterVariables vars) {
@@ -165,12 +165,20 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
       if (!prop.getName().equals(TestElement.GUI_CLASS)
           && !prop.getName().equals(TestElement.TEST_CLASS)) {
         prop = replaceSimpleProp(prop, vars);
-        LOG.debug("CorrelationReplacement result: {}", prop);
       }
     } else if (prop instanceof NumberProperty) {
       prop = replaceSimpleProp(prop, vars);
-      LOG.debug("CorrelationReplacement result: {}", prop);
     } else if (prop instanceof MultiProperty) {
+      if (prop instanceof TestElementProperty) {
+        TestElementProperty testElementProperty = (TestElementProperty) prop;
+        if (testElementProperty.getObjectValue() instanceof Argument) {
+          replaceArgument((Argument) testElementProperty.getObjectValue(), vars);
+          return prop;
+        } else if (testElementProperty.getObjectValue() instanceof Header) {
+          replaceHeader((Header) testElementProperty.getObjectValue(), vars);
+          return prop;
+        }
+      }
       MultiProperty multiVal = (MultiProperty) prop;
       PropertyIterator propertyIterator = multiVal.iterator();
       Collection<JMeterProperty> newValues = new ArrayList<>();
@@ -182,19 +190,10 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
       for (JMeterProperty jmp : newValues) {
         multiVal.addProperty(jmp);
       }
-      if (multiVal instanceof TestElementProperty) {
-        TestElementProperty multiProp = (TestElementProperty) multiVal;
-        if (multiProp.getObjectValue() instanceof Argument) {
-          replaceArgument((Argument) multiProp.getObjectValue(), vars);
-        } else if (multiProp.getObjectValue() instanceof Header) {
-          replaceHeader((Header) multiProp.getObjectValue(), vars);
-        }
-      }
-      LOG.debug("CorrelationReplacement result: {}", multiVal);
-
     } else {
       LOG.debug("Won't replace {}", prop);
     }
+    LOG.debug("CorrelationReplacement result: {}", prop);
     return prop;
   }
 
@@ -212,7 +211,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * implemented.
    *
    * @param input property's string to check and replace
-   * @param vars  stored variables shared between request during the recording
+   * @param vars stored variables shared between request during the recording
    * @return the resultant input after been processed
    */
   protected abstract String replaceString(String input, JMeterVariables vars);
@@ -224,12 +223,17 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     }
     /*
       To normalize the replacement on arguments for HTTP requests, we include the argument name and
-      '=' to the input, apply the replacement logic, and remove it afterward. This doesn't applies 
+      '=' to the input, apply the replacement logic, and remove it afterward. This doesn't applies
       when the argument has no name (eg: Data Body is a JSON/XML).
     */
     String prefix = arg.getName().isEmpty() ? "" : arg.getName() + "=";
     input = replaceString(prefix + arg.getValue(), vars).replace(prefix, "");
     arg.setValue(input);
+    /*
+    In order to comply backward compatibility from <=v2.5 keys (arg name) is also processed by
+     the replacement
+     */
+    arg.setName(replaceString(arg.getName(), vars));
   }
 
   private void replaceHeader(Header header, JMeterVariables vars) {
@@ -240,6 +244,11 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     input = replaceString(header.getName() + ": " + header.getValue(), vars)
         .replace(header.getName() + ": ", "");
     header.setValue(input);
+    /*
+    In order to comply backward compatibility from <=v2.5 keys (header name) is also processed by
+     the replacement
+     */
+    header.setName(replaceString(header.getName(), vars));
   }
 
   @Override

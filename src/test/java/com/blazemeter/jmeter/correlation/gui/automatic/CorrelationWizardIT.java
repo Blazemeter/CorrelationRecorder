@@ -1,21 +1,28 @@
 package com.blazemeter.jmeter.correlation.gui.automatic;
 
 import static org.assertj.swing.fixture.Containers.showInFrame;
+import static org.mockito.ArgumentMatchers.any;
+
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Repository;
 
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import java.awt.Container;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.swing.fixture.FrameFixture;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 
 @RunWith(SwingTestRunner.class)
@@ -24,6 +31,8 @@ public class CorrelationWizardIT {
   public JUnitSoftAssertions softly = new JUnitSoftAssertions();
   private FrameFixture frame;
   private CorrelationWizard wizard;
+  @Mock
+  public Function<Builder, Template> buildProvider;
 
   @Before
   public void setUp() throws Exception {
@@ -34,6 +43,8 @@ public class CorrelationWizardIT {
     CorrelationHistory history = new CorrelationHistory();
     wizard.setHistory(history);
     wizard.setRepositoriesSupplier(CorrelationWizardIT::getMockedRepository);
+    Mockito.when(buildProvider.apply(any())).thenReturn(new Template());
+    wizard.setBuildTemplateProvider(buildProvider);
     wizard.init();
     Container contentPane = wizard.getContentPane();
     wizard.displayTemplateSelection("Test");

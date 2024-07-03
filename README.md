@@ -1,8 +1,8 @@
-# Correlations Recorder Plugin for JMeter
+# Auto Correlations Recorder Plugin for JMeter
 
 ![BlazeMeter Labs](docs/src/.vuepress/public/images/blazemeter-labs-logo.png)
 
-Welcome to the Correlation Recorder's JMeter Plugin, the main and extensive documentation can be seen in [this link](https://blazemeter.github.io/CorrelationRecorder/).
+Welcome to the Auto Correlation Recorder's JMeter Plugin, the main and extensive documentation can be seen in [this link](https://blazemeter.github.io/CorrelationRecorder/).
 
 ## Usage
 

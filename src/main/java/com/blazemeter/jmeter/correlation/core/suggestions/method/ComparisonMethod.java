@@ -10,6 +10,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.ResponseAnalyzer;
 import com.blazemeter.jmeter.correlation.core.automatic.Sources;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.StructureType;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.LocationType;
+import com.blazemeter.jmeter.correlation.core.automatic.extraction.method.Extractor;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.method.ExtractorFactory;
 import com.blazemeter.jmeter.correlation.core.automatic.replacement.method.ReplacementContext;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
@@ -17,7 +18,6 @@ import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacemen
 import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.CorrelationContext;
 import com.helger.commons.annotation.VisibleForTesting;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +46,8 @@ public class ComparisonMethod implements CorrelationMethod {
   private final List<CorrelationSuggestion> orphanSuggestions = new ArrayList<>();
   private List<SampleResult> results;
   private ComparisonContext context;
+  private final HashMap<LocationType, StructureType> structureTypeCache =
+      new HashMap<>();
 
   public ComparisonMethod() {
   }
@@ -83,10 +85,10 @@ public class ComparisonMethod implements CorrelationMethod {
    * @return the populated ExtractionSuggestion.
    */
   private static ExtractionSuggestion generateCandidateExtractor(SampleResult result,
-      Appearances appearance,
-      CorrelationExtractor extractor,
-      StructureType structureType,
-      String name) {
+                                                                 Appearances appearance,
+                                                                 CorrelationExtractor extractor,
+                                                                 StructureType structureType,
+                                                                 String name) {
     ExtractionSuggestion suggestion = new ExtractionSuggestion(extractor, result);
     suggestion.setSource(structureType.name());
     suggestion.setValue(appearance.getValue());
@@ -114,7 +116,6 @@ public class ComparisonMethod implements CorrelationMethod {
           context.getClass());
       return new ArrayList<>();
     }
-
     this.context = (ComparisonContext) context;
     this.results = this.context.getRecordingSampleResults(); // Load the results once
 
@@ -166,7 +167,7 @@ public class ComparisonMethod implements CorrelationMethod {
    * @return the populated CorrelationSuggestion.
    */
   private CorrelationSuggestion populateSuggestion(DynamicElement element,
-      CorrelationSuggestion suggestion) {
+                                                   CorrelationSuggestion suggestion) {
     addMultivaluedExtractor(element, suggestion, results, valueToReferenceName);
     addMultivaluedReplacement(element, suggestion, valueToReferenceName);
     return suggestion;
@@ -187,16 +188,15 @@ public class ComparisonMethod implements CorrelationMethod {
    *                             extraction suggestions.
    */
   private void addMultivaluedExtractor(DynamicElement element,
-      CorrelationSuggestion suggestion, List<SampleResult> results,
-      Map<String, String> valueToReferenceName) {
+                                       CorrelationSuggestion suggestion, List<SampleResult> results,
+                                       Map<String, String> valueToReferenceName) {
 
     for (SampleResult result : results) {
       //We use both the "original" and the "other" appearances since the map can come from either
       //the original recorder or from the failing replay
-      addExtractorSuggestions(valueToReferenceName, suggestion, result,
-          element.getOriginalAppearance());
-      addExtractorSuggestions(valueToReferenceName, suggestion, result,
-          element.getOtherAppearance());
+      List<Appearances> appearancesList = new ArrayList<>(element.getOriginalAppearance());
+      appearancesList.addAll(element.getOtherAppearance());
+      addExtractorSuggestions(valueToReferenceName, suggestion, result, appearancesList);
     }
   }
 
@@ -220,11 +220,22 @@ public class ComparisonMethod implements CorrelationMethod {
    *                             suggestions.
    */
   private void addExtractorSuggestions(Map<String, String> valueToReferenceName,
-      CorrelationSuggestion suggestion, SampleResult result,
-      List<Appearances> appearances) {
+                                       CorrelationSuggestion suggestion, SampleResult result,
+                                       List<Appearances> appearances) {
+    structureTypeCache.clear();
+    // Flowing fields declared beforehand for performance proposes
+    StructureType structureType;
+    ExtractorFactory ef = new ExtractorFactory(context.getConfiguration());
+    HashMap<String, Extractor> extractorCache = new HashMap<>();
+    ResponseAnalyzer analyzer = new ResponseAnalyzer();
+    String name;
+    Extractor extractor;
 
     for (Appearances appearance : appearances) {
-      String name = suggestion.getParamName();
+      if (!Sources.isRequestSource(appearance.getSource())) {
+        continue;
+      }
+      name = suggestion.getParamName();
       if (suggestion.getAppearances().size() > getConfiguration().getMaxNumberOfAppearances()
           && getConfiguration().getMaxNumberOfAppearances() != -1) {
         LOG.warn("Too many appearances for element  '{}'. Please review the total appearances.",
@@ -238,18 +249,15 @@ public class ComparisonMethod implements CorrelationMethod {
         continue;
       }
 
-      ResponseAnalyzer analyzer = new ResponseAnalyzer();
       LocationType locationType = analyzer.identifyArgumentLocation(result, appearance.getValue());
       if (locationType == LocationType.UNKNOWN) {
-        LOG.debug("Couldn't associate a location for the param '{}' in the responses of {}. "
-                + "Value {}. Skipping this value.", name, result.getSampleLabel(),
-            appearance.getValue());
+        // "Couldn't associate a location for the param in the responses.
+        // Skipping this value.
         continue;
       }
-
-      StructureType structureType = analyzer.identifyStructureType(result, locationType);
-      List<CorrelationExtractor<?>> extractors = new ExtractorFactory(context.getConfiguration())
-          .getExtractor(locationType, structureType)
+      structureType = getStructureType(result, structureTypeCache, locationType, analyzer);
+      extractor = getExtractor(locationType, structureType, extractorCache, ef);
+      List<CorrelationExtractor<?>> extractors = extractor
           .getCorrelationExtractors(result, appearance.getValue(), name);
 
       if (extractors == null || extractors.isEmpty()) {
@@ -270,6 +278,33 @@ public class ComparisonMethod implements CorrelationMethod {
             suggestion.getExtractionParamName());
       }
     }
+  }
+
+  private static Extractor getExtractor(LocationType locationType, StructureType structureType,
+      HashMap<String, Extractor> extractorCache, ExtractorFactory ef) {
+    String extractorKey;
+    Extractor extractor;
+    extractorKey = locationType + ":" + structureType;
+    if (extractorCache.containsKey(extractorKey)) {
+      extractor = extractorCache.get(extractorKey);
+    } else {
+      extractor = ef.getExtractor(locationType, structureType);
+      extractorCache.put(extractorKey, extractor);
+    }
+    return extractor;
+  }
+
+  private static StructureType getStructureType(SampleResult result,
+      HashMap<LocationType, StructureType> structureTypeCache, LocationType locationType,
+      ResponseAnalyzer analyzer) {
+    StructureType structureType;
+    if (structureTypeCache.containsKey(locationType)) {
+      structureType = structureTypeCache.get(locationType);
+    } else {
+      structureType = analyzer.identifyStructureType(result, locationType);
+      structureTypeCache.put(locationType, structureType);
+    }
+    return structureType;
   }
 
   /**
@@ -308,9 +343,7 @@ public class ComparisonMethod implements CorrelationMethod {
    */
   private boolean valueInUse(SampleResult result, String value) {
     String queryString = this.resultQueryString.apply(result);
-    boolean encodedUsed = queryString.contains(URLEncoder.encode(value));
-    boolean rawUsed = queryString.contains(value);
-    return encodedUsed || rawUsed;
+    return queryString.contains(value);
   }
 
   /**
@@ -343,17 +376,8 @@ public class ComparisonMethod implements CorrelationMethod {
    * @return true if the replacement suggestion is already present in the list, false otherwise.
    */
   private boolean isRepeated(CorrelationSuggestion suggestion,
-      CorrelationReplacement<?> replacementSuggestion) {
-    boolean repeated = false;
-    List<ReplacementSuggestion> replacementSuggestions = suggestion.getReplacementSuggestions();
-    for (ReplacementSuggestion existing : replacementSuggestions) {
-      String s = existing.toString();
-      if (s.equals(replacementSuggestion.toString())) {
-        repeated = true;
-        break;
-      }
-    }
-    return repeated;
+                             CorrelationReplacement<?> replacementSuggestion) {
+    return suggestion.getExtractionSuggestionsString().contains(replacementSuggestion.toString());
   }
 
   /**
@@ -369,15 +393,8 @@ public class ComparisonMethod implements CorrelationMethod {
    * @return true if the extraction suggestion is already present in the list, false otherwise.
    */
   private boolean isRepeated(CorrelationSuggestion suggestion,
-      ExtractionSuggestion extractionSuggestion) {
-    boolean repeated = false;
-    for (ExtractionSuggestion existing : suggestion.getExtractionSuggestions()) {
-      if (existing.toString().equals(extractionSuggestion.toString())) {
-        repeated = true;
-        break;
-      }
-    }
-    return repeated;
+                             ExtractionSuggestion extractionSuggestion) {
+    return suggestion.getExtractionSuggestionsString().contains(extractionSuggestion.toString());
   }
 
   /**
@@ -395,8 +412,8 @@ public class ComparisonMethod implements CorrelationMethod {
    *                             replacement suggestions.
    */
   private void addMultivaluedReplacement(DynamicElement element,
-      CorrelationSuggestion suggestion,
-      Map<String, String> valueToReferenceName) {
+                                         CorrelationSuggestion suggestion,
+                                         Map<String, String> valueToReferenceName) {
 
     List<Appearances> originalAppearances = element.getOriginalAppearance();
     List<Appearances> otherAppearances = element.getOtherAppearance();
@@ -422,8 +439,8 @@ public class ComparisonMethod implements CorrelationMethod {
    *                             suggestions.
    */
   private void addReplacementSuggestions(CorrelationSuggestion suggestion,
-      Map<String, String> valueToReferenceName,
-      List<Appearances> originalAppearances) {
+                                         Map<String, String> valueToReferenceName,
+                                         List<Appearances> originalAppearances) {
     String name = suggestion.getParamName();
     for (Appearances appearance : originalAppearances) {
       String referenceName = valueToReferenceName.get(appearance.getValue());

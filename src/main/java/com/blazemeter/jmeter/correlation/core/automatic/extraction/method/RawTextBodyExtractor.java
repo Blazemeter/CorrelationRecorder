@@ -27,8 +27,9 @@ public class RawTextBodyExtractor extends RegexExtractor {
     String responseDataAsString = response.getResponseDataAsString();
     List<Integer> indexes = ExtractorGenerator.getIndexes(value, responseDataAsString);
     List<CorrelationExtractor<?>> extractors = new ArrayList<>();
+    String context;
     for (int index : indexes) {
-      String context = getContextString(responseDataAsString, value, index);
+      context = getContextString(responseDataAsString, value, index);
       RegexCorrelationExtractor<?> extractor =
           generateExtractor(name, value, context, ResultField.BODY);
       extractor.setMultiValued(true);

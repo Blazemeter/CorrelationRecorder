@@ -9,9 +9,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jmeter.processor.PostProcessor;
 import org.apache.jmeter.samplers.SampleResult;
@@ -22,6 +24,8 @@ public class JsonBodyExtractor extends Extractor {
 
   private static final Logger LOG = LoggerFactory.getLogger(JsonBodyExtractor.class);
   private final ObjectMapper objectMapper;
+
+  private HashMap<String, JsonNode> ssonNodeCache = new HashMap<String, JsonNode>();
 
   public JsonBodyExtractor() {
     this.objectMapper = new ObjectMapper();
@@ -52,16 +56,21 @@ public class JsonBodyExtractor extends Extractor {
 
   @Override
   public List<CorrelationExtractor<?>> getCorrelationExtractors(SampleResult response, String value,
-      String name) {
-    String path;
+                                                                String name) {
+    String path = null;
     try {
-      JsonNode root = objectMapper.readTree(response.getResponseDataAsString());
-      path = JsonUtils.findPath(root, value);
+      JsonNode root;
+      if (ssonNodeCache.containsKey(response.getSampleLabel())) {
+        root = ssonNodeCache.get(response.getSampleLabel());
+      } else {
+        root = objectMapper.readTree(response.getResponseDataAsString());
+        ssonNodeCache.put(response.getSampleLabel(), root);
+      }
+      int foundIndex = StringUtils.indexOf(response.getResponseDataAsString(), value);
+      if (foundIndex != -1) {
+        path = JsonUtils.findPath(root, value);
+      }
       if (path == null) {
-        if (LOG.isDebugEnabled()) {
-          System.out.printf(
-              "No match found for '%s' in response '%s'", value, response.getSampleLabel());
-        }
         return Collections.emptyList();
       }
     } catch (JsonProcessingException e) {

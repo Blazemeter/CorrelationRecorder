@@ -15,6 +15,7 @@ import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepo
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.Repository;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
+import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.gui.analysis.CorrelationTemplatesSelectionPanel;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Component;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
@@ -63,6 +65,7 @@ public class CorrelationWizard extends JDialog {
   private LocalConfiguration configuration;
 
   private SuggestionGenerator suggestionGenerator;
+  private Function<Builder, Template> buildTemplate;
 
   public CorrelationWizard() {
     super();
@@ -93,6 +96,7 @@ public class CorrelationWizard extends JDialog {
     if (history != null) {
       templateSelectionPanel.setGetCorrelationHistorySupplier(() -> history);
     }
+    templateSelectionPanel.setBuildTemplate(buildTemplate);
 
     templateSelectionPanel.setStartNonCorrelatedAnalysis(startNonCorrelatedAnalysis());
   }
@@ -474,4 +478,11 @@ public class CorrelationWizard extends JDialog {
     this.configuration = configuration;
   }
 
+  public void setBuildTemplateProvider(Function<Builder, Template> buildTemplate) {
+    this.buildTemplate = buildTemplate;
+  }
+
+  public Function<Builder, Template> getBuildTemplate() {
+    return buildTemplate;
+  }
 }

@@ -138,7 +138,7 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
           table.setValueAt(state, r, viewColumn);
         }
         updating = false;
-      } catch (ArrayIndexOutOfBoundsException ex) {
+      } catch (IndexOutOfBoundsException ex) {
         // This is thrown when the table is cleared
         return;
       }

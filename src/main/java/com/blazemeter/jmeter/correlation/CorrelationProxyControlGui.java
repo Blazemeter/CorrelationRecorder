@@ -66,6 +66,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     wizard = new CorrelationWizard();
     wizard.setRepositoriesSupplier(this::getRepositories);
     wizard.setAddRuleConsumer(rulesContainer.obtainRulesExporter());
+    wizard.setBuildTemplateProvider((builderTemplate) -> model.getTemplate(builderTemplate));
     wizard.init();
 
     rulesContainer.setOnWizardDisplayMethod(() -> wizard.displayMethodSelection());
@@ -138,7 +139,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
 
   @Override
   public String getStaticLabel() {
-    return "bzm - Correlation Recorder";
+    return "bzm - Auto Correlation Recorder";
   }
 
   @Override
