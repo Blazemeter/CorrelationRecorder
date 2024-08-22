@@ -6,7 +6,7 @@
   <groupId>com.blazemeter</groupId>
   <artifactId>jmeter-bzm-correlation-recorder</artifactId>
   <packaging>jar</packaging>
-  <version>2.5.1</version>
+  <version>2.6</version>
   <name>Auto Correlation Recorder</name>
   <description>Auto Correlation Recorder as JMeter Plugin</description>
   <url>https://github.com/Blazemeter/CorrelationRecorder</url>

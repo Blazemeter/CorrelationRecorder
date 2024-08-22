@@ -9,6 +9,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.Loca
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jmeter.samplers.SampleResult;
 
 /**
@@ -35,14 +36,14 @@ public class ResponseAnalyzer {
    * @return The location of the argument in the response
    * @see ExtractionStrategy
    */
-  public LocationType identifyArgumentLocation(SampleResult response, String value) {
+  public Pair<LocationType, String> identifyArgumentLocation(SampleResult response, String value) {
     for (ExtractionStrategy strategy : strategies) {
-      LocationType location = strategy.identifyLocationInResponse(response, value);
-      if (location != LocationType.UNKNOWN) {
+      Pair<LocationType, String> location = strategy.identifyLocationInResponse(response, value);
+      if (location.getLeft() != LocationType.UNKNOWN) {
         return location;
       }
     }
-    return LocationType.UNKNOWN;
+    return Pair.of(LocationType.UNKNOWN, "");
   }
 
   /**

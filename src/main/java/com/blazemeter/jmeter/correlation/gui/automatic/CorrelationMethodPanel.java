@@ -91,6 +91,7 @@ public class CorrelationMethodPanel extends WizardStepPanel implements ActionLis
   }
 
   private void continueToNextStep() {
+    this.getWizard().setVisible(false);
     if (correlateByRules.getState()) {
       displayTemplateSelectionPanel();
     } else {

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testResults version="1.2">
+<httpSample t="8" it="0" lt="8" ct="1" ts="1721222678073" s="true" lb="/api/token-3" rc="200" rm="OK" tn="Thread Group 1-1" dt="text" de="" by="416" sby="111" sc="1" ec="0" ng="1" na="1" hn="192.168.1.3">
+  <responseHeader class="java.lang.String">HTTP/1.1 200 OK
+Content-Type: application/json
+Matched-Stub-Id: 2312faf9-8ece-4f1f-902e-28dcc828abff
+Transfer-Encoding: chunked
+Server: Jetty(9.2.28.v20190418)
+</responseHeader>
+  <requestHeader class="java.lang.String">Connection: keep-alive
+User-Agent: Java-http-client/11.0.23
+Host: localhost:2525
+</requestHeader>
+  <responseData class="java.lang.String">{
+    &quot;token&quot;: &quot;d1890763-8fd2-4072-bf2b-e683ff42914c&quot;, 
+    &quot;encodedValue&quot;: &quot;%26valor%3Dalgo+con+espaciod1890763-8fd2-4072-bf2b-e683ff42914c&quot;,
+    &quot;decodeValue&quot;: &quot;&amp;otro valor = otro valor con espaciod1890763-8fd2-4072-bf2b-e683ff42914c&quot;
+}</responseData>
+  <responseFile class="java.lang.String"></responseFile>
+  <cookies class="java.lang.String"></cookies>
+  <method class="java.lang.String">GET</method>
+  <queryString class="java.lang.String"></queryString>
+  <java.net.URL>http://localhost:2525/api/token</java.net.URL>
+</httpSample>
+<httpSample t="10" it="0" lt="9" ct="0" ts="1721222678081" s="false" lb="/api/data-4" rc="400" rm="Bad Request" tn="Thread Group 1-1" dt="text" de="" by="193" sby="406" sc="1" ec="1" ng="1" na="1" hn="192.168.1.3">
+  <responseHeader class="java.lang.String">HTTP/1.1 400 Bad Request
+Content-Type: plain/text
+Matched-Stub-Id: 49c8ad20-b705-4a90-a4b5-fc1655a16497
+Transfer-Encoding: chunked
+Server: Jetty(9.2.28.v20190418)
+</responseHeader>
+  <requestHeader class="java.lang.String">Connection: keep-alive
+Content-Type: application/json
+User-Agent: Java-http-client/11.0.23
+Content-Length: 242
+Host: localhost:2525
+</requestHeader>
+  <responseData class="java.lang.String">Invalid token</responseData>
+  <responseFile class="java.lang.String"></responseFile>
+  <cookies class="java.lang.String"></cookies>
+  <method class="java.lang.String">POST</method>
+  <queryString class="java.lang.String">{&#xd;
+    &quot;token&quot;: &quot;3dc42ef8-6bca-41a6-aae4-d0ba75d81290&quot;, &#xd;
+    &quot;encodedValue&quot;: &quot;&amp;valor=algo con espacio3dc42ef8-6bca-41a6-aae4-d0ba75d81290&quot;,&#xd;
+    &quot;decodeValue&quot;: &quot;%26otro+valor+%3D+otro+valor+con+espacio3dc42ef8-6bca-41a6-aae4-d0ba75d81290&quot;&#xd;
+}</queryString>
+  <java.net.URL>http://localhost:2525/api/data</java.net.URL>
+</httpSample>
+
+</testResults>

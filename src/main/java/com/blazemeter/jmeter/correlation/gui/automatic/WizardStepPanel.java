@@ -109,4 +109,8 @@ public class WizardStepPanel extends JPanel {
   public void replayTestPlan() {
     replayTestPlan.run();
   }
+
+  protected CorrelationWizard getWizard() {
+    return this.wizard;
+  }
 }

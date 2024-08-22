@@ -75,6 +75,10 @@ If you select more than one, the plugin will use the union of the dynamic values
 By default, the latest version of a Template is selected, but you can change that by clicking on the field in the Version column.
 
 ![Select Correlation Templates](./assets/select-correlation-template.png)
+::: tip
+Since version [v2.5.1](https://github.com/Blazemeter/CorrelationRecorder/releases/tag/v2.5.1) you can quickly test your pre-existing rules in the Correlation rules tab by selecting the *Draft* template.
+As long as you have rules underdevelopment, the Draft template will be accessible.
+:::
 
 ::: warning
 

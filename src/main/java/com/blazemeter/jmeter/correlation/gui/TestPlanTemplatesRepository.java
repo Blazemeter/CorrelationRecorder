@@ -48,7 +48,7 @@ public class TestPlanTemplatesRepository {
   }
 
   public void addCorrelationRecorderTemplate(String templateFileName, String templatesFolderPath,
-      String descriptionFileName, String templateName) {
+                                             String descriptionFileName, String templateName) {
     copyTemplateFile(templateFileName, templatesFolderPath);
     addTemplateDescription(descriptionFileName, templateName);
     addFailExtractorAssertion(templateFileName);
@@ -127,21 +127,25 @@ public class TestPlanTemplatesRepository {
     List<Pattern> patterns =
         Stream.of("Correlation Recorder", "bzm - Correlation Recorder")
             .map(name -> Pattern.compile(
-                "(<template isTestPlan=\"true\">[\\n ]*<name>" + name + "</name>.*</template>)",
-                Pattern.DOTALL))
+                "(<template isTestPlan=\"true\">[\\n\\s]*<name>" + name +
+                    "</name>.*?</template>)", Pattern.DOTALL))
             .collect(Collectors.toList());
+    boolean updated = false;
     for (Pattern pattern : patterns) {
       Matcher matcher = pattern.matcher(content);
-      if (!matcher.find()) {
-        LOG.debug("Old Correlation Template not found.");
-        continue;
+      while (matcher.find()) {
+        content = content.replace(matcher.group(), "");
+        updated = true;
       }
-
+    }
+    if (updated) {
       try (FileWriter fileWriter = new FileWriter(filePath)) {
-        fileWriter.write(content.replace(matcher.group(), ""));
+        fileWriter.write(content);
       } catch (IOException e) {
         LOG.error("Error trying to write the file {}", filePath);
       }
+    } else {
+      LOG.debug("Old Correlation Template not found.");
     }
   }
 

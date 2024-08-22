@@ -45,7 +45,7 @@ Once JMeter restarts, the Auto Correlation Recorder plugin will be installed.
 
 ### Manually
 
-1. Go to the [Auto Correlation Recorder plugin page](https://jmeter-plugins.org/?search=BlazeMeter%20-%20Correlation%20Recorder%20Plugin) and download the
+1. Go to the [Auto Correlation Recorder plugin page](https://jmeter-plugins.org/?search=Blazemeter%20-%20Auto%20Correlation%20Recorder%20Plugin) and download the
    latest version of the plugin, with the dependencies.
 1. Place the Plugin jar in the ext folder of your JMeter installation. The ext folder is usually located in
    `<JMeter_Home>/lib/ext`.
