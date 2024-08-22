@@ -172,6 +172,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     buttonsPanel.add(builder.withAction(CORRELATE)
         .withName("correlate")
         .withText("Apply")
+        .withToolTip("Add suggestions in tesplan")
         .build());
 
     buttonsPanel.add(builder.withAction(EXPORT_AS_RULES)
@@ -459,7 +460,6 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     List<CorrelationSuggestion> suggestions = generator.generateSuggestions(context);
 
     loadSuggestions(suggestions);
-    toggleWizardVisibility();
     showColumn(3, 0);
   }
 

@@ -13,6 +13,9 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.FileManagementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplacementSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ResultFileParser;
+import com.blazemeter.jmeter.correlation.core.automatic.ResultsExtraction;
+import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
@@ -23,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.samplers.SampleResult;
@@ -161,5 +165,37 @@ public class ComparisonMethodTest extends ReplacementTest {
     replacer.process(sampler, Collections.singletonList(headerManager), null, vars);
     softly.assertThat(headerManager.getHeader(0))
         .isEqualTo(new Header(PARAM_NAME, "${" + REFERENCE_NAME + "}"));
+  }
+
+  @Test
+  public void shouldGenerateSuggestionWithReplacementString() throws IOException {
+    Configuration configuration = new Configuration();
+    when(context.getConfiguration()).thenReturn(configuration);
+    String path = TestUtils
+        .getFolderPath("/recordings/recordingTrace/recording-encode-decode.jtl", getClass());
+    List<SampleResult> results = new ResultFileParser(configuration)
+        .loadFromFile(new File(path), true);
+    ResultsExtraction resultsExtraction = new ResultsExtraction(configuration);
+    when(context.getRecordingSampleResults()).thenReturn(results);
+    when(context.getRecordingMap()).thenReturn(resultsExtraction.extractAppearanceMap(TestUtils
+        .getFolderPath("/recordings/recordingTrace/recording-encode-decode.jtl", getClass())
+        .toString()));
+    when(context.getReplayMap()).thenReturn(resultsExtraction.extractAppearanceMap(TestUtils
+        .getFolderPath("/recordings/recordingTrace/replay-encode-decode.jtl", getClass())
+        .toString()));
+    List<CorrelationSuggestion> suggestions = method.generateSuggestions(context);
+    List<CorrelationReplacement> replacementSuggestions =
+        suggestions.stream().map(CorrelationSuggestion::getReplacementSuggestions)
+            .collect(Collectors.toList()).stream().flatMap(List::stream)
+            .collect(Collectors.toList()).stream()
+            .map(ReplacementSuggestion::getReplacementSuggestion).collect(Collectors.toList());
+    JsonCorrelationReplacement<BaseCorrelationContext> expectedDecodeReplacement = new JsonCorrelationReplacement<>(
+        "$.decodeValue", "${__urlencode(${decodeValue})}", "false");
+    expectedDecodeReplacement.setVariableName("decodeValue");
+    JsonCorrelationReplacement<BaseCorrelationContext> expectedEncodeReplacement = new JsonCorrelationReplacement<>(
+        "$.encodedValue", "${__urldecode(${encodedValue})}", "false");
+    expectedEncodeReplacement.setVariableName("encodedValue");
+    softly.assertThat(replacementSuggestions).contains(expectedDecodeReplacement);
+    softly.assertThat(replacementSuggestions).contains(expectedEncodeReplacement);
   }
 }

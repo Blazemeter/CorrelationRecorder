@@ -3,6 +3,7 @@ package com.blazemeter.jmeter.correlation.core.replacements;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
 import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtractor;
@@ -140,7 +141,6 @@ public class JsonCorrelationReplacementTest {
         createJsonExtractor(context, "1", true);
     String replacementString = "${__javaScript(${" + REFERENCE_NAME + "} + '3')}";
     processJonReplacement(extractor, REQUEST_JSONPATH, replacementString, false);
-
     Assertions.assertThat(getFirstArgumentValue())
         .isEqualTo("{\"arg1\":\"" + escapeJsonValue(replacementString) + "\"}");
   }
@@ -150,9 +150,7 @@ public class JsonCorrelationReplacementTest {
     JMeterContext context = JMeterContextService.getContext();
     JSONPostProcessor extractor =
         createJsonExtractor(context, "1", true);
-
-    String replacementString = "${__javaScript(${" + REFERENCE_NAME + "} + '3')}";
-
+    String replacementString = "${__javaScript(${" + REFERENCE_NAME + "#1_2} + '3')}";
     // Simulate multi value variables, overwrite context counter to 1
     doReturn(1).when(replaceContext).getVariableCount(anyString());
     JMeterVariables ctx_vars = context.getVariables();
@@ -362,9 +360,11 @@ public class JsonCorrelationReplacementTest {
   }
 
   private void processJonReplacement(JSONPostProcessor extractor, String jsonPath,
-                                     String replacementString, boolean ignoreValue) {
+      String replacementString, boolean ignoreValue) {
     replacer = new JsonCorrelationReplacement<>(jsonPath, replacementString,
         Boolean.toString(ignoreValue));
+    replacer.setExpressionEvaluator(expressionEvaluation);
+    when(expressionEvaluation.apply(replacementString)).thenReturn("123");
     processJonReplacement(extractor);
   }
 
@@ -376,7 +376,7 @@ public class JsonCorrelationReplacementTest {
   }
 
   private static JSONPostProcessor createJsonExtractor(JMeterContext context, String matchNumbers,
-                                                       boolean computeConcatenation) {
+      boolean computeConcatenation) {
     String VAR_NAME = "varName";
     JSONPostProcessor processor = new JSONPostProcessor();
     processor.setThreadContext(context);

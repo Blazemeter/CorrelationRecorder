@@ -8,6 +8,8 @@ import com.blazemeter.jmeter.correlation.core.automatic.Appearances;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.method.JsonBodyExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.suggestions.method.ComparisonMethod;
+import com.blazemeter.jmeter.correlation.core.suggestions.method.ComparisonMethod.ReplacementParameters;
 import java.io.IOException;
 import java.util.Collections;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
@@ -33,7 +35,8 @@ public class ReplacementJsonStrategyTest {
     HTTPSamplerBase sampler = new HTTPSampler();
     sampler.addArgument("", json);
     Appearances appearances = new Appearances("NotValid", "", sampler);
-    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(sampler, appearances, "csrftoken");
+    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(sampler,
+        appearances, new ReplacementParameters("csrftoken", ReplacementString.NONE));
     assertThat(actual).isNull();
   }
 
@@ -42,13 +45,15 @@ public class ReplacementJsonStrategyTest {
     HTTPSamplerBase sampler = new HTTPSampler();
     sampler.addArgument("Key1", "Value1");
     sampler.addArgument("Key2", "Value2");
-    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(new HeaderManager(), null, "csrftoken");
+    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(
+        new HeaderManager(), null, new ReplacementParameters("csrftoken", ReplacementString.NONE));
     assertThat(actual).isNull();
   }
 
   @Test
   public void shouldReturnNullWhenSamplerIsNotHTTPSampler() {
-    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(new HeaderManager(), null, "csrftoken");
+    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(
+        new HeaderManager(), null, new ReplacementParameters("csrftoken", ReplacementString.NONE));
     assertThat(actual).isNull();
   }
 
@@ -58,10 +63,10 @@ public class ReplacementJsonStrategyTest {
     HTTPSamplerBase sampler = new HTTPSampler();
     sampler.addArgument("", json);
     Appearances appearances = new Appearances("a6e9ad8f-cc16-42b0-b189-8dd1ea531cf4", "", sampler);
-    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(sampler, appearances, "csrftoken");
+    CorrelationReplacement<?> actual = replacementJsonStrategy.generateReplacement(sampler,
+        appearances, new ReplacementParameters("csrftoken", ReplacementString.NONE));
     JsonCorrelationReplacement<?> expected = new JsonCorrelationReplacement<>("$.csrftoken");
     expected.setVariableName("csrftoken");
     assertThat(actual).isEqualTo(expected);
   }
-
 }

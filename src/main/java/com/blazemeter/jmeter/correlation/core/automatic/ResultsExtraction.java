@@ -133,19 +133,24 @@ public class ResultsExtraction implements AppearancesExtraction {
       parameters = getParameterListFromQuery(httpResult);
     }
 
-    for (Pair<String, String> param : parameters) {
-      String value = param.getValue();
-      String decode = JMeterElementUtils.decode(value);
-      if (!value.equals(decode)) {
-        try {
-          sampler.addEncodedArgument(param.getKey(), value);
-        } catch (IllegalArgumentException e) {
-          LOG.warn("Error adding argument to the sampler,  {}", httpResult.getSampleLabel(), e);
-          e.printStackTrace();
+    if (isRawBody(parameters)) {
+      sampler.addArgument(parameters.get(0).getKey(), parameters.get(0).getValue());
+      sampler.setPostBodyRaw(true);
+    } else {
+      for (Pair<String, String> param : parameters) {
+        String value = param.getValue();
+        String decode = JMeterElementUtils.decode(value);
+        if (!value.equals(decode)) {
+          try {
+            sampler.addEncodedArgument(param.getKey(), value);
+          } catch (IllegalArgumentException e) {
+            LOG.warn("Error adding argument to the sampler,  {}", httpResult.getSampleLabel(), e);
+            e.printStackTrace();
+          }
+          continue;
         }
-        continue;
+        sampler.addArgument(param.getKey(), value);
       }
-      sampler.addArgument(param.getKey(), value);
     }
 
     if (isJson) {
@@ -158,6 +163,10 @@ public class ResultsExtraction implements AppearancesExtraction {
     }
 
     return sampler;
+  }
+
+  private static boolean isRawBody(List<Pair<String, String>> parameters) {
+    return parameters.size() == 1 && parameters.get(0).getKey().isEmpty();
   }
 
   private static List<Pair<String, String>> getParametersFromJsonBody(HTTPSampleResult httpResult,

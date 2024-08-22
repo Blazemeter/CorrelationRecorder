@@ -1,6 +1,5 @@
 package com.blazemeter.jmeter.correlation.core.replacements;
 
-import static com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils.classIsNumberOrBoolean;
 import static com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils.jsonFindMatches;
 
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
@@ -30,8 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Correlation Replacements that applies the replacement using Json Xpath and the captured
- * values.
+ * Correlation Replacements that applies the replacement using Json Xpath and the captured values.
  *
  * @param <T> correlation context that can be used to store and share values during replay
  */
@@ -41,8 +39,7 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
 
   protected static final String JSONPATH_DEFAULT_VALUE = "$.jsonpath.expression";
   protected static final String REPLACEMENT_JSON_PROPERTY_NAME = PROPERTIES_PREFIX + "jsonpath";
-  protected static final String REPLACEMENT_JSON_PROPERTY_DESCRIPTION =
-      "JSONPath expression";
+  protected static final String REPLACEMENT_JSON_PROPERTY_DESCRIPTION = "JSONPath expression";
 
   private static final Logger LOG = LoggerFactory.getLogger(RegexCorrelationReplacement.class);
   private static final boolean IGNORE_VALUE_DEFAULT = false;
@@ -92,11 +89,9 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
         new ParameterDefinition.TextParameterDefinition(REPLACEMENT_JSON_PROPERTY_NAME,
             REPLACEMENT_JSON_PROPERTY_DESCRIPTION, JSONPATH_DEFAULT_VALUE),
         new ParameterDefinition.TextParameterDefinition(REPLACEMENT_STRING_PROPERTY_NAME,
-            "Replacement string",
-            REPLACEMENT_STRING_DEFAULT_VALUE, true),
+            "Replacement string", REPLACEMENT_STRING_DEFAULT_VALUE, true),
         new ParameterDefinition.CheckBoxParameterDefinition(REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME,
-            "Ignore Value",
-            IGNORE_VALUE_DEFAULT, true));
+            "Ignore Value", IGNORE_VALUE_DEFAULT, true));
   }
 
   @Override
@@ -104,8 +99,7 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
     // https://github.com/json-path/JsonPath?tab=readme-ov-file#set-a-value
     // Skip empty inputs
     if (input == null || input.isEmpty() || jsonpath == null || jsonpath.isEmpty()
-        || variableName == null
-        || variableName.isEmpty()) {
+        || variableName == null || variableName.isEmpty()) {
       return input;
     }
     // For previous replaced matches with variables, escape the unquoted variables
@@ -114,38 +108,31 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
       HashSet<Pair<String, String>> valuesReplaced = new HashSet();
 
       // Test if the path of the jsonpath match
-      Pair<Class, ArrayList<String>> result =
-          jsonFindMatches(inputProcessed, jsonpath);
+      Pair<Class, ArrayList<String>> result = jsonFindMatches(inputProcessed, jsonpath);
       String updatedInput = inputProcessed;
       Class resultType = result.getLeft();
       ArrayList<String> matches = result.getRight();
       if (matches.size() > 0) {
         // Ok, match, try to each match get the path and replace
-        Function<String, String> expressionProvider = replaceExpressionProvider();
-        String currentVariableName = variableName;
         for (int varNr = 0; varNr < matches.size(); varNr++) {
           String valueStr = matches.get(varNr);
-          String varMatched = searchVariable(vars, valueStr);
-          currentVariableName = varMatched;
+          String varMatched = searchVariable(vars, valueStr, replacementString);
           String replaceExpression = null;
           // When ignore value, use the replacement string
           if (!replacementString.isEmpty() && ignoreValue) {
             replaceExpression = replacementString;
-          } else if (varMatched != null && replacementString.isEmpty()) {
-            // When no replacement string
-            replaceExpression = expressionProvider.apply(varMatched);
-          } else if (varMatched != null) { // When replacement string, use replacement string
-            replaceExpression = expressionProvider.apply(
-                buildReplacementStringForMultivalued(varMatched));
+          } else if (varMatched != null) {
+            replaceExpression = varMatched;
           }
           if (replaceExpression != null) {
             boolean inArray = resultType == JSONArray.class;
             String updatedJsonPath = inArray ? jsonpath + "[" + varNr + "]" : jsonpath;
-            Pair<Class, ArrayList<String>> toUpdateMatches =
-                jsonFindMatches(updatedInput, updatedJsonPath);
+            Pair<Class, ArrayList<String>> toUpdateMatches = jsonFindMatches(updatedInput,
+                updatedJsonPath);
             if (toUpdateMatches.getRight() != null) {
               Class updateResultType = toUpdateMatches.getLeft();
-              boolean originIsUnQuoted = classIsNumberOrBoolean(updateResultType);
+              boolean originIsUnQuoted = JMeterElementUtils.classIsNumberOrBoolean(
+                  updateResultType);
               if (originIsUnQuoted) {
                 // When value is needed to put in the json structure without the quotes
                 // this not is allowed by jayway because generate an invalid json with free text
@@ -155,22 +142,18 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
                 replaceExpression = ESCAPE_QUOTE_LEFT + replaceExpression + ESCAPE_QUOTE_RIGHT;
               }
               try {
-                updatedInput =
-                    JsonPath.parse(updatedInput).set(updatedJsonPath, replaceExpression)
-                        .jsonString();
+                updatedInput = JsonPath.parse(updatedInput)
+                    .set(updatedJsonPath, replaceExpression)
+                    .jsonString();
                 // Store the values matched and used in the replacement
                 valuesReplaced.add(Pair.of(valueStr, variableName));
               } catch (InvalidPathException e) {
-                LOG.debug(
-                    "JSONPath used to update target value doesn't match in the set: " +
-                        "value:{} jsonpath={}",
-                    valueStr, updatedJsonPath);
+                LOG.debug("JSONPath used to update target value doesn't match in the set: "
+                    + "value:{} jsonpath={}", valueStr, updatedJsonPath);
               }
             } else {
-              LOG.debug(
-                  "JSONPath used to update target value doesn't match in the get: " +
-                      "value:{} jsonpath={}",
-                  valueStr, updatedJsonPath);
+              LOG.debug("JSONPath used to update target value doesn't match in the get: "
+                  + "value:{} jsonpath={}", valueStr, updatedJsonPath);
             }
           }
         }
@@ -183,7 +166,6 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
           // Replace the start and end marks used for the values without quotes
           // This is needed to recover the original format
           updatedInput = unescapeQuotedVariablesWithMarks(updatedInput);
-
           if (AnalysisReporter.canCorrelate()) {
             return updatedInput;
           } else {
@@ -200,22 +182,30 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
     AnalysisReporter.report(this, literalMatched, currentSampler, currentVariableName);
   }
 
-  private String searchVariable(JMeterVariables vars, String value) {
+  private String searchVariable(JMeterVariables vars, String value, String replacementString) {
     int varNr = 0;
+    Function<String, String> expressionProvider = replaceExpressionProvider();
     while (varNr <= context.getVariableCount(variableName)) {
       String varName = varNr == 0 ? variableName : variableName + "#" + varNr;
       String varMatchesCount = vars.get(varName + "_matchNr");
       int matchNr = varMatchesCount == null ? 0 : Integer.parseInt(varMatchesCount);
       if (matchNr == 0) {
-        if (vars.get(varName) != null && vars.get(varName).equals(value)) {
-          return varName;
+        String computedVal =
+            replacementString.isEmpty() ? vars.get(varName) : computeStringReplacement(varName);
+        if (computedVal != null && computedVal.equals(value)) {
+          return replacementString.isEmpty() ? expressionProvider.apply(varName)
+              : expressionProvider.apply(buildReplacementStringForMultivalued(varName));
         }
       }
       int varMatch = 1;
       while (varMatch <= matchNr) {
         String varNameMatch = varName + "_" + varMatch;
-        if (vars.get(varNameMatch) != null && vars.get(varNameMatch).equals(value)) {
-          return varNameMatch;
+        String computedVal =
+            replacementString.isEmpty() ? vars.get(varNameMatch)
+                : computeStringReplacement(varNameMatch);
+        if (computedVal != null && computedVal.equals(value)) {
+          return replacementString.isEmpty() ? expressionProvider.apply(varNameMatch)
+              : expressionProvider.apply(buildReplacementStringForMultivalued(varNameMatch));
         }
         varMatch += 1;
       }
@@ -228,7 +218,7 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
     // Try to escape unquoted variable/function in json
     // this try to allow a json parse without error for json path evaluation
 
-    String regex = "(\\$\\{[^}]+\\})(?=(?:[^\"\\}]*\\})|(?:[^\"\\]]*\\]))";
+    String regex = "[^(\"](\\$\\{.+?\\})(?=[^)\"])";
 
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(json);
@@ -274,8 +264,9 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
   }
 
   @Override
-  public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-                      JMeterVariables vars) {
+  public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult
+      result,
+      JMeterVariables vars) {
     if (jsonpath.isEmpty()) {
       return;
     }
@@ -292,10 +283,8 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
 
   @Override
   public String toString() {
-    return "RegexCorrelationReplacement{"
-        + ", jsonpath='" + jsonpath + "'"
-        + ", replacementString='" + replacementString + "'"
-        + ", ignoreValue=" + ignoreValue
+    return "RegexCorrelationReplacement{" + ", jsonpath='" + jsonpath + "'"
+        + ", replacementString='" + replacementString + "'" + ", ignoreValue=" + ignoreValue
         + '}';
   }
 
@@ -304,16 +293,19 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof JsonCorrelationReplacement)) {
+      return false;
+    }
+    if (!super.equals(o)) {
       return false;
     }
     JsonCorrelationReplacement<?> that = (JsonCorrelationReplacement<?>) o;
-    return Objects.equals(jsonpath, that.jsonpath);
+    return ignoreValue == that.ignoreValue && Objects.equals(jsonpath, that.jsonpath);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(jsonpath);
+    return Objects.hash(super.hashCode(), jsonpath, ignoreValue);
   }
 
   @VisibleForTesting

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.ConfigTestElement;
@@ -115,11 +116,12 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    *
    * <p>Both the properties in the recorded sampler and its children will be processed
    *
-   * @param sampler recorded sampler containing the information of the request
+   * @param sampler  recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the condition is matched, components
-   * will be added to it to correlate the obtained values)
-   * @param result result containing information about request and associated response from server
-   * @param vars stored variables shared between requests during recording
+   *                 will be added to it to correlate the obtained values)
+   * @param result   result containing information about request and associated response from
+   *                 server
+   * @param vars     stored variables shared between requests during recording
    */
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
       JMeterVariables vars) {
@@ -140,7 +142,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * Replacement, the value will be replaced in the String as <code>${referenceVariableName}</code>,
    * as many times as the logic in the condition allows it.
    *
-   * @param el test element to check and match the properties
+   * @param el   test element to check and match the properties
    * @param vars stored variables from the recording
    */
   private void replaceTestElementProperties(TestElement el, JMeterVariables vars) {
@@ -211,7 +213,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * implemented.
    *
    * @param input property's string to check and replace
-   * @param vars stored variables shared between request during the recording
+   * @param vars  stored variables shared between request during the recording
    * @return the resultant input after been processed
    */
   protected abstract String replaceString(String input, JMeterVariables vars);
@@ -295,4 +297,21 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     return replacementString;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof CorrelationReplacement)) {
+      return false;
+    }
+    CorrelationReplacement<?> that = (CorrelationReplacement<?>) o;
+    return Objects.equals(variableName, that.variableName) && Objects.equals(
+        replacementString, that.replacementString);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(variableName, replacementString);
+  }
 }

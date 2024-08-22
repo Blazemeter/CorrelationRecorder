@@ -4,6 +4,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.Appearances;
 import com.blazemeter.jmeter.correlation.core.automatic.JsonUtils;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.core.suggestions.method.ComparisonMethod.ReplacementParameters;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +19,7 @@ public class ReplacementJsonStrategy implements ReplacementStrategy {
 
   @Override
   public CorrelationReplacement<?> generateReplacement(TestElement usage, Appearances appearance,
-      String referenceName) {
+      ReplacementParameters replacementParameters) {
     if (!(usage instanceof HTTPSamplerBase)) {
       return null;
     }
@@ -40,8 +41,12 @@ public class ReplacementJsonStrategy implements ReplacementStrategy {
       return null;
     }
     path = "$" + path;
-    JsonCorrelationReplacement<?> replacement = new JsonCorrelationReplacement<>(path);
-    replacement.setVariableName(referenceName);
+    JsonCorrelationReplacement<?> replacement =
+        replacementParameters.getReplacementString() == ReplacementString.NONE
+            ? new JsonCorrelationReplacement<>(path) : new JsonCorrelationReplacement<>(path,
+            replacementParameters.getReplacementString().getExpression(
+                replacementParameters.getRefName()), Boolean.toString(false));
+    replacement.setVariableName(replacementParameters.getRefName());
     return replacement;
   }
 }
