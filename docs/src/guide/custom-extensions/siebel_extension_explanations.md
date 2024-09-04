@@ -12,7 +12,7 @@ Remember to review [The Flow](the_flow_explanation.md) to know when and where th
 
 The following section will give an explanation of the problem and the necessity of a Siebel CRM Extensions.
 
-##Some Context
+## Some Context
 
 While the user is moving from one point of the page to another, some data is sent under the hood (embedded inside JS scripts, before the HTML or inside it). That information is used by Siebel CRM to keep track of where the user is coming. 
 
