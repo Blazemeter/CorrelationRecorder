@@ -1,0 +1,21 @@
+{
+  "id": "test",
+  "description": "This is a testing template used to verify product integrity",
+  "version": "1.1",
+  "components": "",
+  "responseFilters": "text/html",
+  "rules": [
+    {
+      "referenceName": "testRefVar3",
+      "correlationExtractor": {
+        "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "regex": "test1=(.*?)&"
+      },
+      "correlationReplacement": {
+        "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex": "test2=([^&\\n]+)"
+      }
+    }
+  ],
+  "repositoryId": "local"
+}

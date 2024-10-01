@@ -109,25 +109,6 @@ public class TestPlanTemplatesRepositoryTest {
   }
 
   @Test
-  public void shouldAddSiebelCorrelationTemplateWhenStart() throws IOException {
-    String rootFolder =
-        Paths.get(
-            tempFolder.getRoot().getPath(),
-            LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER
-        ).toAbsolutePath().toString() + File.separator;
-
-    repository.setRootFolder(rootFolder);
-
-    String siebelCorrelationTemplate = "/siebel-1.0-template.json";
-    repository.addCorrelationTemplate(siebelCorrelationTemplate, "/correlation-templates/");
-    File resultCorrelationTemplate = new File(
-        Paths.get(
-            rootFolder, siebelCorrelationTemplate).toAbsolutePath().toString()
-    );
-    assertFiles(siebelCorrelationTemplate, resultCorrelationTemplate);
-  }
-
-  @Test
   public void shouldAddAssertionsOnCorrelationRecorderTemplateWhenStart() throws IOException {
     String expectedCorrelationRecorderTemplate = copyTemplateWithAssertions();
 

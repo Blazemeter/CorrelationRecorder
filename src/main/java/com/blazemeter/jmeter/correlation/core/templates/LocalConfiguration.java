@@ -7,6 +7,7 @@ import static com.blazemeter.jmeter.correlation.core.templates.RepositoryGeneral
 import static com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils.isURL;
 import static com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils.removeRepositoryNameFromFile;
 
+import com.blazemeter.jmeter.correlation.core.ClassFinderUtils;
 import com.blazemeter.jmeter.correlation.core.templates.repository.PluggableRepository;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
@@ -33,7 +34,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -53,16 +53,15 @@ import javax.imageio.ImageIO;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jorphan.reflect.ClassFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LocalConfiguration {
+
   public static final String CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER = "/correlation-templates/";
   public static final String INSTALL = "install";
   public static final String UNINSTALL = "uninstall";
   private static final String LOCAL_CONFIGURATION_FILE_NAME = "repositories";
-  private static final String SIEBEL_CORRELATION_TEMPLATE = "siebel-1.0-template.json";
   private static final String JAR_FILE_SUFFIX = ".jar";
   private static final String TEMPLATES_FOLDER_PATH = "/templates/";
   private static final String LOCAL_REPOSITORIES_MANAGERS_FILE_NAME = "managers";
@@ -85,6 +84,7 @@ public class LocalConfiguration {
   private transient ObjectWriter writer;
 
   private List<CorrelationTemplatesRepositoryConfiguration> repositories = new ArrayList<>();
+  private boolean templateLogParseError;
 
   //Constructor added to avoid issues with the serialization
   public LocalConfiguration() {
@@ -114,7 +114,7 @@ public class LocalConfiguration {
   public static void installDefaultFiles(String rootFolder) {
     LOG.info("Installing default files");
     installCorrelationRecorderTemplateTestPlan(rootFolder);
-    installSiebelCorrelationTemplate(rootFolder);
+    SiebelTemplateRemoval.delete(rootFolder);
     addBlazeMeterProperties(rootFolder);
   }
 
@@ -128,16 +128,6 @@ public class LocalConfiguration {
         TEMPLATES_FOLDER_PATH + CORRELATION_RECORDER_TEMPLATE_DESC,
         CORRELATION_RECORDER_TEMPLATE_NAME);
     LOG.info("bzm - Correlation Recorder Test Plan Template installed");
-  }
-
-  private static void installSiebelCorrelationTemplate(String rootFolder) {
-    TestPlanTemplatesRepository templateRepository = new TestPlanTemplatesRepository(Paths
-        .get(rootFolder,
-            LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER)
-        .toAbsolutePath().toString() + File.separator);
-    templateRepository.addCorrelationTemplate(SIEBEL_CORRELATION_TEMPLATE,
-        LocalConfiguration.CORRELATIONS_TEMPLATE_INSTALLATION_FOLDER);
-    LOG.info("Siebel Correlation's Template installed");
   }
 
   private static void addBlazeMeterProperties(String rootFolder) {
@@ -213,30 +203,8 @@ public class LocalConfiguration {
     return null;
   }
 
-  private boolean isJUnitTest() {
-    for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
-      if (element.getClassName().startsWith("org.junit.")) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   private List<String> findPluggableRepositoriesClasses() throws IOException {
-    List<String> findPaths = new ArrayList<>();
-    findPaths.addAll(Arrays.asList(JMeterUtils.getSearchPaths()));
-    // WA for no correct jmeter env initialization like junit tests
-    if (isJUnitTest()) {
-      findPaths.add(new File(URLDecoder.decode(this.getClass()
-              .getProtectionDomain().getCodeSource()
-              .getLocation().getFile(), "UTF-8"))
-              .getAbsolutePath());
-    }
-    String[] findPathsArr = new String[findPaths.size()];
-    findPathsArr = findPaths.toArray(findPathsArr);
-    return ClassFinder.findClassesThatExtend(
-        findPathsArr,
-        new Class[] {PluggableRepository.class});
+    return ClassFinderUtils.findClassesThatExtendOnLibExt(PluggableRepository.class);
   }
 
   private void registerPreInstalledRepositories() throws IOException {
@@ -370,6 +338,7 @@ public class LocalConfiguration {
     mapper.setFilterProvider(filters);
     mapper.writerWithDefaultPrettyPrinter().with(filters);
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    setTemplateLogParseError(true);
     writer = mapper.writerWithDefaultPrettyPrinter().with(filters);
   }
 
@@ -382,20 +351,57 @@ public class LocalConfiguration {
         LOG.error("There was an error trying to read the local configuration file. ", e);
       }
     } else {
-      LOG.info("No local configuration file was found.");
+      LOG.warn("No local configuration file was found.");
     }
   }
 
   public <T> T readValue(File source, Class<T> valueType) throws IOException {
-    return mapper.readValue(source, valueType);
+    // By default, set to fail on invalid subtype
+    mapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, true);
+    try {
+      return mapper.readValue(source, valueType);
+    } catch (Exception e) {
+      // On case on error, try to load the template ignoring subtype errors
+      if (templateLogParseError) {
+        LOG.warn("Error loading template file", e);
+      }
+      // Set to don't fail on invalid subtype
+      mapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, false);
+      try {
+        return mapper.readValue(source, valueType);
+      } catch (Exception ex) {
+        // On this case, it's a critical error
+        LOG.error("Error loading template file", ex);
+        throw new IOException(ex); // Wrap any type of exception into an IOException
+      }
+    }
   }
 
   public <T> T readValue(String source, Class<T> valueType) throws IOException {
-    return mapper.readValue(source, valueType);
+    // By default, set to fail on invalid subtype
+    mapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, true);
+    try {
+      return mapper.readValue(source, valueType);
+    } catch (Exception e) {
+      // On case on error, try to load the template ignoring subtype errors
+      if (templateLogParseError) {
+        LOG.warn("Error loading template file", e);
+      }
+      // Set to don't fail on invalid subtype
+      mapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, false);
+      try {
+        return mapper.readValue(source, valueType);
+      } catch (Exception ex) {
+        // On this case, it's a critical error
+        LOG.error("Error loading template file", ex);
+        throw new IOException(ex); // Wrap any type of exception into an IOException
+      }
+    }
   }
 
   public Template readTemplateFromPath(String templatePath) throws IOException {
-    return readValue(new File(templatePath), Template.class);
+    Template tmpl = readValue(new File(templatePath), Template.class);
+    return tmpl;
   }
 
   public Template readTemplateFromString(String templateContent) throws IOException {
@@ -409,8 +415,29 @@ public class LocalConfiguration {
 
   public Map<String, CorrelationTemplateVersions> readTemplatesReferences(File source)
       throws IOException {
-    return mapper.readValue(source, new TypeReference<Map<String, CorrelationTemplateVersions>>() {
-    });
+    // By default, set to fail on invalid subtype
+    mapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, true);
+    try {
+      return mapper.readValue(source,
+          new TypeReference<Map<String, CorrelationTemplateVersions>>() {
+          });
+    } catch (Exception e) {
+      // On case on error, try to load the template ignoring subtype errors
+      if (templateLogParseError) {
+        LOG.warn("Error loading template file", e);
+      }
+      // Set to don't fail on invalid subtype
+      mapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, false);
+      try {
+        return mapper.readValue(source,
+            new TypeReference<Map<String, CorrelationTemplateVersions>>() {
+            });
+      } catch (Exception ex) {
+        // On this case, it's a critical error
+        LOG.error("Error loading template file", ex);
+        throw new IOException(ex); // Wrap any type of exception into an IOException
+      }
+    }
   }
 
   public void writeValue(File resultFile, Object value) throws IOException {
@@ -469,7 +496,7 @@ public class LocalConfiguration {
   }
 
   public void manageTemplate(String action, String repositoryName, String templateId,
-                             String templateVersion) throws ConfigurationException {
+      String templateVersion) throws ConfigurationException {
     Optional<CorrelationTemplatesRepositoryConfiguration> repository = findRepositoryById(
         repositoryName);
 
@@ -548,7 +575,7 @@ public class LocalConfiguration {
     for (CorrelationTemplateDependency dependency : dependencies) {
       String possibleJarFileName = getUrlFileName(dependency.getUrl());
 
-      String dependenciesFolderPath = rootFolder + "/lib/";
+      String dependenciesFolderPath = getDependenciesFolderPath();
       File[] possibleDependencies = getJarFileByCondition(dependenciesFolderPath,
           (fileName) -> fileName.toLowerCase().contains(dependency.getName().toLowerCase())
               || fileName.contains(possibleJarFileName.replace(JAR_FILE_SUFFIX, "")));
@@ -579,6 +606,10 @@ public class LocalConfiguration {
     return conflictingDependencies;
   }
 
+  private static String getDependenciesFolderPath() {
+    return JMeterUtils.getJMeterHome() + "/lib/ext/";
+  }
+
   private String getUrlFileName(String url) {
     int pos = url.lastIndexOf("/");
     return pos < 0 ? "" : url.substring(pos + 1);
@@ -602,12 +633,22 @@ public class LocalConfiguration {
 
   public void downloadDependencies(List<CorrelationTemplateDependency> dependencies)
       throws IOException {
-    String dependenciesFolderPath = rootFolder + "/lib/";
-    for (CorrelationTemplateDependency dependency : dependencies) {
-      saveFileFromURL(dependency.getUrl(),
-          dependenciesFolderPath + dependency.getName() + "-" + dependency.getVersion()
-              + JAR_FILE_SUFFIX);
+    Map<String, String> dependenciesJars = getDependenciesJars(dependencies);
+    for (Map.Entry<String, String> dependencyJar : dependenciesJars.entrySet()) {
+      saveFileFromURL(dependencyJar.getKey(), dependencyJar.getValue());
     }
+  }
+
+  public Map<String, String> getDependenciesJars(List<CorrelationTemplateDependency> dependencies) {
+    String dependenciesFolderPath = getDependenciesFolderPath();
+    Map<String, String> dependenciesJars = new HashMap<>();
+    for (CorrelationTemplateDependency dependency : dependencies) {
+      String jarPath =
+          dependenciesFolderPath + dependency.getName() + "-" + dependency.getVersion() +
+              JAR_FILE_SUFFIX;
+      dependenciesJars.put(dependency.getUrl(), jarPath);
+    }
+    return dependenciesJars;
   }
 
   private void saveFileFromURL(String fileURL, String fileFullPath) throws IOException {
@@ -657,7 +698,7 @@ public class LocalConfiguration {
   }
 
   public RepositoryManager getRepositoryManagerFromFolderOrUrl(String repositoryId,
-                                                               String repositoryURL) {
+      String repositoryURL) {
     RepositoryManager manager;
     if (isURL(repositoryURL)) {
       manager = new RemoteUrlRepository();
@@ -713,7 +754,7 @@ public class LocalConfiguration {
   }
 
   public String getTemplateFilePath(String repositoryName, String templateId,
-                                    String templateVersion) {
+      String templateVersion) {
     return Paths.get(getRepositoryFolderPath(repositoryName),
             getTemplateFilename(templateId, templateVersion))
         .toAbsolutePath()
@@ -871,9 +912,13 @@ public class LocalConfiguration {
     manageTemplate(LocalConfiguration.UNINSTALL, repositoryName, templateId, templateVersion);
   }
 
+  void setTemplateLogParseError(boolean fail) {
+    templateLogParseError = fail;
+  }
+
   public boolean refreshRepositories(String configurationRoute,
-                                     Consumer<Integer> setProgressConsumer,
-                                     Consumer<String> setStatusConsumer) {
+      Consumer<Integer> setProgressConsumer,
+      Consumer<String> setStatusConsumer) {
     int progress = 0;
     boolean isUpToDate = true;
     setProgressConsumer.accept(progress);

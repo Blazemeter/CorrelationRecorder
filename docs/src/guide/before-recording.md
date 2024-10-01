@@ -268,39 +268,6 @@ The IETF group in charge of creating Internet standards in February 2024 complet
 You can consult the RFC documentation in case you require more details about JSONPath
 https://datatracker.ietf.org/doc/rfc9535/
 
-**SiebelRow**
-
-This Correlation Extractor comes in the already installed Siebel's Template. To know more about how to load and save Correlation Rules Templates, please refer to the [Saving and Loading Rules](#saving-and-loading-rules) section, for further details about it.
-
-![Siebel Row Correlation Extractor](./assets/siebel-row-correlation-extractor.png)
-
-The Siebel Row Correlation Extractor works in a similar way like the previously mentioned RegEx, with the main differences that:
-
-- This applies a "Siebel Star Array strings" parsing function over the matched regex and store the parsed values as variables.
-- Regarding the Parameters expected, Siebel Row Correlation Extractor uses all but the _Match Number_, since it parses every match it founds.
-- Last, but not least, if the Regex its matched, a JSR223PostProcessor will be added to the sampler.
-
-_For a better understanding, lets do an example_
-
-Let's say that the String we want to extract and, therefore, apply this extracting and parsing function, its
-
-`8\*testUser12\*testPassword6\*VRId-0`
-
-The plugin will search for the number before an occurrence of "\*", uses that value as the length of the number of characters to store, and then repeats if there is another occurrence of "\*".
-
-If the Reference Variable is set to _VAR_, the split strings returned will be set in variables names like ${VAR_1}, ${VAR_2}, ${VAR_3} etc. and, the count of variables is returned as ${VAR_n}.
-
-The stored values for that string, at the end, will be:
-
-- VAR_n=3
-- VAR_1=testUser
-- VAR_2=testPassword
-- VAR_3=VRId-0
-
-### Star Array Correlation
-
-When the server returns variables using a star array, the plugin will parse the array and generate a new variable for each of the parameters, using the specified prefix name.
-
 ## Variable Generation
 
 The creation of JMeter variables for later usage is one of the pillars of this plugin. Therefore, this section is specially dedicated to understand and review all the possible scenarios.
@@ -428,7 +395,7 @@ Now that we have a basic idea of a replacement, lets explain the most complex an
 
 ## List of Correlation Replacements
 
-All the Correlation Replacements mentioned below comes either installed by default in the plugin, or as a part of the preloaded Siebel Template. To know more about how to load and save Correlation Rules Templates, please refer to the [Saving and Loading Rules](#saving-and-loading-rules) section, for further details about it.
+All the Correlation Replacements mentioned below are installed by default in the plugin. To know more about how to load and save Correlation Rules Templates, please refer to the [Saving and Loading Rules](#saving-and-loading-rules) section, for further details about it.
 
 In case none of the following Replacements fits the desired behavior your application requires, to correlate the dynamic variables that it might have, feel free to read the [Customizing your one extensions](CUSTOM_EXTENSIONS.md) section that we have prepared for you.
 
@@ -447,15 +414,3 @@ Similarly to the _JSON Correlation Extractor_, this one also receives a JSONPath
 For examples of using JSONPath expressions, refer to the _JSON Correlation Extractor_ documentation.
 
 The logic behind **Replacement string** and **Ignore value** is the same as _Regex Correlation Replacement_. Go to the documentation related to **Variable Replacement** for usage examples.
-
-**Siebel Counter**
-
-This Correlation Replacement replaced the matched regex with a counter that holds the value of each time it has matched on the moment the replacement occurs.
-
-**Siebel Row Id**
-
-This replacement adds _\_rowId_ to the Reference Variable name before each replacement, and search the value of the regex on rows of the Siebel Context. After this, it behaves like a regular RegEx Replacement using the Siebel Context
-
-**SiebelRowParams**
-
-Similarly to the rest of the Correlation that involves Regex, this Replacement will receive a Regular Expression as param, its going to search for the first occurrence of the first group of (), inside the Siebel Context values, extracted previously by the SiebelRow's CorrelationExtractor, and replace the respective value following the formula `RefVar` + \_ + `RowNumber`.

@@ -5,8 +5,6 @@ import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
-import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
@@ -23,18 +21,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
-import org.apache.http.entity.ContentType;
 import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +60,6 @@ public class RulesContainer extends JPanel implements ActionListener {
   private TemplatesManagerFrame loadFrame;
   private CorrelationHistoryFrame historyFrame;
   private CorrelationHistory history;
-  private boolean isSiebelTestPlan;
   private JCheckBox enableCorrelation;
   private Runnable onWizardDisplay;
   private Runnable onSuggestionsDisplay;
@@ -263,22 +257,14 @@ public class RulesContainer extends JPanel implements ActionListener {
   public void configure(CorrelationProxyControl model) {
     clearLocalConfiguration();
     updateCustomExtensions(buildCorrelationComponents(model));
-    setResponseFilter(isSiebelTestPlan ? ContentType.TEXT_HTML.getMimeType()
-        : model.getResponseFilter());
+    setResponseFilter(model.getResponseFilter());
     if (model.getGroups() != null && !model.getGroups().isEmpty()) {
       groupsContainer.configure(model.getGroups());
     }
   }
 
   private String buildCorrelationComponents(CorrelationProxyControl correlationProxyControl) {
-    String correlationComponents = correlationProxyControl.getCorrelationComponents();
-    if (correlationComponents.isEmpty()) {
-      //if empty could mean that comes from CRM-Siebel.
-      correlationComponents = getSiebelCRMComponents(
-          correlationProxyControl.getCorrelationRulesTestElement());
-      isSiebelTestPlan = !correlationComponents.isEmpty();
-    }
-    return correlationComponents;
+    return correlationProxyControl.getCorrelationComponents();
   }
 
   private BufferedImage getSnapshotBufferedImage() {
@@ -306,19 +292,6 @@ public class RulesContainer extends JPanel implements ActionListener {
         .updateActiveComponents(correlationComponents, new ArrayList<>());
   }
 
-  private String getSiebelCRMComponents(CorrelationRulesTestElement correlationRulesTestElement) {
-    if (correlationRulesTestElement == null) {
-      return "";
-    }
-    return correlationRulesTestElement.getRules().stream()
-        .flatMap(r -> Stream.<Class<?>>of(r.getExtractorClass(), r.getReplacementClass()))
-        .filter(c -> c != null && c != RegexCorrelationExtractor.class
-            && c != RegexCorrelationReplacement.class)
-        .collect(Collectors.toCollection(LinkedHashSet::new)).stream()
-        .map(Class::getCanonicalName)
-        .collect(Collectors.joining(",\n"));
-  }
-
   public String getResponseFilter() {
     return responseFilterPanel.getResponseFilter();
   }
@@ -336,7 +309,6 @@ public class RulesContainer extends JPanel implements ActionListener {
     return "RulesContainer{" +
         "loadedTemplates=" + loadedTemplates +
         ", groupsContainer=" + groupsContainer +
-        ", isSiebelTestPlan=" + isSiebelTestPlan +
         '}';
   }
 

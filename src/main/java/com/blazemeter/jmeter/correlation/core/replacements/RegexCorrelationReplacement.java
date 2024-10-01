@@ -113,18 +113,17 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
    * from the father's class {@link CorrelationReplacement}'s by applying short circuit evaluation
    * for better performance.
    *
-   * @param sampler  recorded sampler containing the information of the request
+   * @param sampler recorded sampler containing the information of the request
    * @param children list of children added to the sampler (if the value matches the one associated
-   *                 to the Reference Variable, components could be added to help the correlation
-   *                 process)
-   * @param result   containing information about the request and associated response from server
-   * @param vars     stored variables shared between requests during recording
+   * to the Reference Variable, components could be added to help the correlation process)
+   * @param result containing information about the request and associated response from server
+   * @param vars stored variables shared between requests during recording
    * @see <a href="https://en.wikipedia.org/wiki/Short-circuit_evaluation">Short-circuit
    * evaluation</a>
    */
   @Override
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-                      JMeterVariables vars) {
+      JMeterVariables vars) {
     if (regex.isEmpty()) {
       return;
     }
@@ -141,7 +140,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
    * for <pre>variableName=VAR_1</pre> the replacement would be <pre>${VAR_1}</pre>
    *
    * @param input property's string to check and replace
-   * @param vars  stored variables shared between request during the recording
+   * @param vars stored variables shared between request during the recording
    * @return the resultant input after been processed
    */
   @Override
@@ -158,18 +157,18 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
    * Handles the method used to evaluate all the matched values by the Regular Expression.
    *
    * <p>Establish the condition that, if a value is matched with the Regular expression, it should
-   * also be equals to the value stored in the JMeterVariables with the variable name. Not all
-   * the values matched with the regex needs to be correlated. Overwrite it when the condition
-   * wants to be changed.
+   * also be equals to the value stored in the JMeterVariables with the variable name. Not all the
+   * values matched with the regex needs to be correlated. Overwrite it when the condition wants to
+   * be changed.
    *
-   * @param input        property's string to check and replace
-   * @param regex        regular expression used to do the evaluation
+   * @param input property's string to check and replace
+   * @param regex regular expression used to do the evaluation
    * @param variableName name of the variable name associated to this Correlation Replacement
-   * @param vars         stored variables shared between requests during recording
+   * @param vars stored variables shared between requests during recording
    * @return the resultant input after been processed
    */
   protected String replaceWithRegex(String input, String regex,
-                                    String variableName, JMeterVariables vars)
+      String variableName, JMeterVariables vars)
       throws MalformedPatternException {
     // Skip empty inputs
     if (input == null || input.isEmpty() || regex == null || regex.isEmpty() || variableName == null
@@ -200,7 +199,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
       int varNr = 0;
       while (varNr <= context.getVariableCount(variableName) && !hasMatch) {
         /* varNr could be 0 if non MultiValuedExtractor is used
-         so this code is to support when yo use MultiValuedReplacement with 
+         so this code is to support when yo use MultiValuedReplacement with
          SingleValuedExtractor */
         String varName = varNr == 0 ? variableName : variableName + "#" + varNr;
         String varMatchesCount = vars.get(varName + "_matchNr");
@@ -215,7 +214,8 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
             currentVariableName = varName;
           } else if (ignoreValue && !replacementString.isEmpty()) {
             replaceExpression = replacementString;
-            /* This case does not care if the value is 'matching'. Because ignore value is 
+            currentVariableName = super.variableName;
+            /* This case does not care if the value is 'matching'. Because ignore value is
             activated, therefore we need to step out of loop by setting hasMatch.*/
             hasMatch = true;
           } else if (computeStringReplacement(varName)
@@ -270,7 +270,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     }
 
     for (Pair<String, String> valueReplaced : valuesReplaced) {
-      analysis(valueReplaced.getLeft(), valueReplaced.getRight());
+      analysis(valueReplaced.getLeft(), this.variableName);
     }
     if (!AnalysisReporter.canCorrelate()) {
       return input;
@@ -280,8 +280,8 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   }
 
   private StringBuilder replaceMatch(StringBuilder result, PatternMatcherInput patternMatcherInput,
-                                     MatchResult match, int beginOffset, char[] inputBuffer,
-                                     String expression) {
+      MatchResult match, int beginOffset, char[] inputBuffer,
+      String expression) {
     return result.append(inputBuffer, beginOffset, match.beginOffset(1) - beginOffset)
         .append(expression)
         .append(inputBuffer, match.endOffset(1),
@@ -295,15 +295,15 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
    * <p>Receives a matching condition that evaluates the String input. If the condition is met,
    * every appearance of the matched value will be replaced by <code>${expression}</code>.
    *
-   * @param input          property's string to check and replace
-   * @param regex          regular expression used to do the evaluation
-   * @param expression     expression that will replace the matched value(s)
+   * @param input property's string to check and replace
+   * @param regex regular expression used to do the evaluation
+   * @param expression expression that will replace the matched value(s)
    * @param matchCondition predicate that will serve for evaluating whether or not the matched value
-   *                       should be replaced by the expression
+   * should be replaced by the expression
    * @return the resultant input after been processed
    */
   protected String replaceWithRegexAndPredicate(String input, String regex, String expression,
-                                                Predicate<String> matchCondition)
+      Predicate<String> matchCondition)
       throws MalformedPatternException {
     PatternMatcher matcher = JMeterUtils.getMatcher();
     Pattern pattern = new Perl5Compiler().compile(regex);
@@ -314,8 +314,14 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     while (matcher.contains(patternMatcherInput, pattern)) {
       MatchResult match = matcher.getMatch();
       if (matchCondition.test(match.group(1))) {
-        replaceMatch(result, patternMatcherInput, match, beginOffset, inputBuffer,
-            FUNCTION_REF_PREFIX + expression + FUNCTION_REF_SUFFIX);
+        analysis(match.group(1), this.variableName);
+        if (AnalysisReporter.canCorrelate()) {
+          replaceMatch(result, patternMatcherInput, match, beginOffset, inputBuffer,
+              FUNCTION_REF_PREFIX + expression + FUNCTION_REF_SUFFIX);
+        } else {
+          result.append(inputBuffer, beginOffset,
+              patternMatcherInput.getMatchEndOffset() - beginOffset);
+        }
       } else {
         result.append(inputBuffer, beginOffset,
             patternMatcherInput.getMatchEndOffset() - beginOffset);
@@ -333,7 +339,7 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
     ignoreValue = testElem.getPropertyAsBoolean(REPLACEMENT_IGNORE_VALUE_PROPERTY_NAME);
   }
 
-  private void analysis(String literalMatched, String currentVariableName) {
+  protected void analysis(String literalMatched, String currentVariableName) {
     AnalysisReporter.report(this, literalMatched, currentSampler, currentVariableName);
   }
 

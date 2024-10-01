@@ -312,6 +312,8 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
   private void updateTemplatesList(boolean useLocal) {
     Map<Template, TemplateProperties> rawTemplates = new HashMap<>();
 
+    repositoriesRegistryHandler.setTemplatesIgnoreErrors(true);
+
     List<CorrelationTemplatesRepository> repositories =
         repositoriesRegistryHandler.getCorrelationRepositories();
 
@@ -343,6 +345,8 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
 
     installedTemplates.setModel(installedModel);
     availableTemplates.setModel(availableModel);
+
+    repositoriesRegistryHandler.setTemplatesIgnoreErrors(false);
   }
 
   private DefaultListModel<TemplateManagerDisplay> unifyTemplates(
@@ -584,6 +588,8 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
      * after closing this frame, and open it again.
      * */
 
+    repositoriesRegistryHandler.setTemplatesIgnoreErrors(true);
+
     Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
     // calculate the new location of the window
     int x = (dim.width - this.getSize().width) / 2;
@@ -597,6 +603,8 @@ public class TemplatesManagerFrame extends JDialog implements ActionListener {
     } else {
       updateTemplatesList(true);
     }
+
+    repositoriesRegistryHandler.setTemplatesIgnoreErrors(false);
   }
 
   private boolean needsRefresh(DefaultListModel<TemplateManagerDisplay> listModel) {

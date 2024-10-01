@@ -17,7 +17,6 @@ import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepo
 import com.blazemeter.jmeter.correlation.core.templates.LocalConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -198,7 +197,6 @@ public class CorrelationProxyControlTest {
 
   private void setInitialValues(CorrelationProxyControl model) {
     model.setResponseFilter("Filter 0");
-    model.setCorrelationComponents(SiebelRowParamsCorrelationReplacement.class.getName());
 
     RegexCorrelationExtractor<?> regexExtractor = new RegexCorrelationExtractor<>();
     regexExtractor.setParams(Collections.singletonList("=(1)"));

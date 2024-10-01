@@ -180,6 +180,8 @@ public class RepositoriesConfigFrame extends JDialog implements ActionListener {
 
   @VisibleForTesting
   void updateRepositoriesTable() {
+    repositoryHandler.setTemplatesIgnoreErrors(true);
+
     GuiUtils.cancelEditing(repositoryTable);
     List<CorrelationTemplatesRepository> listCorrelationRepositories = repositoryHandler
         .getCorrelationRepositories();
@@ -202,6 +204,8 @@ public class RepositoriesConfigFrame extends JDialog implements ActionListener {
     });
     repositoryTable.clearSelection();
     repositoryTable.repaint();
+
+    repositoryHandler.setTemplatesIgnoreErrors(false);
   }
 
   private JPanel makeButtonPanel() {

@@ -7,9 +7,9 @@ import com.blazemeter.jmeter.correlation.core.RulesGroup.Builder;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
+import com.blazemeter.jmeter.correlation.custom.extension.CustomContext;
+import com.blazemeter.jmeter.correlation.custom.extension.CustomCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
-import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ public class CorrelationEngineTest {
   public void prepare() {
     engine = new CorrelationEngine();
     engine.setEnabled(true);
-    when(registry.getContext(SiebelContext.class)).thenReturn(new SiebelContext());
+    when(registry.getContext(CustomContext.class)).thenReturn(new CustomContext());
     when(registry.getContext(BaseCorrelationContext.class))
         .thenReturn(new BaseCorrelationContext());
   }
@@ -72,7 +72,7 @@ public class CorrelationEngineTest {
   @Test
   public void shouldUpdateContextWhenSetCorrelationRules() {
     engine.setCorrelationRules(createGroupWithRules(
-        Arrays.asList(buildRuleWithEnable(true), buildRuleWithSiebelReplacement(
+        Arrays.asList(buildRuleWithEnable(true), buildRuleWithCustomReplacement(
             "variable2"))), registry);
 
     assertThat(engine.getCorrelationRules().stream()
@@ -96,10 +96,10 @@ public class CorrelationEngineTest {
     return correlationRule;
   }
 
-  private CorrelationRule buildRuleWithSiebelReplacement(String referenceName) {
+  private CorrelationRule buildRuleWithCustomReplacement(String referenceName) {
     return new CorrelationRule(referenceName,
         new RegexCorrelationExtractor<>(REGEX, "1", "1", ResultField.BODY.name(), "false"),
-        createSiebelRowIdReplacement());
+        new CustomCorrelationReplacement());
   }
 
   private RegexCorrelationExtractor<?> createRegexExtractor(String regex) {
@@ -108,21 +108,13 @@ public class CorrelationEngineTest {
     return regexExtractorWithoutRegex;
   }
 
-  private SiebelRowIdCorrelationReplacement createSiebelRowIdReplacement() {
-    SiebelRowIdCorrelationReplacement siebelRowIdReplacement =
-        new SiebelRowIdCorrelationReplacement();
-    siebelRowIdReplacement.setParams(Collections.singletonList(""));
-    return siebelRowIdReplacement;
-  }
-
   @Test
   public void shouldResetContextWhenReset() throws IOException {
     engine.setCorrelationRules(createGroupWithRules(Collections
-        .singletonList(buildRuleWithSiebelReplacement("var"))), registry);
+        .singletonList(buildRuleWithCustomReplacement("var"))), registry);
     engine.updateContexts(buildSampleResult());
     String updatedContext = getContextsToString();
     engine.reset();
-
     assertThat(getContextsToString()).isNotEqualTo(updatedContext);
   }
 

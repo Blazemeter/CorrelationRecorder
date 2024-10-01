@@ -1,21 +1,18 @@
 package com.blazemeter.jmeter.correlation.gui;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.extractors.XmlCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,17 +24,13 @@ public class CorrelationComponentsRegistryTest {
   private static final RegexCorrelationReplacement<?> REGEX_REPLACEMENT =
       new RegexCorrelationReplacement<>();
   private static final JsonCorrelationReplacement<?> JSON_REPLACEMENT =
-          new JsonCorrelationReplacement<>();
-  private static final SiebelRowCorrelationExtractor SIEBEL_EXTRACTOR_EXTENSION =
-      new SiebelRowCorrelationExtractor();
-  private static final SiebelRowIdCorrelationReplacement SIEBEL_REPLACEMENT_EXTENSION =
-      new SiebelRowIdCorrelationReplacement();
+      new JsonCorrelationReplacement<>();
 
   private CorrelationComponentsRegistry registry;
 
   @Before
   public void setup() {
-    registry = CorrelationComponentsRegistry.getInstance();
+    registry = CorrelationComponentsRegistry.getNewInstance();
     registry.reset();
   }
 
@@ -53,17 +46,8 @@ public class CorrelationComponentsRegistryTest {
         .buildActiveReplacementRulePart();
     registry.updateActiveComponents(REGEX_EXTRACTOR.getClass().getCanonicalName(),
         new ArrayList<>());
-    assertThat(initialReplacements.toString()).isEqualTo((registry.buildActiveReplacementRulePart()).toString());
-  }
-
-  @Test
-  public void shouldAddReplacementWhenAddComponent() {
-    List<CorrelationRulePartTestElement<?>> initialAllowedReplacements =
-        registry.buildActiveReplacementRulePart();
-    registry.updateActiveComponents(SiebelRowParamsCorrelationReplacement.class.getCanonicalName(),
-        new ArrayList<>());
-    assertThat(initialAllowedReplacements).isNotEqualTo(registry
-        .buildActiveReplacementRulePart());
+    assertThat(initialReplacements.toString()).isEqualTo(
+        (registry.buildActiveReplacementRulePart()).toString());
   }
 
   @Test
@@ -77,30 +61,10 @@ public class CorrelationComponentsRegistryTest {
   }
 
   @Test
-  public void shouldReturnFalseWhenIsAllowedWithNotAddedReplacement() {
-    assertThat(!registry.isReplacementActive(SIEBEL_EXTRACTOR_EXTENSION))
-        .isTrue();
-  }
-
-  @Test
-  public void shouldReturnTrueWhenIsAllowedAfterAddingComponent() {
-    registry.updateActiveComponents(SIEBEL_EXTRACTOR_EXTENSION.getClass().getCanonicalName(),
-        new ArrayList<>());
-    assertThat(registry.isExtractorActive(SIEBEL_EXTRACTOR_EXTENSION))
-        .isTrue();
-  }
-
-  @Test
   public void shouldGetNullWhenGetCorrelationExtractorWithNullClass()
       throws InvalidRulePartElementException {
     assertThat(registry
         .getCorrelationExtractor(null) == null).isTrue();
-  }
-
-  @Test(expected = InvalidRulePartElementException.class)
-  public void shouldThrowExceptionWhenGetCorrelationExtractorWithNotActiveExtractor()
-      throws InvalidRulePartElementException {
-    registry.getCorrelationExtractor(SIEBEL_EXTRACTOR_EXTENSION.getClass());
   }
 
   @Test
@@ -116,11 +80,6 @@ public class CorrelationComponentsRegistryTest {
     assertThat(registry.getCorrelationReplacement(null) == null).isTrue();
   }
 
-  @Test(expected = InvalidRulePartElementException.class)
-  public void shouldThrowExceptionWhenGetCorrelationReplacementWithNotAllowedReplacement()
-      throws InvalidRulePartElementException {
-    registry.getCorrelationReplacement(SIEBEL_REPLACEMENT_EXTENSION.getClass());
-  }
 
   @Test
   public void shouldGetReplacementWhenGetCorrelationReplacementWithAllowedReplacement()
@@ -137,51 +96,23 @@ public class CorrelationComponentsRegistryTest {
   }
 
   @Test
-  public void shouldAddComponentsWhenUpdateAllowedComponents() {
-    registry.updateActiveComponents(SiebelRowParamsCorrelationReplacement.class.getCanonicalName(),
-        new ArrayList<>());
-    List<CorrelationRulePartTestElement<?>> allowedReplacements = registry
-        .buildActiveReplacementRulePart();
-    assertThat(allowedReplacements.equals(registry.buildActiveReplacementRulePart()));
-  }
-
-  @Test
-  public void shouldResetAllowedComponentsWhenUpdateAllowedComponents() {
-    List<CorrelationRulePartTestElement<?>> initialActiveReplacements = new ArrayList<>(
-        registry.buildActiveReplacementRulePart());
-    registry.updateActiveComponents(SiebelRowParamsCorrelationReplacement.class.getCanonicalName(),
-        new ArrayList<>());
-    assertThat(initialActiveReplacements).isNotEqualTo(registry.buildActiveReplacementRulePart());
-  }
-
-  @Test
   public void shouldGetDefaultAllowedExtractorsWhenGetAllowedExtractors() {
-    List<CorrelationRulePartTestElement<?>> activeExtractor = registry.buildActiveExtractorRulePart();
-    assertThat(activeExtractor).isEqualTo(Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR,
-        new RegexCorrelationExtractor<>(),
-        new JsonCorrelationExtractor<>(),
-        CorrelationComponentsRegistry.MORE_EXTRACTOR));
+    List<CorrelationRulePartTestElement<?>> activeExtractor =
+        registry.buildActiveExtractorRulePart();
+    assertThat(new HashSet<>(activeExtractor)).isEqualTo(new HashSet<>(
+        Arrays.asList(CorrelationComponentsRegistry.NONE_EXTRACTOR,
+            new RegexCorrelationExtractor<>(),
+            new JsonCorrelationExtractor<>(),
+            CorrelationComponentsRegistry.MORE_EXTRACTOR)));
   }
 
   @Test
   public void shouldGetDefaultAllowedReplacementsWhenGetAllowedReplacements() {
     List<CorrelationRulePartTestElement<?>> expectedDefaultAllowedReplacements = Arrays
         .asList(CorrelationComponentsRegistry.NONE_REPLACEMENT, REGEX_REPLACEMENT,
-                JSON_REPLACEMENT, CorrelationComponentsRegistry.MORE_REPLACEMENT);
-    assertThat(expectedDefaultAllowedReplacements.toString()).isEqualTo(
-        registry.buildActiveReplacementRulePart().toString());
+            JSON_REPLACEMENT, CorrelationComponentsRegistry.MORE_REPLACEMENT);
+    assertThat(new HashSet<>(expectedDefaultAllowedReplacements).toString()).isEqualTo(
+        new HashSet<>(registry.buildActiveReplacementRulePart()).toString());
   }
 
-  @Test
-  public void shouldNotGetSiebelExtensionsWhenGetAllowedExtractorsWithAddingBefore() {
-    assertThat(registry.buildActiveExtractorRulePart().stream()
-        .noneMatch(e -> e.equals(SIEBEL_EXTRACTOR_EXTENSION)))
-        .isTrue();
-  }
-
-  @Test
-  public void shouldGetContextInstanceWhenGetContext() {
-    assertThat(new SiebelContext().toString())
-        .isEqualTo(registry.getContext(SiebelContext.class).toString());
-  }
 }

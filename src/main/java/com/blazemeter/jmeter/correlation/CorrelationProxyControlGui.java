@@ -58,9 +58,9 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   }
 
   public CorrelationProxyControlGui() {
-    JTabbedPane siebelPane = findTabbedPane();
+    JTabbedPane correlationPane = findTabbedPane();
     rulesContainer = new RulesContainer(this, () -> modifyTestElement(model));
-    Objects.requireNonNull(siebelPane).add("Correlation", rulesContainer);
+    Objects.requireNonNull(correlationPane).add("Correlation", rulesContainer);
     add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
 
     wizard = new CorrelationWizard();
@@ -81,6 +81,11 @@ public class CorrelationProxyControlGui extends ProxyControlGui
   public CorrelationProxyControlGui(CorrelationProxyControl model, RulesContainer container) {
     this.model = model;
     this.rulesContainer = container;
+  }
+
+  @Override
+  public void setTemplatesIgnoreErrors(boolean ignoreErrors) {
+    model.setTemplatesIgnoreErrors(ignoreErrors);
   }
 
   public void actionPerformed(ActionEvent action) {

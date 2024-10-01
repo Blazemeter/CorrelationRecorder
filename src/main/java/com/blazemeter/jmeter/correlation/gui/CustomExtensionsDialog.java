@@ -235,6 +235,7 @@ public class CustomExtensionsDialog extends JDialog implements ActionListener {
 
     availableModel = new DefaultListModel<>();
     registry.getAvailableExtensions().stream()
+        .filter(c -> c != null)  // Exclude components with errors
         .filter(c -> type == RulePartType.fromComponent(c))
         .forEach(e -> availableModel.addElement(new ExtensionItem(e, false)));
 

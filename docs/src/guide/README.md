@@ -16,7 +16,7 @@ easier to maintain.
 ## Key Features
 
 - Automated correlation detection and suggestions for faster and more accurate test script creation
-- Preloaded SIEBEL templates for convenience and faster test script creation
+- Access to SIEBEL templates for convenience and faster test script creation
 - Auto install, download and update repositories for a convenient and hassle-free team collaboration
 - Easy customization options for efficient test script creation and increased productivity
 - Customizable correlations to match your specific testing needs and requirements

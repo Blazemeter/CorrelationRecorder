@@ -3,15 +3,14 @@ package com.blazemeter.jmeter.correlation.gui;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.swing.fixture.Containers.showInFrame;
 import static org.mockito.Mockito.doReturn;
+
 import com.blazemeter.jmeter.correlation.SwingTestRunner;
 import com.blazemeter.jmeter.correlation.TestUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
+import com.blazemeter.jmeter.correlation.custom.extension.CustomCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.custom.extension.CustomCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.gui.CustomExtensionsDialog.ExtensionItem;
 import com.blazemeter.jmeter.correlation.gui.common.RulePartType;
-import com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,13 +53,11 @@ public class CustomExtensionsDialogIT {
 
   @Before
   public void setUp() {
-    extensionsRegistry = CorrelationComponentsRegistry.getInstance();
+    extensionsRegistry = CorrelationComponentsRegistry.getNewInstance();
     extensionsRegistry.reset();
     List<String> availableExtensions = Arrays
-        .asList(SiebelCounterCorrelationReplacement.class.getCanonicalName(),
-            SiebelRowCorrelationExtractor.class.getCanonicalName(),
-            SiebelRowIdCorrelationReplacement.class.getCanonicalName(),
-            SiebelRowParamsCorrelationReplacement.class.getCanonicalName());
+        .asList(CustomCorrelationExtractor.class.getCanonicalName(),
+            CustomCorrelationReplacement.class.getCanonicalName());
     doReturn(availableExtensions).when(classFinderFunction)
         .apply(CorrelationRulePartTestElement.class);
     extensionsRegistry.setClassFinderFunction(classFinderFunction);
@@ -75,14 +72,14 @@ public class CustomExtensionsDialogIT {
   }
 
   @Test
-  public void shouldDisplaySiebelExtractorExtensionsWhenNoUsedExtensionsAndNoLoadedExtensions() {
+  public void shouldDisplayCustomExtractorExtensionsWhenNoUsedExtensionsAndNoLoadedExtensions() {
     customExtensionsDialog.buildExtensions(new HashSet<>(), RulePartType.EXTRACTOR);
-    assertThat(buildSiebelExtractors()).isEqualTo(getAvailableExtensions());
+    assertThat(buildCustomExtractors()).isEqualTo(getAvailableExtensions());
   }
 
-  private List<ExtensionItem> buildSiebelExtractors() {
+  private List<ExtensionItem> buildCustomExtractors() {
     return buildExpectedExtensionItemsList(
-        Collections.singletonList(SiebelRowCorrelationExtractor.class), false);
+        Collections.singletonList(CustomCorrelationExtractor.class), false);
   }
 
   private List<ExtensionItem> getAvailableExtensions() {
@@ -100,32 +97,29 @@ public class CustomExtensionsDialogIT {
   }
 
   @Test
-  public void shouldDisplaySiebelReplacementExtensionsWhenNoUsedExtensionsAndNoLoadedExtensions() {
+  public void shouldDisplayCustomReplacementExtensionsWhenNoUsedExtensionsAndNoLoadedExtensions() {
     customExtensionsDialog.buildExtensions(new HashSet<>(), RulePartType.REPLACEMENT);
-    assertThat(buildSiebelReplacements(false)).isEqualTo(getAvailableExtensions());
+    assertThat(buildCustomReplacements(false)).isEqualTo(getAvailableExtensions());
   }
 
-  private List<ExtensionItem> buildSiebelReplacements(boolean active) {
-    return buildExpectedExtensionItemsList(Arrays.asList(SiebelCounterCorrelationReplacement.class,
-            SiebelRowIdCorrelationReplacement.class, SiebelRowParamsCorrelationReplacement.class),
+  private List<ExtensionItem> buildCustomReplacements(boolean active) {
+    return buildExpectedExtensionItemsList(
+        Collections.singletonList(CustomCorrelationReplacement.class),
         active);
   }
 
   @Test
   public void shouldDisplayOnlyNotLoadedReplacementsWhenNoUsedExtensionsAndLoadedReplacements() {
-    loadCustomExtensions(Arrays.asList(SiebelRowParamsCorrelationReplacement.class,
-        SiebelCounterCorrelationReplacement.class));
     customExtensionsDialog.buildExtensions(new HashSet<>(), RulePartType.REPLACEMENT);
     assertThat(buildExpectedExtensionItemsList(
-        Collections.singletonList(SiebelRowIdCorrelationReplacement.class), false))
+        Collections.singletonList(CustomCorrelationReplacement.class), false))
         .isEqualTo(getAvailableExtensions());
   }
 
   @Test
   public void shouldNotDisplayExtensionsWhenNoUsedExtensionsAndAllAvailableExtensionsAreLoaded() {
     loadCustomExtensions(Arrays
-        .asList(SiebelCounterCorrelationReplacement.class, SiebelRowCorrelationExtractor.class,
-            SiebelRowIdCorrelationReplacement.class, SiebelRowParamsCorrelationReplacement.class));
+        .asList(CustomCorrelationReplacement.class, CustomCorrelationExtractor.class));
     customExtensionsDialog.buildExtensions(new HashSet<>(), RulePartType.REPLACEMENT);
     assertThat(new ArrayList<>()).isEqualTo(getAvailableExtensions());
   }
@@ -133,17 +127,15 @@ public class CustomExtensionsDialogIT {
   @Test
   public void shouldDisplayActiveExtensionsWhenLoadedExtensionsAreUsed() {
     Set<Class<? extends CorrelationRulePartTestElement>> usedExtensions = Stream
-        .of(SiebelRowParamsCorrelationReplacement.class, SiebelRowIdCorrelationReplacement.class,
-            SiebelCounterCorrelationReplacement.class)
+        .of(CustomCorrelationExtractor.class, CustomCorrelationReplacement.class)
         .collect(Collectors.toCollection(HashSet::new));
 
     loadCustomExtensions(Arrays
-        .asList(SiebelCounterCorrelationReplacement.class, SiebelRowCorrelationExtractor.class,
-            SiebelRowIdCorrelationReplacement.class, SiebelRowParamsCorrelationReplacement.class));
+        .asList(CustomCorrelationExtractor.class, CustomCorrelationReplacement.class));
     customExtensionsDialog.buildExtensions(usedExtensions, RulePartType.REPLACEMENT);
     assertListsEquals(
-        buildExpectedExtensionItemsList(Arrays.asList(SiebelCounterCorrelationReplacement.class,
-                SiebelRowIdCorrelationReplacement.class, SiebelRowParamsCorrelationReplacement.class),
+        buildExpectedExtensionItemsList(Arrays.asList(CustomCorrelationExtractor.class,
+                CustomCorrelationReplacement.class),
             true), getActiveExtensions());
   }
 
@@ -177,17 +169,16 @@ public class CustomExtensionsDialogIT {
   @Test
   public void shouldDisplayUsedExtensionsAsActiveWhenSomeLoadedExtensionsAreUsed() {
     Set<Class<? extends CorrelationRulePartTestElement>> usedExtensions = Stream
-        .of(SiebelRowParamsCorrelationReplacement.class)
+        .of(CustomCorrelationReplacement.class)
         .collect(Collectors.toCollection(HashSet::new));
 
     loadCustomExtensions(Arrays
-        .asList(SiebelCounterCorrelationReplacement.class, SiebelRowCorrelationExtractor.class,
-            SiebelRowIdCorrelationReplacement.class, SiebelRowParamsCorrelationReplacement.class));
+        .asList(CustomCorrelationExtractor.class, CustomCorrelationReplacement.class));
     customExtensionsDialog.buildExtensions(usedExtensions, RulePartType.REPLACEMENT);
     assertListsEquals(
-        buildExpectedExtensionItemsList(Arrays.asList(SiebelRowParamsCorrelationReplacement.class,
-                SiebelCounterCorrelationReplacement.class, SiebelRowIdCorrelationReplacement.class),
-            true, false, false), getActiveExtensions());
+        buildExpectedExtensionItemsList(Arrays.asList(CustomCorrelationExtractor.class,
+                CustomCorrelationReplacement.class),
+            true, true), getActiveExtensions());
   }
 
   //Created to avoid assertions failing because elements not being in the same order
@@ -239,19 +230,20 @@ public class CustomExtensionsDialogIT {
     customExtensionsDialog.buildExtensions(new HashSet<>(), RulePartType.REPLACEMENT);
     List<ExtensionItem> originalActive = getActiveExtensions();
     selectAvailableExtensionByIndex(0);
-    assertDescription("/selectedReplacementDescription.html");
+    assertDescription("/correlation-descriptions/CustomCorrelationReplacement.html");
   }
 
 
   private void assertDescription(String templateInfoFile) throws IOException {
     CompareMatcher
-        .isIdenticalTo(buildTestDocument(
+        .isSimilarTo(buildTestDocument(
             TestUtils.getFileContent(templateInfoFile, getClass())))
         .throwComparisonFailure()
         .matches(buildTestDocument(frame.textBox("displayInfoPanel").text()));
   }
 
-  // we need to use this for comparison to avoid xml malformed (img without closing tag) nature of html
+  // we need to use this for comparison to avoid xml malformed (img without closing tag) nature
+  // of html
   private Document buildTestDocument(String html) {
     try {
       TolerantSaxDocumentBuilder tolerantSaxDocumentBuilder = new TolerantSaxDocumentBuilder(

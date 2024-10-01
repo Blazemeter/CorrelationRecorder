@@ -15,6 +15,9 @@ public interface CorrelationTemplatesRegistryHandler {
   boolean isLocalTemplateVersionSaved(String templateId, String templateVersion);
 
   boolean isValidDependencyURL(String url, String name, String version);
+
+  void   setTemplatesIgnoreErrors(boolean ignoreErrors);
+
 }
 
 

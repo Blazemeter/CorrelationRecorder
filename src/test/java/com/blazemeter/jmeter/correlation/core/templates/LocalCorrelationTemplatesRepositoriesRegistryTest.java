@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -30,7 +31,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   private static final String TEMPLATE_FILE_SUFFIX = "template.json";
   private static final String REPOSITORY_FILE_SUFFIX = "repository.json";
   private static final String EXTERNAL_REPOSITORY_NAME = "base";
-  private static final String SIEBEL_TEMPLATE_REFERENCE_NAME = "siebel";
+  private static final String TEST_TEMPLATE_REFERENCE_NAME = "test";
   private static final String WORDPRESS_TEMPLATE_REFERENCE_NAME = "wordpress";
 
   private static final String BASE_REPOSITORY_NAME =
@@ -39,10 +40,10 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   private static final String TEMPLATE_VERSION_TWO = "1.1";
   private static final String TEMPLATE_VERSION_ONE = "1.0";
 
-  private static final String SIEBEL_TEMPLATE_VERSION_TWO_NAME =
-      SIEBEL_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_TWO + "-" + TEMPLATE_FILE_SUFFIX;
-  private static final String SIEBEL_TEMPLATE_VERSION_ONE_NAME =
-      SIEBEL_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
+  private static final String TEST_TEMPLATE_VERSION_TWO_NAME =
+      TEST_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_TWO + "-" + TEMPLATE_FILE_SUFFIX;
+  private static final String TEST_TEMPLATE_VERSION_ONE_NAME =
+      TEST_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
 
   private static final String WORDPRESS_TEMPLATE_VERSION_ONE_NAME =
       WORDPRESS_TEMPLATE_REFERENCE_NAME + "-" + TEMPLATE_VERSION_ONE + "-" + TEMPLATE_FILE_SUFFIX;
@@ -57,12 +58,14 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
 
   @Before
   public void setup() throws IOException {
+    JMeterTestUtils.setupUpdatedJMeter();
     LocalConfiguration.installDefaultFiles(folder.getRoot().getPath());
     LocalConfiguration localConfiguration =
         new LocalConfiguration(folder.getRoot().getPath(), true);
     localConfiguration.setupRepositoryManagers();
     local = new LocalCorrelationTemplatesRepositoriesRegistry(localConfiguration);
-    String localRepository = Paths.get(TestUtils.getCleanPath(this.getClass()), BASE_REPOSITORY_NAME).toAbsolutePath().toString();
+    String localRepository = Paths.get(TestUtils.getCleanPath(this.getClass()),
+        "correlation-templates/" + BASE_REPOSITORY_NAME).toAbsolutePath().toString();
 
     local.save(EXTERNAL_REPOSITORY_NAME, localRepository);
     prepareExpectedLocalRepository();
@@ -73,7 +76,7 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
     when(expectedBaseRepository.getValues()).thenReturn(
         CORRELATION_TEMPLATES_REPOSITORY_NAME + "{name='" + EXTERNAL_REPOSITORY_NAME
             + "', displayName='null', templatesVersions={"
-            + SIEBEL_TEMPLATE_REFERENCE_NAME
+            + TEST_TEMPLATE_REFERENCE_NAME
             + "=CorrelationTemplateVersions {versions=[" + TEMPLATE_VERSION_ONE
             + ", " + TEMPLATE_VERSION_TWO + "]}, "
             + WORDPRESS_TEMPLATE_REFERENCE_NAME
@@ -84,8 +87,8 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   @Test
   public void shouldSaveRepositoryAndTemplatesWhenSaveFromLocalFileSystem() {
     List<String> expectedGeneratedFilesNames = Arrays
-        .asList(BASE_REPOSITORY_NAME, SIEBEL_TEMPLATE_VERSION_TWO_NAME,
-            SIEBEL_TEMPLATE_VERSION_ONE_NAME,
+        .asList(BASE_REPOSITORY_NAME, TEST_TEMPLATE_VERSION_TWO_NAME,
+            TEST_TEMPLATE_VERSION_ONE_NAME,
             WORDPRESS_TEMPLATE_VERSION_ONE_NAME);
 
     List<String> actualGeneratedFilesNames = getGeneratedFilesNames(EXTERNAL_REPOSITORY_NAME);
@@ -114,12 +117,6 @@ public class LocalCorrelationTemplatesRepositoriesRegistryTest {
   public void shouldFindRepositoryByIdWhenFind() {
     assertEquals(expectedBaseRepository.getValues(),
         local.find(EXTERNAL_REPOSITORY_NAME).getValues());
-  }
-
-  public String getValuesForCompare(CorrelationTemplatesRepository repository) {
-    return repository.getTemplates().keySet().stream()
-        .map(key -> key + "=" + repository.getTemplates().get(key))
-        .collect(Collectors.joining(", ", "{", "}"));
   }
 
   @Test

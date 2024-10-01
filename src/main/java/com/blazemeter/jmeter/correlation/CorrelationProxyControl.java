@@ -167,6 +167,9 @@ public class CorrelationProxyControl extends ProxyControl implements
   }
 
   private static String getTemplateDirectoryPath() {
+    // TODO: This not is the best way to manage this
+    // because the instance of the template directory can be used on different places
+    // review this in a universal way and not as CorrelationProxyControl property
     return JMeterUtils.getPropDefault(TEMPLATE_PATH, JMeterUtils.getJMeterHome());
   }
 
@@ -945,5 +948,9 @@ public class CorrelationProxyControl extends ProxyControl implements
   private boolean isRedirectDisablingConfigured() {
     String property = JMeterUtils.getProperty(CORRELATION_PROXY_REDIRECT_DISABLING_NAME);
     return "false".equals(property);
+  }
+
+  public void setTemplatesIgnoreErrors(boolean ignoreErrors) {
+    templateRepositoryConfig.setTemplatesIgnoreErrors(ignoreErrors);
   }
 }

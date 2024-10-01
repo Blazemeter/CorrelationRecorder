@@ -2,18 +2,16 @@ package com.blazemeter.jmeter.correlation.gui;
 
 import static java.lang.Class.forName;
 
+import com.blazemeter.jmeter.correlation.core.ClassFinderUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.InvalidRulePartElementException;
 import com.blazemeter.jmeter.correlation.core.ParameterDefinition;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.extractors.JsonCorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
+import com.blazemeter.jmeter.correlation.core.extractors.XmlCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.replacements.FunctionCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.replacements.JsonCorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -22,10 +20,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,32 +42,86 @@ public class CorrelationComponentsRegistry {
   private static CorrelationComponentsRegistry instance;
   private final Set<Class<?>> customExtractors = new HashSet<>();
   private final Set<Class<?>> customReplacements = new HashSet<>();
-  private final List<Class<?>> defaultExtractors =
-      Arrays.asList(RegexCorrelationExtractor.class, JsonCorrelationExtractor.class);
-  private final List<Class<?>> defaultReplacements =
-          Arrays.asList(RegexCorrelationReplacement.class,
-                  JsonCorrelationReplacement.class);
-  private final List<String> deprecatedComponents = Collections.singletonList(
-      FunctionCorrelationReplacement.class.getCanonicalName());
+  private List<Class<?>> defaultExtractors = Arrays.asList();
+  private List<Class<?>> defaultReplacements = Arrays.asList();
+  private final List<String> deprecatedComponents =
+      Arrays.asList(FunctionCorrelationReplacement.class.getCanonicalName(),
+          XmlCorrelationExtractor.class.getCanonicalName()); // TODO: XML Temporarily excluded
 
   @VisibleForTesting
   protected Function<Class<?>, List<String>> classFinderFunction = (clazz) -> {
     try {
-      return JMeterUtils.findClassesThatExtend(clazz);
+      return ClassFinderUtils.findClassesThatExtendOnLibExt(clazz);
     } catch (IOException e) {
       LOG.error("There was an error trying to search for the classes that extends {}", clazz, e);
       return Collections.emptyList();
     }
   };
 
-  private CorrelationComponentsRegistry() {
+  private List<CorrelationRulePartTestElement<?>> filteredAvailableExtensions;
 
+  private CorrelationComponentsRegistry() {
+    loadClasses();
+  }
+
+  private Map<Boolean, List<Class<?>>> mapCoreComponents(Class refClass) {
+    try {
+      List<Class<?>> components = stringClassToClass(
+          ClassFinderUtils.findClassesThatExtendOnLibExt(refClass));
+      String core = "com.blazemeter.jmeter.correlation.core";
+      return components.stream()
+          .collect(Collectors.partitioningBy(
+              s -> s.getCanonicalName().startsWith(core) &&
+                  !deprecatedComponents.contains(s.getCanonicalName())));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void loadClasses() {
+
+    // Only once
+    if (defaultExtractors.size() != 0) {
+      return;
+    }
+
+    // Load the classes related with Extractor and Replacement available in the class loader
+    Map<Boolean, List<Class<?>>> availableExtractorsMap =
+        mapCoreComponents(CorrelationExtractor.class);
+    defaultExtractors = availableExtractorsMap.get(true);
+    customExtractors.clear();
+    customExtractors.addAll(availableExtractorsMap.get(false));
+
+    Map<Boolean, List<Class<?>>> availableReplacementsMap =
+        mapCoreComponents(CorrelationReplacement.class);
+    defaultReplacements = availableReplacementsMap.get(true);
+    customReplacements.clear();
+    customReplacements.addAll(availableReplacementsMap.get(false));
+
+  }
+
+  private List<Class<?>> stringClassToClass(List<String> classNames) {
+    return classNames.stream()
+        .map(className -> {
+          try {
+            return Class.forName(className);
+          } catch (ClassNotFoundException e) {
+            return null; // Temporary null
+          }
+        })
+        .filter(clazz -> clazz != null) // Null filtered
+        .collect(Collectors.toList());
   }
 
   public static synchronized CorrelationComponentsRegistry getInstance() {
     if (instance == null) {
       instance = new CorrelationComponentsRegistry();
     }
+    return instance;
+  }
+
+  public static synchronized CorrelationComponentsRegistry getNewInstance() {
+    instance = new CorrelationComponentsRegistry();
     return instance;
   }
 
@@ -133,7 +185,7 @@ public class CorrelationComponentsRegistry {
       return correlationPartClass.getConstructor().newInstance();
     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
              | InvocationTargetException e) {
-      LOG.warn("Couldn't build the correlation type '{}'.", correlationPartClass, e);
+      LOG.error("Couldn't build the correlation type '{}'.", correlationPartClass, e);
       return null;
     }
   }
@@ -143,13 +195,13 @@ public class CorrelationComponentsRegistry {
       return contextType.getConstructor().newInstance();
     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
              | InvocationTargetException e) {
-      LOG.warn("Couldn't build the correlation type='{}'.", contextType, e);
+      LOG.error("Couldn't build the correlation type='{}'.", contextType, e);
       return null;
     }
   }
 
   public String updateActiveComponents(String components,
-                                       List<String> missingSelectedExtensions) {
+      List<String> missingSelectedExtensions) {
     reset();
     //Deprecated components shouldn't appear nor in ComboBoxes nor in ComponentsContainer
     List<String> validComponents = removeDeprecatedComponents(components);
@@ -292,18 +344,22 @@ public class CorrelationComponentsRegistry {
   //Returns Extensions that are Custom, not installed and not deprecated
   public List<CorrelationRulePartTestElement<?>> getAvailableExtensions() {
 
-    List<String> availableExtensions = classFinderFunction
-        .apply(CorrelationRulePartTestElement.class);
-    List<CorrelationRulePartTestElement<?>> filteredAvailable = availableExtensions.stream()
-        .filter(ext -> !deprecatedComponents.contains(ext)
-            && defaultExtractors.stream().noneMatch(e -> e.getCanonicalName().equals(ext))
-            && defaultReplacements.stream().noneMatch(r -> r.getCanonicalName().equals(ext))
-            && customExtractors.stream().noneMatch(e -> e.getCanonicalName().equals(ext))
-            && customReplacements.stream().noneMatch(r -> r.getCanonicalName().equals(ext)))
-        .map(this::buildRulePartFromClassName)
-        .collect(Collectors.toList());
+    // Find all classes related to CorrelationRulePartTestElement only once
+    if (filteredAvailableExtensions == null) {
+      List<String> allAvailableExtensions = classFinderFunction
+          .apply(CorrelationRulePartTestElement.class);
 
-    return filteredAvailable;
+      filteredAvailableExtensions = allAvailableExtensions.stream()
+          .filter(ext -> !deprecatedComponents.contains(ext)
+              && defaultExtractors.stream().noneMatch(e -> e.getCanonicalName().equals(ext))
+              && defaultReplacements.stream().noneMatch(r -> r.getCanonicalName().equals(ext))
+              && customExtractors.stream().noneMatch(e -> e.getCanonicalName().equals(ext))
+              && customReplacements.stream().noneMatch(r -> r.getCanonicalName().equals(ext)))
+          .map(this::buildRulePartFromClassName)
+          .collect(Collectors.toList());
+    }
+
+    return filteredAvailableExtensions;
   }
 
   public String getCorrelationComponents() {

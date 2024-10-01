@@ -15,7 +15,6 @@ import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationRepla
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.gui.templates.TemplateSaveFrame;
 import com.blazemeter.jmeter.correlation.gui.templates.TemplatesManagerFrame;
-import com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,7 +33,6 @@ import org.mockito.Mockito;
 @RunWith(SwingTestRunner.class)
 public class RulesContainerIT {
 
-  private static final Color DISABLE_FONT_RULE_COLOR = new JTextField().getDisabledTextColor();
   public JUnitSoftAssertions softly = new JUnitSoftAssertions();
   @Mock
   private CorrelationProxyControl model;
@@ -141,12 +139,12 @@ public class RulesContainerIT {
     rulesContainer.configure(model);
 
     CorrelationRule secondRule = new CorrelationRule("refVar2", null,
-        new SiebelCounterCorrelationReplacement());
+        new RegexCorrelationReplacement<>());
     secondRule.setEnabled(false);
     List<CorrelationRule> expectedRules = Arrays.asList(firstRule, secondRule);
     builder.withRules(expectedRules);
     when(model.getGroups()).thenReturn(Collections.singletonList(builder.build()));
-    String expectedComponents = SiebelCounterCorrelationReplacement.class.getCanonicalName();
+    String expectedComponents = RegexCorrelationReplacement.class.getCanonicalName();
     when(model.getCorrelationComponents()).thenReturn(expectedComponents);
     String expectedFilter = "someText";
     when(model.getResponseFilter()).thenReturn(expectedFilter);

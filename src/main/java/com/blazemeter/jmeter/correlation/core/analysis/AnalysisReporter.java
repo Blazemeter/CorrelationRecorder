@@ -155,7 +155,7 @@ public class AnalysisReporter {
         for (ReportEntry entry : report.entries) {
           ExtractionSuggestion extraction = new ExtractionSuggestion(extractor, entry.getSampler());
           extraction.setValue(entry.value);
-          extraction.setName(entry.variableName);
+          extraction.setName(paramName);
           extraction.setSource(entry.location);
           suggestion.setOriginalValue(entry.value);
           suggestion.addExtractionSuggestion(extraction);
@@ -167,7 +167,7 @@ public class AnalysisReporter {
               = new ReplacementSuggestion(replacement,
               entry.getSampler());
           replacementSuggestion.setValue(entry.value);
-          replacementSuggestion.setName(entry.variableName);
+          replacementSuggestion.setName(paramName);
           replacementSuggestion.setSource(entry.location);
           suggestion.setOriginalValue(entry.value);
           suggestion.addReplacementSuggestion(replacementSuggestion);
