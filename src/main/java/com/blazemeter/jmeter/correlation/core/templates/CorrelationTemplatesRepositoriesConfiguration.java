@@ -120,4 +120,7 @@ public class CorrelationTemplatesRepositoriesConfiguration {
     return localConfig;
   }
 
+  public void setTemplatesIgnoreErrors(boolean ignoreErrors) {
+    localConfig.setTemplateLogParseError(!ignoreErrors);
+  }
 }

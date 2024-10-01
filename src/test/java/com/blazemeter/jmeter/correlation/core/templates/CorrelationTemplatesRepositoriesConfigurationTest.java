@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
+import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.blazemeter.jmeter.correlation.core.templates.repository.pluggable.RemoteUrlRepository;
@@ -28,7 +29,6 @@ public class CorrelationTemplatesRepositoriesConfigurationTest extends WiredBase
     private static final String TEST_REPO_NAME = "test";
     private static final String FIRST_TEMPLATE_NAME = "first";
     private static final String SECOND_TEMPLATE_NAME = "second";
-    private static final String SIEBEL_TEMPLATE_NAME = "siebel";
     private static final String TEMPLATE_VERSION_1_1 = "1.1";
     private static final String TEMPLATE_VERSION_1_0 = "1.0";
     private static final String TEMPLATE_DESCRIPTION = "Description1";
@@ -37,6 +37,7 @@ public class CorrelationTemplatesRepositoriesConfigurationTest extends WiredBase
 
     @Before
     public void setUp() throws IOException {
+        JMeterTestUtils.setupUpdatedJMeter();
         String path = folder.getRoot().getPath();
         LocalConfiguration.installDefaultFiles(path);
         localConfiguration = new LocalConfiguration(path, true);
@@ -105,8 +106,10 @@ public class CorrelationTemplatesRepositoriesConfigurationTest extends WiredBase
     }
 
     @Test
-    public void shouldReturnCorrelationRepositoriesWhenGetCorrelationRepositories() throws IOException {
+    public void shouldReturnCorrelationRepositoriesWhenGetCorrelationRepositories()
+        throws IOException, ConfigurationException {
         installTestRepo();
+        TemplateUtils.installTestTemplate(folder.getRoot().getPath(), localConfiguration);
         List<CorrelationTemplatesRepository> repositories =  correlationTempRepoConfig.getCorrelationRepositories();
         assertTrue(repositories.stream().anyMatch(r -> r.getName().equals(TEST_REPO_NAME)));
         assertTrue(repositories.stream().anyMatch(r -> r.getName().equals(LOCAL_REPO_NAME)));
@@ -159,11 +162,6 @@ public class CorrelationTemplatesRepositoriesConfigurationTest extends WiredBase
         installTestRepo();
         String repoURL = correlationTempRepoConfig.getRepositoryURL(TEST_REPO_NAME);
         assertEquals(getBaseURL() + TEST_REPOSITORY_URL, repoURL);
-    }
-
-    @Test
-    public void shouldReturnTrueWhenIisLocalTemplateVersionSavedWithSavedVersion() {
-        assertTrue(correlationTempRepoConfig.isLocalTemplateVersionSaved(SIEBEL_TEMPLATE_NAME, TEMPLATE_VERSION_1_0));
     }
 
     @Test

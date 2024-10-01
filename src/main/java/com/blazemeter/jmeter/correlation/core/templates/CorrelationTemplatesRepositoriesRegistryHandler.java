@@ -51,4 +51,6 @@ public interface CorrelationTemplatesRepositoriesRegistryHandler {
   boolean refreshRepositories(String localConfigurationRoute,
                               Consumer<Integer> setProgressConsumer,
                               Consumer<String> setStatusConsumer);
+
+  void setTemplatesIgnoreErrors(boolean b);
 }

@@ -16,7 +16,6 @@ import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtract
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationSuggestionsPanel;
-import com.blazemeter.jmeter.correlation.siebel.SiebelContext;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +57,6 @@ public class AnalysisReporterIT {
     engine = new CorrelationEngine();
     panel = new CorrelationSuggestionsPanel(null);
     frame = showInFrame(panel);
-    when(registry.getContext(SiebelContext.class)).thenReturn(new SiebelContext());
     when(registry.getContext(BaseCorrelationContext.class))
         .thenReturn(new BaseCorrelationContext());
     AnalysisReporter.startCollecting();

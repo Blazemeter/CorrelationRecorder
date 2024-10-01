@@ -3,7 +3,6 @@ package com.blazemeter.jmeter.correlation.core;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
@@ -30,7 +29,7 @@ public class CorrelationEngine {
   }
 
   public synchronized void setCorrelationRules(List<RulesGroup> groups,
-                                               CorrelationComponentsRegistry registry) {
+      CorrelationComponentsRegistry registry) {
     rules.clear();
     groups.stream()
         .filter(RulesGroup::isEnable)
@@ -43,7 +42,7 @@ public class CorrelationEngine {
   }
 
   private void updateCorrelationContext(CorrelationRulePartTestElement rulePartTestElement,
-                                        CorrelationComponentsRegistry registry) {
+      CorrelationComponentsRegistry registry) {
     if (rulePartTestElement != null && rulePartTestElement.getSupportedContext() != null) {
       rulePartTestElement
           .setContext(getSupportedContext(rulePartTestElement.getSupportedContext(), registry));
@@ -72,8 +71,8 @@ public class CorrelationEngine {
   }
 
   public synchronized void process(HTTPSamplerBase sampler, List<TestElement> children,
-                                   SampleResult result,
-                                   String responseFilter) {
+      SampleResult result,
+      String responseFilter) {
 
     if (result != null && !result.isSuccessful()) {
       String originalComment = sampler.getComment();
@@ -88,11 +87,17 @@ public class CorrelationEngine {
 
     JMeterContextService.getContext().setVariables(vars);
     // Using for instead of streams to avoid ConcurrentModificationException
-    Iterator<CorrelationRule> replacementRulesIterator = rules.iterator();
-    while (replacementRulesIterator.hasNext()) {
-      CorrelationRule rule = replacementRulesIterator.next();
+    for (CorrelationRule rule : rules) {
       if (rule.isEnabled() && rule.getCorrelationReplacement() != null) {
-        rule.getCorrelationReplacement().process(sampler, children, result, vars);
+        try {
+          rule.getCorrelationReplacement().process(sampler, children, result, vars);
+        } catch (RuntimeException e) {
+          LOG.warn("Error applying the following replacement {} in the request {}", rule,
+              sampler.getName(), e);
+          LOG.debug("Request URL: {}\nRequest Headers:\n{}\nRequest Body:\n{}\n",
+              result.getUrlAsString(), result.getRequestHeaders(),
+              result.getDataEncodingWithDefault());
+        }
       }
     }
 
@@ -100,11 +105,18 @@ public class CorrelationEngine {
 
     if (isContentTypeAllowed(result, responseFilter)) {
       // Using for instead of streams to avoid ConcurrentModificationException
-      Iterator<CorrelationRule> extractorRulesIterator = rules.iterator();
-      while (extractorRulesIterator.hasNext()) {
-        CorrelationRule rule = extractorRulesIterator.next();
+      for (CorrelationRule rule : rules) {
         if (rule.isEnabled() && rule.getCorrelationExtractor() != null) {
-          rule.getCorrelationExtractor().process(sampler, children, result, vars);
+          try {
+            rule.getCorrelationExtractor().process(sampler, children, result, vars);
+
+          } catch (RuntimeException e) {
+            LOG.warn("Error applying the following extractor {} in the request {}", rule,
+                sampler.getName(), e);
+            LOG.debug("Response URL: {}\nResponse Headers:\n{}\nResponse Body:\n{}\n",
+                result.getUrlAsString(), result.getResponseHeaders(),
+                result.getResponseDataAsString());
+          }
         }
       }
     }

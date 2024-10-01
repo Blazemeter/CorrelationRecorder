@@ -308,80 +308,11 @@ title __Correlations Recorder's Class Diagram__\n
       class com.blazemeter.jmeter.correlation.gui.TestPlanTemplatesRepository {
           - rootFolder : String
           + TestPlanTemplatesRepository()
-          + addSiebelCorrelationTemplate()
-          + addSiebelTemplate()
           + setRootFolder()
       }
 
     }
 
-    namespace siebel {
-      class com.blazemeter.jmeter.correlation.siebel.SiebelArrayFunction {
-          {static} - DESC : List<String>
-          {static} - KEY : String
-      }
-
-      class com.blazemeter.jmeter.correlation.siebel.SiebelContext {
-          - bcis : Map<String, BCI>
-          - counter : Integer
-          - paramRowFields : Map<String, Field>
-          - prefixId : int
-          - rowVars : Map<String, String>
-          + update()
-      }
-
-      class com.blazemeter.jmeter.correlation.siebel.SiebelContext.BCI {
-          - fields : Map<Integer, Field>
-          - addField()
-          - getField()
-      }
-      class com.blazemeter.jmeter.correlation.siebel.SiebelContext.Field {
-          {static} - TELEPHONE_TYPE : int
-          - id : int
-          - position : int
-          - type : int
-          + getIgnoredCharsRegex()
-          + getPosition()
-          - Field()
-      }
-      class com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement {
-          + SiebelCounterCorrelationReplacement()
-          + getSupportedContext()
-          + process()
-          + toString()
-          + update()
-          + updateTestElem()
-          - createPreProcessor()
-      }
-      class com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor {
-          + SiebelRowCorrelationExtractor()
-          + getParams()
-          + getParamsDefinition()
-          + getSupportedContext()
-          + process()
-          + update()
-          + updateTestElem()
-          - buildArrayParserPostProcessor()
-      }
-      class com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement {
-          + getSupportedContext()
-          + update()
-          + updateTestElem()
-          # replaceWithRegex()
-      }
-      class com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement {
-          - rowVarPrefix : String
-          + SiebelRowParamsCorrelationReplacement()
-          + getParams()
-          + getParamsDefinition()
-          + getSupportedContext()
-          + process()
-          + setParams()
-          + update()
-          + updateTestElem()
-          # replaceWithRegex()
-      }
-    }
 
     }
 
@@ -462,15 +393,6 @@ title __Correlations Recorder's Class Diagram__\n
   com.blazemeter.jmeter.correlation.gui.RulesContainer .up.|> com.blazemeter.jmeter.correlation.gui.ComponentsValidations
   com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.gui.ComponentContainer : componentContainer
   com.blazemeter.jmeter.correlation.gui.RulesContainer o-- com.blazemeter.jmeter.correlation.core.CorrelationComponentsRegistry : componentsRepository
-
-  com.blazemeter.jmeter.correlation.siebel.SiebelArrayFunction -up-|> org.apache.jmeter.functions.AbstractFunction
-  com.blazemeter.jmeter.correlation.siebel.SiebelContext .up.|> com.blazemeter.jmeter.correlation.core.CorrelationContext
-  com.blazemeter.jmeter.correlation.siebel.SiebelContext +-down- com.blazemeter.jmeter.correlation.siebel.SiebelContext.BCI
-  com.blazemeter.jmeter.correlation.siebel.SiebelContext +-down- com.blazemeter.jmeter.correlation.siebel.SiebelContext.Field
-  com.blazemeter.jmeter.correlation.siebel.SiebelCounterCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
-  com.blazemeter.jmeter.correlation.siebel.SiebelRowCorrelationExtractor -up-|> com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor
-  com.blazemeter.jmeter.correlation.siebel.SiebelRowIdCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
-  com.blazemeter.jmeter.correlation.siebel.SiebelRowParamsCorrelationReplacement -up-|> com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement
 
   com.blazemeter.jmeter.correlation.CorrelationProxyControl .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRegistryHandler
   com.blazemeter.jmeter.correlation.CorrelationProxyControl .up.|> com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesRegistryHandler

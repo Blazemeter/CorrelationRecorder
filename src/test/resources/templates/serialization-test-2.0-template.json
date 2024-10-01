@@ -1,0 +1,50 @@
+{
+  "type" : "correlation",
+  "id" : "serialization-test",
+  "description" : "This is a description",
+  "version" : "1.0",
+  "author" : "BlazeMeter",
+  "url" : "https://github.com/Blazemeter/CorrelationsRecorderTemplates/tree/master/central",
+  "components" : "",
+  "responseFilters" : "",
+  "groups" : [ {
+    "id" : "id",
+    "rules" : [ {
+      "referenceName" : "TestRule",
+      "correlationExtractor" : {
+        "type" : "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "target" : "RESPONSE_HEADERS",
+        "regex" : "testExtractorRegEx(.*?)",
+        "groupNr" : 2
+      },
+      "correlationReplacement" : {
+        "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex" : "testReplacementRegEx(.*?)"
+      },
+      "enabled" : true
+    }, {
+      "referenceName" : "OtherTestRule",
+      "correlationExtractor" : {
+        "type" : "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
+        "target" : "RESPONSE_HEADERS",
+        "regex" : "otherExtractorRegEx(.*?)",
+        "matchNr" : 3,
+        "groupNr" : 4
+      },
+      "correlationReplacement" : {
+        "type" : "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement",
+        "regex" : "otherReplacementRegEx(.*?)"
+      },
+      "enabled" : true
+    } ],
+    "enable" : true
+  } ],
+  "dependencies" : [ {
+    "name" : "Dependency1",
+    "version" : "2.0",
+    "url" : "URL"
+  } ],
+  "repositoryId" : "local",
+  "changes" : "",
+  "installed" : false
+}

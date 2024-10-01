@@ -71,7 +71,7 @@ public class TestPlanTemplatesRepository {
     }
   }
 
-  private void removeDeprecatedTemplate(
+  public void removeDeprecatedTemplate(
       @SuppressWarnings("SameParameterValue") String templateName) {
     File oldTemplate =
         new File(Paths.get(rootFolder, templateName).toAbsolutePath().toString());

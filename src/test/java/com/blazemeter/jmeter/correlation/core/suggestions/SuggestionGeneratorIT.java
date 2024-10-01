@@ -37,7 +37,7 @@ public class SuggestionGeneratorIT {
   public void setUp() throws IOException {
     JMeterTestUtils.setupUpdatedJMeter();
     analysisContext = new AnalysisContext();
-    analysisContext.setRegistry(CorrelationComponentsRegistry.getInstance());
+    analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
     analysisMethod = new AnalysisMethod();
     suggestionGenerator = new SuggestionGenerator(analysisMethod);
   }
@@ -141,7 +141,7 @@ public class SuggestionGeneratorIT {
     if (didntLoadRecordingTraceToContextSuccessfully()) {
       return;
     }
-    analysisContext.setRegistry(CorrelationComponentsRegistry.getInstance());
+    analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
 
     List<CorrelationSuggestion> suggestions = suggestionGenerator.generateSuggestions(analysisContext);
     softly.assertThat(suggestions).isNotEmpty();
@@ -174,7 +174,7 @@ public class SuggestionGeneratorIT {
     if (didntLoadRecordingTraceToContextSuccessfully()) {
       return;
     }
-    analysisContext.setRegistry(CorrelationComponentsRegistry.getInstance());
+    analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
 
     List<CorrelationSuggestion> suggestions = suggestionGenerator.generateSuggestions(analysisContext);
     softly.assertThat(suggestions).isNotEmpty();
@@ -198,7 +198,7 @@ public class SuggestionGeneratorIT {
     if (didntLoadRecordingTraceToContextSuccessfully()) {
       return;
     }
-    analysisContext.setRegistry(CorrelationComponentsRegistry.getInstance());
+    analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
     suggestionGenerator.applySuggestions(suggestionGenerator.generateSuggestions(analysisContext));
   }
 }

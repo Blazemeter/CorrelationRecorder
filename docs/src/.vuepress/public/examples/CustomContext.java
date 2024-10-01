@@ -36,7 +36,6 @@ public class CustomContext implements CorrelationContext {
    * This method is always called when the {@link CorrelationEngine} is processing the responses
    * from the server.
    *
-   * Look for the implementation on {@link ../src/main/java/com/blazemeter/jmeter/correlation/siebel/SiebelContext}
    */
   @Override
   public void update(SampleResult sampleResult) {

@@ -1,6 +1,8 @@
 package com.blazemeter.jmeter.correlation.core.templates;
 
+import static com.blazemeter.jmeter.correlation.core.templates.TemplateUtils.installTestTemplate;
 import static org.junit.Assert.assertEquals;
+
 import com.blazemeter.jmeter.correlation.CorrelationProxyControl;
 import com.blazemeter.jmeter.correlation.CorrelationProxyControlBuilder;
 import com.blazemeter.jmeter.correlation.JMeterTestUtils;
@@ -12,25 +14,17 @@ import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtract
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
-import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
-import com.blazemeter.jmeter.correlation.core.templates.repository.pluggable.LocalRepository;
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,9 +40,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class LocalCorrelationTemplatesRegistryTest {
 
   private static final String TEMPLATES_FOLDER = "correlation-templates";
-  private static final String CORRELATION_RULE_SERIALIZATION_PATH = "Siebel-CRM-1.0-template.json";
-  private static final String TEMPLATE_WITH_DEPENDENCIES_PATH = "Siebel-CRM-2.0-template.json";
-  private static final String TEMPLATE_ID = "Siebel-CRM";
+  private static final String CORRELATION_RULE_SERIALIZATION_PATH = "serialization-test-1.0-template.json";
+  private static final String TEMPLATE_WITH_DEPENDENCIES_PATH = "serialization-test-2.0-template.json";
+  private static final String TEMPLATE_ID = "serialization-test";
   private static final ResultField DEFAULT_TARGET = ResultField.BODY;
   private static final String DEFAULT_TEMPLATE_VERSION = "1.0";
   private static final String TEMPLATE_WITH_DEPENDENCIES_VERSION = "2.0";
@@ -87,7 +81,7 @@ public class LocalCorrelationTemplatesRegistryTest {
       throws IOException, ConfigurationException {
     proxyControl.onSaveTemplate(getBuilderCorrelationTemplate());
 
-    String expected = getFileContent("/" + CORRELATION_RULE_SERIALIZATION_PATH);
+    String expected = getFileContent("/templates/" + CORRELATION_RULE_SERIALIZATION_PATH);
     String actual = TestUtils
         .readFile(getGeneratedJSON(CORRELATION_RULE_SERIALIZATION_PATH).getPath(),
             Charset.defaultCharset());
@@ -95,7 +89,7 @@ public class LocalCorrelationTemplatesRegistryTest {
   }
 
   private void compareWithoutSpaces(String expected, String actual) {
-    assertEquals(expected.replaceAll("[\\n\\t ]", ""), actual.replaceAll("[\\n\\t ]", ""));
+    assertEquals(expected.replaceAll("[\\n\\r\\t ]", ""), actual.replaceAll("[\\n\\r\\t ]", ""));
   }
 
   public String getFileContent(String filePath) {
@@ -128,15 +122,15 @@ public class LocalCorrelationTemplatesRegistryTest {
   private RulesGroup buildCorrelationGroup(String title) {
     List<CorrelationRule> rules = new ArrayList<>();
     rules.add(
-        new CorrelationRule("TestRuleOne",
-            new RegexCorrelationExtractor<>("SWEACn=([a-z])", "1", "2",
+        new CorrelationRule("TestRule",
+            new RegexCorrelationExtractor<>("testExtractorRegEx(.*?)", "1", "2",
                 ResultField.RESPONSE_HEADERS.name(), ""),
-            new RegexCorrelationReplacement<>("SWEACn=([A-Z])")));
+            new RegexCorrelationReplacement<>("testReplacementRegEx(.*?)")));
     rules.add(
-        new CorrelationRule("TestRuleTwo",
-            new RegexCorrelationExtractor<>("SWEACn=(ˆ[\\.\\.])", "5", "6",
-                DEFAULT_TARGET.name(), ""),
-            new RegexCorrelationReplacement<>("SWEACn=([(\\d)])")));
+        new CorrelationRule("OtherTestRule",
+            new RegexCorrelationExtractor<>("otherExtractorRegEx(.*?)", "3", "4",
+                ResultField.RESPONSE_HEADERS.name(), ""),
+            new RegexCorrelationReplacement<>("otherReplacementRegEx(.*?)")));
 
     return new RulesGroup.Builder().withId(title).withRules(rules).build();
   }
@@ -177,7 +171,7 @@ public class LocalCorrelationTemplatesRegistryTest {
     proxyControl.onSaveTemplate(
         getBuilderCorrelationTemplate().withDependencies(Collections.singletonList(dependency)));
 
-    String expected = TestUtils.getFileContent("/" + TEMPLATE_WITH_DEPENDENCIES_PATH, getClass());
+    String expected = TestUtils.getFileContent("/templates/" + TEMPLATE_WITH_DEPENDENCIES_PATH, getClass());
     String actual = TestUtils
         .readFile(getGeneratedJSON(CORRELATION_RULE_SERIALIZATION_PATH).getPath(),
             Charset.defaultCharset());
@@ -186,51 +180,31 @@ public class LocalCorrelationTemplatesRegistryTest {
   }
 
   @Test
-  public void shouldReturnTemplatesAndPropertiesWhenGetCorrelationTemplatesAndPropertiesByRepositoryId(){
+  public void shouldReturnEmptyTemplatesAndPropertiesWhenGetCorrelationTemplatesAndPropertiesByRepositoryIdLocal() {
     String path = folder.getRoot().getPath();
     LocalConfiguration.installDefaultFiles(path);
     configuration.setupRepositoryManagers();
-    LocalCorrelationTemplatesRepositoriesRegistry localCorrelationTemplatesRepoReg = new LocalCorrelationTemplatesRepositoriesRegistry(configuration);
-    Map<Template, TemplateProperties> templatePropertiesMap = localCorrelationTemplatesRepoReg.getCorrelationTemplatesAndPropertiesByRepositoryId("local");
-    Map.Entry<Template, TemplateProperties> entire = templatePropertiesMap.entrySet().iterator().next();
-    Assert.assertEquals("false",entire.getValue().get("not_allow_export"));
-    Assert.assertEquals("false",entire.getValue().get("disallow_to_use"));
-    Assert.assertEquals("siebel",entire.getKey().getId());
-  }
-
-  @Test
-  public void shouldReturnTemplatesAndPropertiesWhenGetCorrelationTemplatesAndPropertiesByRepositoryIdWhitFilter(){
-    String path = folder.getRoot().getPath();
-    LocalConfiguration.installDefaultFiles(path);
-    configuration.setupRepositoryManagers();
-    LocalCorrelationTemplatesRepositoriesRegistry localCorrelationTemplatesRepoReg = new LocalCorrelationTemplatesRepositoriesRegistry(configuration);
-    List<TemplateVersion> filter = new ArrayList<>();
-    filter.add(new TemplateVersion("siebel", "1.0"));
+    LocalCorrelationTemplatesRepositoriesRegistry localCorrelationTemplatesRepoReg =
+        new LocalCorrelationTemplatesRepositoriesRegistry(
+            configuration);
     Map<Template, TemplateProperties> templatePropertiesMap =
-            localCorrelationTemplatesRepoReg.getCorrelationTemplatesAndPropertiesByRepositoryId("local", filter );
-    Map.Entry<Template, TemplateProperties> entire = templatePropertiesMap.entrySet().iterator().next();
-    Assert.assertEquals("false",entire.getValue().get("not_allow_export"));
-    Assert.assertEquals("false",entire.getValue().get("disallow_to_use"));
-    Assert.assertEquals("siebel",entire.getKey().getId());
+        localCorrelationTemplatesRepoReg.getCorrelationTemplatesAndPropertiesByRepositoryId(
+            "local");
+    Assert.assertTrue(templatePropertiesMap.isEmpty());
   }
 
   @Test
-  public void shouldReturnTemplateVersionsWhenGetCorrelationTemplateVersionsByRepositoryId(){
+  public void shouldReturnTrueWhenIsLocalTemplateVersionSavedWhitSavedTemplate()
+      throws ConfigurationException, IOException {
     String path = folder.getRoot().getPath();
     LocalConfiguration.installDefaultFiles(path);
+    installTestTemplate(folder.getRoot().getAbsolutePath(), configuration);
     configuration.setupRepositoryManagers();
-    LocalCorrelationTemplatesRepositoriesRegistry localCorrelationTemplatesRepoReg = new LocalCorrelationTemplatesRepositoriesRegistry(configuration);
-    Map<String, CorrelationTemplateVersions> correlationTemplateVersionsMap =
-            localCorrelationTemplatesRepoReg.getCorrelationTemplateVersionsByRepositoryId("local");
-    Assert.assertEquals("local",correlationTemplateVersionsMap.get("siebel").getRepositoryDisplayName());
-    Assert.assertEquals("1.0",correlationTemplateVersionsMap.get("siebel").getVersions().get(0));
+    LocalCorrelationTemplatesRepositoriesRegistry localCorrelationTemplatesRepoReg =
+        new LocalCorrelationTemplatesRepositoriesRegistry(
+            configuration);
+    Assert.assertTrue(
+        localCorrelationTemplatesRepoReg.isLocalTemplateVersionSaved("test", "1.0"));
   }
-  @Test
-  public void shouldReturnTrueWhenIsLocalTemplateVersionSavedWhitSavedTemplate(){
-    String path = folder.getRoot().getPath();
-    LocalConfiguration.installDefaultFiles(path);
-    configuration.setupRepositoryManagers();
-    LocalCorrelationTemplatesRepositoriesRegistry localCorrelationTemplatesRepoReg = new LocalCorrelationTemplatesRepositoriesRegistry(configuration);
-    Assert.assertTrue(localCorrelationTemplatesRepoReg.isLocalTemplateVersionSaved("siebel", "1.0"));
-  }
+
 }

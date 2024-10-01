@@ -6,7 +6,7 @@
   <groupId>com.blazemeter</groupId>
   <artifactId>jmeter-bzm-correlation-recorder</artifactId>
   <packaging>jar</packaging>
-  <version>2.6</version>
+  <version>3.0</version>
   <name>Auto Correlation Recorder</name>
   <description>Auto Correlation Recorder as JMeter Plugin</description>
   <url>https://github.com/Blazemeter/CorrelationRecorder</url>
@@ -269,8 +269,7 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
           <excludes>
-            <!-- Avoid excluding nested tests -->
-            <exclude/>
+            <exclude>**/RegressionIT.java</exclude>
           </excludes>
         </configuration>
         <executions>

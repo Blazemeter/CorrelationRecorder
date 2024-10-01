@@ -1,26 +1,26 @@
 {
-  "id": "Siebel-1.1",
-  "name": "Siebel-1.1_Name",
+  "id": "Wordpress-1.0",
+  "name": "Wordpress-1.0_Name",
   "author": "blazemeter",
-  "description": "This is the version number 1.1 of this template. Now we have support for all the variables and we are awesome!!!!",
-  "version": "1.1",
+  "description": "This is the version number 1.0 for wordpress.",
+  "version": "1.0",
   "rules": [
     {
-      "referenceName": "Temp1Siebel",
+      "referenceName": "Temp1wordpress",
       "correlationExtractor": {
         "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
-        "regex": "(siebel)"
+        "regex": "(wordpress)"
       },
       "correlationReplacement": {
         "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement"
       }
     },
     {
-      "referenceName": "Temp1WikiVar",
+      "referenceName": "Temp1Wordp",
       "correlationExtractor": {
         "type": "com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor",
         "target": "URL",
-        "regex": "(wikipedia)"
+        "regex": "(wordp)"
       },
       "correlationReplacement": {
         "type": "com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement"
