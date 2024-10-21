@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import com.blazemeter.jmeter.correlation.JMeterTestUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationEngine;
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
@@ -23,14 +24,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AnalysisReporterTest extends AnalysisTest {
 
-  @Mock
-  private CorrelationComponentsRegistry registry;
-  private CorrelationEngine engine = new CorrelationEngine();
-
   @Before
   public void setup() throws IOException {
     JMeterTestUtils.setupUpdatedJMeter();
-    engine = new CorrelationEngine();
     AnalysisReporter.startCollecting();
   }
 
@@ -43,8 +39,8 @@ public class AnalysisReporterTest extends AnalysisTest {
   public void shouldAddExtractorInformationWhenReportWithRegexCorrExtractor() throws IOException {
     extractor.setVariableName(VALUE_NAME);
     HTTPSamplerBase loggedUserRequest = createLoggedUserRequest();
-    AnalysisReporter.report(extractor, TOKEN_VALUE, loggedUserRequest, VALUE_NAME);
-    AnalysisReporter.Report report = AnalysisReporter.getReport(extractor);
+    AnalysisReporter.report(extractor, loggedUserRequest, extractor.getTarget().toString(),
+        TOKEN_VALUE);
     String reportString = AnalysisReporter.getReporter().getReportAsString();
     assertThat(reportString)
         .isEqualToIgnoringWhitespace(getExpectedReport(extractor));
@@ -55,19 +51,19 @@ public class AnalysisReporterTest extends AnalysisTest {
       throws IOException {
     replacement.setVariableName(VALUE_NAME);
     HTTPSamplerBase loggedUserRequest = createLoggedUserRequest();
-    AnalysisReporter.report(replacement, TOKEN_VALUE, loggedUserRequest, VALUE_NAME);
+    AnalysisReporter.report(replacement, loggedUserRequest, TOKEN_VALUE);
     String reportString = AnalysisReporter.getReporter().getReportAsString();
     List<Pair<String, CorrelationRulePartTestElement<?>>> parts = Collections
         .singletonList(Pair.of(LOGGED_REQUEST_NAME, replacement));
     assertThat(reportString)
-        .isEqualToIgnoringWhitespace(getExpectedAnalysisReport(parts));
+        .isEqualToIgnoringWhitespace(getExpectedReport(parts));
   }
 
   @Test
   public void shouldNotAddReportsWhenNotCollecting() {
     AnalysisReporter.stopCollecting();
     extractor.setVariableName(VALUE_NAME);
-    AnalysisReporter.report(extractor, TOKEN_VALUE, LOGGED_REQUEST_NAME, VALUE_NAME);
+    AnalysisReporter.report(extractor, (Object) LOGGED_REQUEST_NAME, VALUE_NAME, TOKEN_VALUE);
     String reportString = AnalysisReporter.getReporter().getReportAsString();
     assertThat(reportString).isEqualToIgnoringWhitespace(AnalysisReporter.NO_REPORT);
   }
@@ -87,7 +83,8 @@ public class AnalysisReporterTest extends AnalysisTest {
       throws IOException {
     extractor.setVariableName(VALUE_NAME);
     HTTPSamplerBase loggedUserRequest = createLoggedUserRequest();
-    AnalysisReporter.report(extractor, TOKEN_VALUE, loggedUserRequest, VALUE_NAME);
+    AnalysisReporter.report(extractor, loggedUserRequest, extractor.getTarget().toString(),
+        TOKEN_VALUE);
     List<CorrelationSuggestion> suggestions = AnalysisReporter.generateCorrelationSuggestions();
     List<CorrelationSuggestion> expectedSuggestions = Collections
         .singletonList(createExpectedSuggestions(loggedUserRequest));
@@ -99,10 +96,9 @@ public class AnalysisReporterTest extends AnalysisTest {
     suggestion.setParamName(VALUE_NAME);
     suggestion.setOriginalValue(TOKEN_VALUE);
     ExtractionSuggestion extractionSuggestion
-        = new ExtractionSuggestion((RegexCorrelationExtractor<?>) extractor, affectedRequest);
-
+        = new ExtractionSuggestion(extractor, affectedRequest);
     extractionSuggestion.setName(VALUE_NAME);
-    extractionSuggestion.setSource("Correlation Analysis");
+    extractionSuggestion.setSource(extractor.getTarget().toString());
     extractionSuggestion.setValue(TOKEN_VALUE);
     suggestion.addExtractionSuggestion(extractionSuggestion);
     return suggestion;

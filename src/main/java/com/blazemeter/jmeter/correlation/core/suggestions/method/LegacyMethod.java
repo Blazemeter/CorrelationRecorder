@@ -14,9 +14,4 @@ public class LegacyMethod implements CorrelationMethod {
   public List<CorrelationSuggestion> generateSuggestions(CorrelationContext context) {
     return new ArrayList<>();
   }
-
-  @Override
-  public void applySuggestions(List<CorrelationSuggestion> suggestions) {
-    // Do nothing
-  }
 }

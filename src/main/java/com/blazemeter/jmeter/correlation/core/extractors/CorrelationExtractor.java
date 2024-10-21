@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Contains all the methods from loading, saving and processing responses from the server.
  *
- * <p>For a more detailed explanation on Correlation Extractors, their usages and methods, please 
- * read the 
+ * <p>For a more detailed explanation on Correlation Extractors, their usages and methods, please
+ * read the
  * <a href="https://github.com/Blazemeter/CorrelationRecorder/blob/master/README.md">readme</a>.
  *
  * <p>Along side {@link com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement}
@@ -182,8 +182,8 @@ public abstract class CorrelationExtractor<T extends CorrelationContext> extends
    * of the mode of the recording (i.e. whether we are recording or doing
    * static analysis).
    */
-  protected void analyze(String value, Object affectedElement, String varName) {
-    AnalysisReporter.report(this, value, affectedElement, varName, target.name());
+  protected void analyze(String value, Object affectedElement) {
+    AnalysisReporter.report(this, affectedElement, target.name(), value);
   }
 
 }

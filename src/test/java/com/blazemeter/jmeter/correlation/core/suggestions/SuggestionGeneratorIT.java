@@ -12,6 +12,7 @@ import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import org.assertj.core.api.JUnitSoftAssertions;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SuggestionGeneratorIT {
+
   private static final Logger LOG = LoggerFactory.getLogger(SuggestionGeneratorIT.class);
 
   @Rule
@@ -128,7 +130,7 @@ public class SuggestionGeneratorIT {
     return false;
   }
 
-//  @Test // Need to mock the node supplier
+  //  @Test // Need to mock the node supplier
   public void shouldReturnListWhenGenerateSuggestionsWithValidContext() {
     if (didntLoadedTemplateToContextSuccessfully()) {
       return;
@@ -143,14 +145,16 @@ public class SuggestionGeneratorIT {
     }
     analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
 
-    List<CorrelationSuggestion> suggestions = suggestionGenerator.generateSuggestions(analysisContext);
+    List<CorrelationSuggestion> suggestions = suggestionGenerator.generateSuggestions(
+        analysisContext);
     softly.assertThat(suggestions).isNotEmpty();
     softly.assertThat(suggestions.size()).isEqualTo(1);
   }
 
   private boolean didntLoadRecordingTraceToContextSuccessfully() {
     String recordingTraceFilepath = "/recordings/recordingTrace/recordingWithNonces.jtl";
-    Optional<String> recordingTraceOptional = TestUtils.getFilePathFromResources(recordingTraceFilepath,
+    Optional<String> recordingTraceOptional = TestUtils.getFilePathFromResources(
+        recordingTraceFilepath,
         getClass());
     if (!recordingTraceOptional.isPresent()) {
       LOG.error("Recording trace not found at '{}'. Skipping test.", recordingTraceFilepath);
@@ -161,7 +165,7 @@ public class SuggestionGeneratorIT {
     return false;
   }
 
-//  @Test
+  //  @Test
   public void shouldReturnListOfRulesWhenParseToRulesWhenApplySuggestions() {
     if (didntLoadedTemplateToContextSuccessfully()) {
       return;
@@ -176,29 +180,15 @@ public class SuggestionGeneratorIT {
     }
     analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
 
-    List<CorrelationSuggestion> suggestions = suggestionGenerator.generateSuggestions(analysisContext);
+    List<CorrelationSuggestion> suggestions = suggestionGenerator.generateSuggestions(
+        analysisContext);
     softly.assertThat(suggestions).isNotEmpty();
     softly.assertThat(suggestions.size()).isEqualTo(1);
 
-    List<CorrelationRule> correlationRules = suggestionGenerator.parseToRules(suggestions);
+    HashMap<CorrelationRule, Integer> correlationRules = suggestionGenerator.parseToRules(
+        suggestions);
     softly.assertThat(correlationRules).isNotEmpty();
     softly.assertThat(correlationRules.size()).isEqualTo(2);
   }
 
-  @Test
-  public void shouldSuccessfullyModifyTestPlanWhen() {
-    if (didntLoadedTemplateToContextSuccessfully()) {
-      return;
-    }
-
-    if (didntLoadTestPlanToContextSuccessfully()) {
-      return;
-    }
-
-    if (didntLoadRecordingTraceToContextSuccessfully()) {
-      return;
-    }
-    analysisContext.setRegistry(CorrelationComponentsRegistry.getNewInstance());
-    suggestionGenerator.applySuggestions(suggestionGenerator.generateSuggestions(analysisContext));
-  }
 }

@@ -211,7 +211,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
       String match = regexMatcher.findMatch(field, matchNr);
       String varName = multiValued ? generateVariableName() : variableName;
       if (match != null && !match.equals(vars.get(varName))) {
-        analyze(match, sampler, variableName);
+        analyze(match, sampler);
         addVarAndChildPostProcessor(match, varName,
             createPostProcessor(varName, matchNr));
       }
@@ -220,7 +220,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
       if (matches.size() == 1) {
         String varName = multiValued ? generateVariableName() : variableName;
         String match = matches.get(0);
-        analyze(match, sampler, variableName);
+        analyze(match, sampler);
         addVarAndChildPostProcessor(match, varName,
             createPostProcessor(varName, 1));
       } else if (matches.size() > 1) {
@@ -229,7 +229,7 @@ public class RegexCorrelationExtractor<T extends BaseCorrelationContext> extends
         }
         String value = String.valueOf(matches.size());
         String varName = multiValued ? generateVariableName() : variableName;
-        analyze(value, sampler, variableName);
+        analyze(value, sampler);
         addVarAndChildPostProcessor(value,
             varName + "_matchNr", createPostProcessor(varName, matchNr));
 

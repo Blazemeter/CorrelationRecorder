@@ -5,7 +5,6 @@ import com.blazemeter.jmeter.correlation.core.suggestions.context.CorrelationCon
 import java.util.List;
 
 public interface CorrelationMethod {
-  List<CorrelationSuggestion> generateSuggestions(CorrelationContext context);
 
-  void applySuggestions(List<CorrelationSuggestion> suggestions);
+  List<CorrelationSuggestion> generateSuggestions(CorrelationContext context);
 }

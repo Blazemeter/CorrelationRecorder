@@ -19,6 +19,7 @@ public class ExtractionSuggestion {
   // This suggestion comes from the analysis of a sample result?
   private boolean comesFromSampleResult = true;
   private HTTPSamplerBase sampler;
+  private int sequence = 0;
 
   public ExtractionSuggestion(CorrelationExtractor<?> extractors, SampleResult sampleResult) {
     this.extractors.add(extractors);
@@ -45,6 +46,14 @@ public class ExtractionSuggestion {
 
   public void setSampleResult(SampleResult sampleResult) {
     this.sampleResult = sampleResult;
+  }
+
+  public int getSequence() {
+    return this.sequence;
+  }
+
+  public void setSequence(int sequence) {
+    this.sequence = sequence;
   }
 
   public String getValue() {
@@ -98,4 +107,5 @@ public class ExtractionSuggestion {
         : ", httpSamplerBase=" + sampler.getName())
         + ", \nextractor=" + extractor + '}';
   }
+
 }

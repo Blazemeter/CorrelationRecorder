@@ -7,15 +7,17 @@ import com.blazemeter.jmeter.correlation.core.suggestions.method.AnalysisMethod;
 import com.blazemeter.jmeter.correlation.core.suggestions.method.CorrelationMethod;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /*
-* Reminder: Maybe we can call this "SuggestionsHandler" or "SuggestionsManager"
-*  to be able to handle both the generation and the application of the suggestions.
-* */
+ * Reminder: Maybe we can call this "SuggestionsHandler" or "SuggestionsManager"
+ *  to be able to handle both the generation and the application of the suggestions.
+ * */
 public class SuggestionGenerator {
+
   private static final Logger LOG = LoggerFactory.getLogger(SuggestionGenerator.class);
   private static SuggestionGenerator instance;
   private CorrelationMethod correlationMethod;
@@ -62,16 +64,12 @@ public class SuggestionGenerator {
   }
 
   @VisibleForTesting
-  public List<CorrelationRule> parseToRules(List<CorrelationSuggestion> suggestions) {
-    List<CorrelationRule> rules = new ArrayList<>();
+  public HashMap<CorrelationRule, Integer> parseToRules(List<CorrelationSuggestion> suggestions) {
+    HashMap<CorrelationRule, Integer> rules = new HashMap<>();
     for (CorrelationSuggestion suggestion : suggestions) {
-      List<CorrelationRule> correlationRules = suggestion.toCorrelationRules();
-      rules.addAll(correlationRules);
+      HashMap<CorrelationRule, Integer> correlationRules = suggestion.toCorrelationRules();
+      rules.putAll(correlationRules);
     }
     return rules;
-  }
-
-  public void applySuggestions(List<CorrelationSuggestion> suggestions) {
-    correlationMethod.applySuggestions(suggestions);
   }
 }

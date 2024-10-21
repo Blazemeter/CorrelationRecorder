@@ -4,7 +4,7 @@ import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory.Step;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
-import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
+import com.blazemeter.jmeter.correlation.core.automatic.WaitingDialog;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
@@ -48,15 +48,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
 /**
- * This class will allow the user see the history and select a step to roll back to.
- * It will display a list of the avaliable snapshots in the history file
- * and allow the user to select one.
- * After, based on that slection the new tree will be loaded.
+ * This class will allow the user see the history and select a step to roll back to. It will display
+ * a list of the avaliable snapshots in the history file and allow the user to select one. After,
+ * based on that slection the new tree will be loaded.
  */
 
 public class CorrelationHistoryFrame extends JDialog implements ActionListener {
+
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationSuggestionsPanel.class);
   private static final String DELETE = "delete";
   private static final String RESTORE = "restore";
@@ -64,7 +63,6 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
   private static final String CREATE = "create";
 
   protected CorrelationHistory history;
-  protected JDialog runDialog;
 
   @VisibleForTesting
   protected JTable table;
@@ -150,10 +148,10 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
         .build();
 
     createCheckpointButton = builder.withAction(CREATE)
-            .withName("createIteration")
-            .withText("Create Checkpoint")
-            .withToolTip("Create a snapshot of the jmx state as history iteration.")
-            .build();
+        .withName("createIteration")
+        .withText("Create Checkpoint")
+        .withToolTip("Create a snapshot of the jmx state as history iteration.")
+        .build();
 
     JPanel buttonsPanel = new JPanel();
     buttonsPanel.add(deleteButton);
@@ -188,20 +186,6 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
     model.loadSteps(steps);
   }
 
-  protected void displayWaitingScreen(String message) {
-    runDialog = JMeterElementUtils.makeWaitingFrame(message);
-    runDialog.pack();
-    runDialog.repaint();
-    runDialog.setAlwaysOnTop(true);
-    runDialog.setVisible(true);
-    runDialog.toFront();
-  }
-
-  public void disposeWaitingDialog() {
-    runDialog.dispose();
-    runDialog.setVisible(false);
-  }
-
   @Override
   public void actionPerformed(ActionEvent e) {
     HistoryTableModel tableModel = (HistoryTableModel) this.table.getModel();
@@ -220,13 +204,13 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
       case RESTORE:
         if (tableModel.getSelectedSteps().isEmpty()) {
           JOptionPane.showMessageDialog(this,
-                  "Please select one iteration to restore");
+              "Please select one iteration to restore");
         } else if (tableModel.getSelectedSteps().size() > 1) {
           JOptionPane.showMessageDialog(this,
-                  "You can't restore more than one iteration at a time.");
+              "You can't restore more than one iteration at a time.");
         } else {
           try {
-            this.displayWaitingScreen("Restoring iteration.");
+            WaitingDialog.displayWaitingScreen("History Manager", "Restoring iteration.");
             this.restoreStep(tableModel.getSelectedSteps().get(0));
             HistoryFrameSwingWorker worker = new HistoryFrameSwingWorker(this);
             worker.execute();
@@ -275,6 +259,7 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
   }
 
   public static class HistoryTableModel extends DefaultTableModel {
+
     private final List<String> columns = Arrays.asList("", "Timestamp", "Description", "Notes");
     private final List<HistoryItem> stepList = new ArrayList<>();
     private final Map<Template, List<CorrelationSuggestion>> suggestionsMap =
@@ -398,6 +383,7 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
   }
 
   public static class HistoryFrameSwingWorker extends SwingWorker {
+
     private final CorrelationHistoryFrame frame;
 
     public HistoryFrameSwingWorker(CorrelationHistoryFrame frame) {
@@ -413,9 +399,10 @@ public class CorrelationHistoryFrame extends JDialog implements ActionListener {
 
     @Override
     protected void done() {
-      frame.disposeWaitingDialog();
+      WaitingDialog.disposeWaitingDialog();
+      //frame.disposeWaitingDialog();
       JOptionPane.showMessageDialog(frame,
-              "Iteration restored.");
+          "Iteration restored.");
       frame.setVisible(false);
     }
   }

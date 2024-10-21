@@ -2,6 +2,7 @@ package com.blazemeter.jmeter.correlation.core.suggestions;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.method.CorrelationMethod;
@@ -18,6 +19,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SuggestionGeneratorTest {
+
   @Mock
   private CorrelationMethod method;
   private SuggestionGenerator suggestionGenerator;
@@ -32,11 +34,6 @@ public class SuggestionGeneratorTest {
       @Override
       public List<CorrelationSuggestion> generateSuggestions(CorrelationContext context) {
         return new ArrayList<>();
-      }
-
-      @Override
-      public void applySuggestions(List<CorrelationSuggestion> suggestions) {
-        // Do nothing
       }
     };
   }

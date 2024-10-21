@@ -199,7 +199,7 @@ public class JsonCorrelationExtractor<T extends BaseCorrelationContext> extends
       }
     }
     if (matchedValue != null) {
-      analyze(matchedValue, sampler, variableName);
+      analyze(matchedValue, sampler);
       addVarAndChildPostProcessor(matchedValue, matchedVariableChildPP,
           createPostProcessor(matchedVariablePP, matchedMatchNr));
     }

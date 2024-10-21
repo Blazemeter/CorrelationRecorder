@@ -124,7 +124,7 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * @param vars     stored variables shared between requests during recording
    */
   public void process(HTTPSamplerBase sampler, List<TestElement> children, SampleResult result,
-      JMeterVariables vars) {
+                      JMeterVariables vars) {
     replaceTestElementProperties(sampler, vars);
     for (TestElement child : children) {
       if (child instanceof ConfigTestElement) {
@@ -148,20 +148,25 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   private void replaceTestElementProperties(TestElement el, JMeterVariables vars) {
     List<JMeterProperty> props = new LinkedList<>();
     PropertyIterator propertyIterator = el.propertyIterator();
+    boolean propChanged = false;
     while (propertyIterator.hasNext()) {
-      JMeterProperty val = replaceProperty(propertyIterator.next(), vars);
+      JMeterProperty orgProp = propertyIterator.next();
+      JMeterProperty val = replaceProperty(orgProp, vars);
+      if (!val.equals(orgProp) && !propChanged) {
+        propChanged = true;
+      }
       props.add(val);
     }
-    el.clear();
-    for (JMeterProperty jmp : props) {
-      el.setProperty(jmp);
+    // Only when some property change
+    if (propChanged) {
+      el.clear();
+      for (JMeterProperty jmp : props) {
+        el.setProperty(jmp);
+      }
     }
   }
 
   private JMeterProperty replaceProperty(JMeterProperty prop, JMeterVariables vars) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("About to replace in property of type: {}: {}", prop.getClass(), prop);
-    }
     if (prop instanceof StringProperty) {
       // Must not convert TestElement.gui_class etc
       if (!prop.getName().equals(TestElement.GUI_CLASS)
@@ -184,18 +189,22 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
       MultiProperty multiVal = (MultiProperty) prop;
       PropertyIterator propertyIterator = multiVal.iterator();
       Collection<JMeterProperty> newValues = new ArrayList<>();
+      boolean propChanged = false;
       while (propertyIterator.hasNext()) {
-        JMeterProperty val = replaceProperty(propertyIterator.next(), vars);
+        JMeterProperty orgProp = propertyIterator.next();
+        JMeterProperty val = replaceProperty(orgProp, vars);
+        if (!orgProp.equals(val) && !propChanged) {
+          propChanged = true;
+        }
         newValues.add(val);
       }
-      multiVal.clear();
-      for (JMeterProperty jmp : newValues) {
-        multiVal.addProperty(jmp);
+      if (propChanged) {
+        multiVal.clear();
+        for (JMeterProperty jmp : newValues) {
+          multiVal.addProperty(jmp);
+        }
       }
-    } else {
-      LOG.debug("Won't replace {}", prop);
     }
-    LOG.debug("CorrelationReplacement result: {}", prop);
     return prop;
   }
 
@@ -204,7 +213,12 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     if (input == null) {
       return prop;
     }
-    return new StringProperty(prop.getName(), replaceString(input, vars));
+    String newImput = replaceString(input, vars);
+    if (newImput.equals(input)) {
+      return prop;
+    } else {
+      return new StringProperty(prop.getName(), newImput);
+    }
   }
 
   /**
@@ -223,19 +237,25 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     if (input == null) {
       return;
     }
+    String argName = arg.getName();
     /*
       To normalize the replacement on arguments for HTTP requests, we include the argument name and
       '=' to the input, apply the replacement logic, and remove it afterward. This doesn't applies
       when the argument has no name (eg: Data Body is a JSON/XML).
     */
-    String prefix = arg.getName().isEmpty() ? "" : arg.getName() + "=";
-    input = replaceString(prefix + arg.getValue(), vars).replace(prefix, "");
-    arg.setValue(input);
+    String prefix = argName.isEmpty() ? "" : argName + "=";
+    String newInput = replaceString(prefix + input, vars).replace(prefix, "");
+    if (!newInput.equals(input)) {
+      arg.setValue(newInput);
+    }
     /*
     In order to comply backward compatibility from <=v2.5 keys (arg name) is also processed by
      the replacement
      */
-    arg.setName(replaceString(arg.getName(), vars));
+    String newName = replaceString(argName, vars);
+    if (!newName.equals(argName)) {
+      arg.setName(newName);
+    }
   }
 
   private void replaceHeader(Header header, JMeterVariables vars) {
@@ -243,14 +263,20 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     if (input == null) {
       return;
     }
-    input = replaceString(header.getName() + ": " + header.getValue(), vars)
-        .replace(header.getName() + ": ", "");
-    header.setValue(input);
+    String headName = header.getName();
+    String newInput = replaceString(headName + ": " + input, vars)
+        .replace(headName + ": ", "");
+    if (!newInput.equals(input)) {
+      header.setValue(newInput);
+    }
     /*
     In order to comply backward compatibility from <=v2.5 keys (header name) is also processed by
      the replacement
      */
-    header.setName(replaceString(header.getName(), vars));
+    String newName = replaceString(headName, vars);
+    if (!newName.equals(headName)) {
+      header.setName(newName);
+    }
   }
 
   @Override
@@ -286,7 +312,6 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
   String computeStringReplacement(String varName) {
     String rawReplacementString = buildReplacementStringForMultivalued(varName);
     String computed = expressionEvaluator.apply(rawReplacementString);
-    LOG.debug("Result of {} was {}", rawReplacementString, computed);
     return computed;
   }
 

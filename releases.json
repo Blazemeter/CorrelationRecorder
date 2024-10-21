@@ -40,5 +40,19 @@
       "json>=20190722",
       "maven-artifact>=3.8.4"
     ]
+  },
+  {
+    "version": "3.1",
+    "what_is_new": "Many improvements in generation of suggestions from templates!",
+    "dependencies": [
+      "jackson-dataformat-xml>=2.10.3",
+      "jackson-annotations>=2.13.3",
+      "jackson-databind>=2.10.3",
+      "jackson-core>=2.13.3",
+      "jackson-module-jaxb-annotations>=2.10.3",
+      "jmeter-bzm-commons>=0.2.1",
+      "json>=20190722",
+      "maven-artifact>=3.8.4"
+    ]
   }
 ]

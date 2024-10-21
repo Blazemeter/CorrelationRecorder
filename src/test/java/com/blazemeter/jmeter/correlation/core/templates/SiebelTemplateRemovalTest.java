@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -21,28 +22,23 @@ import org.junit.rules.TemporaryFolder;
 
 public class SiebelTemplateRemovalTest {
 
-
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
-  private File siebelJsonFile;
-  private File localRepoFile;
-
 
   @Before
   public void setUp() throws Exception {
     File binDir = temporaryFolder.newFolder("bin");
     File templatesDir = new File(binDir, "templates");
+    assert templatesDir.mkdirs();
     File correlationTemplatesDir = new File(binDir, "correlation-templates");
-    templatesDir.mkdirs();
-    correlationTemplatesDir.mkdirs();
+    assert correlationTemplatesDir.mkdirs();
     File siebelTemplateFile = new File(templatesDir, "siebel-template.jmx");
-    siebelTemplateFile.createNewFile();
-    siebelJsonFile = new File(correlationTemplatesDir, "siebel-1.0-template.json");
-    siebelJsonFile.createNewFile();
+    assert siebelTemplateFile.createNewFile();
+    File siebelJsonFile = new File(correlationTemplatesDir, "siebel-1.0-template.json");
+    assert siebelJsonFile.createNewFile();
     writeSiebelJsonTemplate(siebelJsonFile);
-
-    localRepoFile = new File(correlationTemplatesDir, "local-repository.json");
-    localRepoFile.createNewFile();
+    File localRepoFile = new File(correlationTemplatesDir, "local-repository.json");
+    assert localRepoFile.createNewFile();
     writeLocalRepository(localRepoFile);
   }
 
@@ -79,6 +75,9 @@ public class SiebelTemplateRemovalTest {
     if (files != null) {
       for (File file : files) {
         ret = findFile(file, fileName);
+        if (ret != null) {
+          break;
+        }
       }
     }
     return ret;
@@ -90,19 +89,23 @@ public class SiebelTemplateRemovalTest {
 
   @Test
   public void shouldRemoveSiebelTestPlanWhenDelete() throws Exception {
-    SiebelTemplateRemoval.delete(temporaryFolder.getRoot().getAbsolutePath() + "/bin");
+    SiebelTemplateRemoval.delete(getTempBinPath());
     assertFalse(fileExists(temporaryFolder.getRoot(), "siebel-template.jmx"));
+  }
+
+  private @NotNull String getTempBinPath() {
+    return Paths.get(temporaryFolder.getRoot().getAbsolutePath(), "bin").toString();
   }
 
   @Test
   public void shouldDeleteJsonTemplateWhenDelete() throws Exception {
-    SiebelTemplateRemoval.delete(temporaryFolder.getRoot().getAbsolutePath() + "/bin");
+    SiebelTemplateRemoval.delete(getTempBinPath());
     assertFalse(fileExists(temporaryFolder.getRoot(), "siebel-1.0-template.json"));
   }
 
   @Test
   public void shouldRemoveSiebelFromLocalRepositoryWhenDelete() throws Exception {
-    SiebelTemplateRemoval.delete(temporaryFolder.getRoot().getAbsolutePath() + "/bin");
+    SiebelTemplateRemoval.delete(getTempBinPath());
     File file = findFile(temporaryFolder.getRoot(), "local-repository.json");
     List<String> lines = Files.readAllLines(file.toPath().toAbsolutePath());
     assertTrue(lines.size() == 1 && lines.get(0).equals("{ }"));

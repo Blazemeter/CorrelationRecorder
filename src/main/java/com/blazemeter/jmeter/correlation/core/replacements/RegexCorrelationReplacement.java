@@ -340,7 +340,8 @@ public class RegexCorrelationReplacement<T extends BaseCorrelationContext> exten
   }
 
   protected void analysis(String literalMatched, String currentVariableName) {
-    AnalysisReporter.report(this, literalMatched, currentSampler, currentVariableName);
+    AnalysisReporter.report(this, currentSampler, currentVariableName, literalMatched
+    );
   }
 
   @Override

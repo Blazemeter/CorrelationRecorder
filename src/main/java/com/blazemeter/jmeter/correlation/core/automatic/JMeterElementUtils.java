@@ -145,8 +145,7 @@ public class JMeterElementUtils {
     }
   }
 
-  @VisibleForTesting
-  protected static void convertSubTree(HashTree tree) {
+  public static void convertSubTree(HashTree tree) {
     for (Object o : new ArrayList<>(tree.list())) {
       JMeterTreeNode item = (JMeterTreeNode) o;
       convertSubTree(tree.getTree(item));
@@ -208,7 +207,7 @@ public class JMeterElementUtils {
    * @param testPlan the HashTree object to be converted.
    * @return a fully functional JMeterTreeModel instance.
    * @throws IllegalUserActionException when some elements of the JMeterTreeNode are not an
-   *                                    AbstractConfigGui and no instance of TestPlan subTree.
+   * AbstractConfigGui and no instance of TestPlan subTree.
    */
   public static JMeterTreeModel convertToTreeModel(HashTree testPlan)
       throws IllegalUserActionException {
@@ -652,16 +651,16 @@ public class JMeterElementUtils {
     }
   }
 
-  private static JMeterTreeModel getTreeModel() {
+  public static JMeterTreeModel getTreeModel() {
     return GuiPackage.getInstance().getTreeModel();
   }
 
   /**
    * Adds a new PostProcessor to the JMeter's tree node.
    *
-   * @param destNode      the node to add the PostProcessor to.
+   * @param destNode the node to add the PostProcessor to.
    * @param postProcessor the PostProcessor to add.
-   * @param model         the JMeter's tree model.
+   * @param model the JMeter's tree model.
    */
   public static void addPostProcessorToNode(JMeterTreeNode destNode,
       AbstractTestElement postProcessor,
@@ -868,7 +867,7 @@ public class JMeterElementUtils {
    * Replay the test plan from the given filepath.
    *
    * @param filepath The filepath of the test plan to replay. The test plan must be a JMeter test
-   *                 plan.
+   * plan.
    * @return The result collector that was used to collect the results of the replay.
    */
   @VisibleForTesting
