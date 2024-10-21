@@ -1,14 +1,14 @@
 package com.blazemeter.jmeter.correlation.gui.automatic;
 
+import static com.blazemeter.jmeter.correlation.core.suggestions.SuggestionsUtils.sortRulesSequence;
+
 import com.blazemeter.jmeter.commons.SwingUtils;
 import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.automatic.Configuration;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
-import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.suggestions.SuggestionGenerator;
-import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContext;
+import com.blazemeter.jmeter.correlation.core.suggestions.SuggestionsApplianceWorker;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.ComparisonContext;
-import com.blazemeter.jmeter.correlation.core.suggestions.method.AnalysisMethod;
 import com.blazemeter.jmeter.correlation.core.suggestions.method.ComparisonMethod;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
@@ -16,7 +16,6 @@ import com.blazemeter.jmeter.correlation.core.templates.repository.Properties;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
-import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -31,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -64,13 +64,13 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   private static final String MANUAL_REPLAY = "replay";
   private static final String CLEAR_SUGGESTIONS = "clear";
   private static final String EXPORT_AS_RULES = "export";
+  protected boolean isSuggestionsApplied;
   private final String iconSize = JMeterUtils.getPropDefault(
       JMeterToolBar.TOOLBAR_ICON_SIZE, JMeterToolBar.DEFAULT_TOOLBAR_ICON_SIZE);
   private final String toolbarPath = "toolbar/" + iconSize + "/";
   private JTabbedPane tabbedPane;
   private JTable table;
   private JList<String> reportList = new JList<>();
-  private Runnable autoCorrelateMethod;
   private Runnable replaySelectionMethod;
   private final boolean isExtraDebuggingEnabled = JMeterUtils.getPropDefault(
       "correlation.debug.extra_debugging", false);
@@ -78,7 +78,6 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   public CorrelationSuggestionsPanel(CorrelationWizard wizard) {
     super(wizard);
     init();
-    setupDefaultAutoCorrelateMethod();
   }
 
   private void init() {
@@ -268,7 +267,7 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     String action = e.getActionCommand();
     switch (action) {
       case CORRELATE:
-        SwingUtilities.invokeLater(autoCorrelateMethod);
+        SwingUtilities.invokeLater(this::applySuggestions);
         return;
       case MANUAL_REPLAY:
         SwingUtilities.invokeLater(this::manualReplayAndGenerateSuggestions);
@@ -289,41 +288,9 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     replayTestPlan();
   }
 
-  private void setupDefaultAutoCorrelateMethod() {
-    autoCorrelateMethod = this::applySuggestions;
-  }
-
-  // Reminder: This method is called when the Suggestions came from Comparison methods.
   public void applySuggestions() {
-    List<CorrelationSuggestion> suggestions = exportSelectedSuggestions();
-    if (suggestions.isEmpty()) {
-      JOptionPane.showMessageDialog(this,
-          "No suggestions selected. Please select at least one suggestion to "
-              + "apply", "No suggestions selected",
-          JOptionPane.INFORMATION_MESSAGE);
-      return;
-    }
-
-    AnalysisContext context = new AnalysisContext();
-    String recordingTraceFilePath = getRecordingTraceSupplier.get();
-    context.setRecordingTraceFilePath(recordingTraceFilePath);
-    context.setRecordingTestPlan(JMeterElementUtils.getNormalizedTestPlan());
-    context.setRegistry(CorrelationComponentsRegistry.getInstance());
-
-    logStepConsumer.accept("(Save) Before apply suggestions");
-    SuggestionGenerator generator
-        = SuggestionGenerator.getInstance(new AnalysisMethod(context));
-    generator.applySuggestions(suggestions);
-    logStepConsumer.accept("(Save) After apply suggestions");
-    JMeterElementUtils.refreshJMeter();
-
-    if (isExtraDebuggingEnabled) {
-      displayAppliedResults();
-    }
-  }
-
-  public void setAutoCorrelateMethod(Runnable autoCorrelateMethod) {
-    this.autoCorrelateMethod = autoCorrelateMethod;
+    SuggestionsApplianceWorker suggestionsApplianceWorker = new SuggestionsApplianceWorker(this);
+    suggestionsApplianceWorker.execute();
   }
 
   public void setReplaySelectionMethod(Runnable replaySelectionMethod) {
@@ -369,14 +336,17 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
           JOptionPane.INFORMATION_MESSAGE);
     }
 
-    Set<CorrelationRule> rules = new HashSet<>();
+    HashMap<CorrelationRule, Integer> rulesSequence = new HashMap<>();
     for (CorrelationSuggestion suggestion : suggestions) {
       Template source = suggestion.getSource();
       // Automatic or Template based
       if (source == null || templateContains(canExport, source)) {
-        rules.addAll(suggestion.toCorrelationRules());
+        rulesSequence.putAll(suggestion.toCorrelationRules());
       }
     }
+
+    // Sort the hashmap based on the sequence and return as a list
+    List<CorrelationRule> rules = sortRulesSequence(rulesSequence);
 
     exportRulesConsumer.accept(new ArrayList<>(rules));
     if (isDraft) {
@@ -466,6 +436,18 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   public void loadSuggestionsMap(Map<Template, List<CorrelationSuggestion>> suggestions) {
     SuggestionsTableModel model = (SuggestionsTableModel) table.getModel();
     model.loadSuggestionsMap(suggestions);
+  }
+
+  public void hideWizard() {
+    wizard.hideWizard();
+  }
+
+  public String getRecordingTraceSupplier() {
+    return getRecordingTraceSupplier.get();
+  }
+
+  public Consumer<String> getHistoryLogStep() {
+    return logStepConsumer;
   }
 
   public static class SuggestionsTableModel extends DefaultTableModel {

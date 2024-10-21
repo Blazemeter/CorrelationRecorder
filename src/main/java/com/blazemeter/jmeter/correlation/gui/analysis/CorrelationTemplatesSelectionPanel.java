@@ -1,16 +1,13 @@
 package com.blazemeter.jmeter.correlation.gui.analysis;
 
-import com.blazemeter.jmeter.commons.SwingUtils;
-import com.blazemeter.jmeter.correlation.core.analysis.Analysis;
+import com.blazemeter.jmeter.commons.SwingUtils.ButtonBuilder;
+import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.templates.CorrelationTemplatesRepositoriesConfiguration;
 import com.blazemeter.jmeter.correlation.core.templates.Repository;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.core.templates.TemplateVersion;
-import com.blazemeter.jmeter.correlation.core.templates.repository.Properties;
-import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
-import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryUtils;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
 import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationWizard;
 import com.blazemeter.jmeter.correlation.gui.automatic.WizardStepPanel;
@@ -25,16 +22,14 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
@@ -44,7 +39,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
-import javax.swing.SwingWorker;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.SwingWorker.StateValue;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultCaret;
@@ -53,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implements ActionListener {
 
+  public static final String DRAFT_REPOSITORY_NAME = "Draft";
   private static final long serialVersionUID = 240L;
   private static final Logger LOG = LoggerFactory.getLogger(
       CorrelationTemplatesSelectionPanel.class);
@@ -60,15 +57,13 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
   private static final String CONTINUE = "continue";
   private static final String CANCEL = "cancel";
   private static final String RELOAD = "reload";
-  private static final String DRAFT_REPOSITORY_NAME = "Draft";
-  private final Analysis analysis = new Analysis();
   private TemplatesSelectionTable selectionTable;
   private JEditorPane informationPane;
   private JTextField traceFilePath;
-  private BiConsumer<List<Template>, String> startNonCorrelatedAnalysis;
   private JButton continueButton;
   private Function<Builder, Template> buildTemplate;
   private Template draftTemplate;
+  private TemplateSuggestionsGeneratorWorker generateSuggestionsInWorker;
 
   public CorrelationTemplatesSelectionPanel(CorrelationWizard wizard) {
     super(wizard);
@@ -111,22 +106,21 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     informationLabel.setText(
         "Select which Correlation Template and the version that you want to apply:");
 
-    JButton reloadTemplates = new SwingUtils.ButtonBuilder().withActionListener(this)
-        .withAction(RELOAD).withName("templateReloadButton").build();
+    JButton reloadTemplates = new ButtonBuilder().withActionListener(this).withAction(RELOAD)
+        .withName("templateReloadButton").build();
     reloadTemplates.setText("Reload Templates");
     reloadTemplates.setToolTipText("Reload the available Correlation Templates");
 
     GroupLayout layout = new GroupLayout(infoAndReloadPanel);
     infoAndReloadPanel.setLayout(layout);
-    layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(
+    layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
         layout.createSequentialGroup().addContainerGap().addComponent(informationLabel)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-                GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE).addComponent(reloadTemplates)
-            .addContainerGap()));
-    layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(
+            .addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(reloadTemplates).addContainerGap()));
+    layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
         layout.createSequentialGroup().addContainerGap().addGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                .addComponent(informationLabel).addComponent(reloadTemplates)).addContainerGap()));
+            layout.createParallelGroup(Alignment.BASELINE).addComponent(informationLabel)
+                .addComponent(reloadTemplates)).addContainerGap()));
     return infoAndReloadPanel;
   }
 
@@ -142,15 +136,14 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
 
     GroupLayout layout = new GroupLayout(correlationRulesSelectionPanel);
     correlationRulesSelectionPanel.setLayout(layout);
-    layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(
+    layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
         layout.createSequentialGroup().addContainerGap().addGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(correlationRulesTableScrollPane, GroupLayout.DEFAULT_SIZE, 400,
                     Short.MAX_VALUE)).addContainerGap()));
 
-    layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(
-        layout.createSequentialGroup().addContainerGap()
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+    layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
+        layout.createSequentialGroup().addContainerGap().addPreferredGap(ComponentPlacement.RELATED)
             .addComponent(correlationRulesTableScrollPane, GroupLayout.DEFAULT_SIZE, 200,
                 Short.MAX_VALUE).addContainerGap()));
 
@@ -201,12 +194,10 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     String lastModifiedDate = LocalDateTime.now()
         .format(DateTimeFormatter.ofPattern("MM.dd.yyyy-HH.mm.ss"));
     this.draftTemplate = buildTemplate.apply(
-        new Builder().withId("draft").withRepositoryId(DRAFT_REPOSITORY_NAME)
-            .withVersion("N/A")
+        new Builder().withId("draft").withRepositoryId(DRAFT_REPOSITORY_NAME).withVersion("N/A")
             .withChanges("Rules extracted on: " + lastModifiedDate)
             .withDescription("These are the rules which are under development in Correlation Panel")
-            .withAuthor(System.getProperty("user.name") + "(you)")
-            .withUrl("")
+            .withAuthor(System.getProperty("user.name") + "(you)").withUrl("")
             .withDependencies(Collections.emptyList()));
 
   }
@@ -231,12 +222,12 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
 
     GroupLayout layout = new GroupLayout(correlationRulesInformationPanel);
     correlationRulesInformationPanel.setLayout(layout);
-    layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(
+    layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
         layout.createSequentialGroup().addContainerGap()
             .addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
             .addContainerGap()));
 
-    layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(
+    layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
         layout.createSequentialGroup().addContainerGap()
             .addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
             .addContainerGap()));
@@ -252,7 +243,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     traceFilePanel.setBorder(BorderFactory.createTitledBorder("Select the .jtl file to use"));
     traceFilePath = new JTextField();
 
-    SwingUtils.ButtonBuilder builder = new SwingUtils.ButtonBuilder().withActionListener(this);
+    ButtonBuilder builder = new ButtonBuilder().withActionListener(this);
     traceFilePanel.add(traceFilePath);
     traceFilePanel.add(
         builder.withAction(BROWSE).withText("Browse").withName("templateBrowseButton").build());
@@ -303,8 +294,7 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     };
 
     worker.addPropertyChangeListener(evt -> {
-      if (evt.getPropertyName().equals("state") && evt.getNewValue()
-          .equals(SwingWorker.StateValue.DONE)) {
+      if (evt.getPropertyName().equals("state") && evt.getNewValue().equals(StateValue.DONE)) {
         loadCorrelationTemplates();
       }
     });
@@ -324,68 +314,16 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
           "No Trace File Selected", JOptionPane.ERROR_MESSAGE);
       return;
     }
-
-    onContinue();
-  }
-
-  private void onContinue() {
-    Map<String, List<TemplateVersion>> repositoryGrouped =
-        selectionTable.getSelectedTemplateWithRepositoryMap();
-
-    boolean isDraft = false;
-    List<Template> canUseTemplates = new ArrayList<>();
-    List<Template> cannotUseTemplates = new ArrayList<>();
-    for (Map.Entry<String, List<TemplateVersion>> entry : repositoryGrouped.entrySet()) {
-      String repositoryName = entry.getKey();
-      if (repositoryName.equals(DRAFT_REPOSITORY_NAME)) {
-        isDraft = !draftTemplate.getGroups().isEmpty();
-        continue;
-      }
-      List<TemplateVersion> templates = entry.getValue();
-      CorrelationTemplatesRepositoriesConfiguration config =
-          this.wizard.getRepositoriesConfiguration();
-      RepositoryManager repManager = config.getRepositoryManager(repositoryName);
-
-      Map<Template, TemplateProperties> templatesAndProperties =
-          repManager.getTemplatesAndProperties(
-              templates);
-
-      if (templatesAndProperties == null || templatesAndProperties.isEmpty()) {
-        // Get all the templates and properties for the local repository and filter the selected
-        templatesAndProperties = config.getCorrelationTemplatesAndPropertiesByRepositoryName(
-                repositoryName, true).entrySet().stream().filter(templateEntry -> templates.stream()
-                .anyMatch(
-                    t -> templateEntry.getKey().getId().equals(t.getName())
-                        && templateEntry.getKey().getVersion().equals(t.getVersion())))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-      }
-
-      for (Map.Entry<Template, TemplateProperties> templateEntry
-          : templatesAndProperties.entrySet()) {
-        TemplateProperties value = templateEntry.getValue();
-        Properties properties = new Properties();
-        properties.putAll(value);
-
-        if (properties.canUse()) {
-          canUseTemplates.add(templateEntry.getKey());
-        } else {
-          cannotUseTemplates.add(templateEntry.getKey());
-        }
-      }
-    }
-
-    if (!cannotUseTemplates.isEmpty()) {
+    continueButton.setEnabled(false);
+    generateSuggestionsInWorker = new TemplateSuggestionsGeneratorWorker(this);
+    if (generateSuggestionsInWorker.isSelectedCanNotUseTemplates()) {
       JOptionPane.showMessageDialog(this,
           "You don't have permission to use the following templates:\n"
-              + cannotUseTemplates.stream().map(RepositoryUtils::getTemplateInfo)
-              .collect(Collectors.joining("\n")), "Cannot use templates",
-          JOptionPane.ERROR_MESSAGE);
+              + generateSuggestionsInWorker.getCanNotUseTemplatesName(),
+          "Templates excluded from suggestion analysis",
+          JOptionPane.INFORMATION_MESSAGE);
     }
-
-    if (isDraft) {
-      canUseTemplates.add(draftTemplate);
-    }
-    this.startNonCorrelatedAnalysis.accept(canUseTemplates, traceFilePath.getText());
+    generateSuggestionsInWorker.execute();
   }
 
   private void browseForJtl() {
@@ -405,11 +343,6 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
         + "Make a recording or select a .jtl of a recording to be analyzed.");
   }
 
-  public void setStartNonCorrelatedAnalysis(
-      BiConsumer<List<Template>, String> nonCorrelatedAnalysis) {
-    this.startNonCorrelatedAnalysis = nonCorrelatedAnalysis;
-  }
-
   public void setRecordingTrace() {
     String fileName = JMeterElementUtils.getRecordingResultFileName();
     boolean fileExist = fileName != null && !fileName.isEmpty();
@@ -427,17 +360,27 @@ public class CorrelationTemplatesSelectionPanel extends WizardStepPanel implemen
     return traceFilePath.getText();
   }
 
-  //Reminder: this is the place where the "Analysis by Template" is called.
-  public void runNonCorrelatedAnalysis(List<Template> templatesToAnalyse, String recordingTrace) {
-    analysis.run(templatesToAnalyse, recordingTrace, false);
-  }
-
-  //Reminder: this is the "Apply Suggestions" for Analysis.
-  public void runCorrelatedAnalysis(List<Template> templatesApply, String recordingTrace) {
-    analysis.run(templatesApply, recordingTrace, true);
-  }
-
   public void setBuildTemplate(Function<Builder, Template> buildTemplate) {
     this.buildTemplate = buildTemplate;
+  }
+
+  public void sendSuggestionsToWizard(List<CorrelationSuggestion> suggestions) {
+    wizard.loadSuggestions(suggestions);
+  }
+
+  public Map<String, List<TemplateVersion>> getSelectedTemplateWithRepositoryMap() {
+    return this.selectionTable.getSelectedTemplateWithRepositoryMap();
+  }
+
+  public Template getDraftTemplate() {
+    return draftTemplate;
+  }
+
+  public CorrelationTemplatesRepositoriesConfiguration getRepositoriesConfiguration() {
+    return wizard.getRepositoriesConfiguration();
+  }
+
+  public void enableContinueButton(boolean enable) {
+    continueButton.setEnabled(enable);
   }
 }

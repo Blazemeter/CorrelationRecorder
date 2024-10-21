@@ -90,11 +90,6 @@ public class CorrelationWizardIT {
     List<Template> selectedVersions = new ArrayList<>();
     int initialSize = 0;
     AtomicReference<String> jtlTracePath = new AtomicReference<>();
-    wizard.getTemplateSelectionPanel()
-        .setStartNonCorrelatedAnalysis((selectedTemplates, jtlTrace) -> {
-          selectedVersions.addAll(selectedTemplates);
-          jtlTracePath.set(jtlTrace);
-        });
 
     templateSelectionPressContinue();
     softly.assertThat(jtlTracePath.get()).isNotNull().as("JTL Trace Path");
@@ -113,11 +108,6 @@ public class CorrelationWizardIT {
     List<Template> selectedVersions = new ArrayList<>();
     int initialSize = 0;
     AtomicReference<String> jtlTracePath = new AtomicReference<>();
-    wizard.getTemplateSelectionPanel()
-        .setStartNonCorrelatedAnalysis((selectedTemplates, jtlTrace) -> {
-          selectedVersions.addAll(selectedTemplates);
-          jtlTracePath.set(jtlTrace);
-        });
     templateSelectionPressReloadTemplates();
     templateSelectionPressContinue();
 

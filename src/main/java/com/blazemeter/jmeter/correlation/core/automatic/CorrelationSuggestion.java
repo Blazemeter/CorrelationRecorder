@@ -253,40 +253,49 @@ public class CorrelationSuggestion {
     }
   }
 
-  public List<CorrelationRule> toCorrelationRules() {
+  public HashMap<CorrelationRule, Integer> toCorrelationRules() {
     if (extractionSuggestions.isEmpty() && replacementSuggestions.isEmpty()) {
       LOG.warn("No suggestions found for parameter {}", paramName);
     }
 
-    Set<CorrelationRule> uniqueRules = new HashSet<>();
-    List<CorrelationRule> correlationRules = new ArrayList<>();
+    Set<CorrelationRule> duplicateRules = new HashSet<>();
+    HashMap<CorrelationRule, Integer> correlationRules = new HashMap<>();
     for (ExtractionSuggestion extractionSuggestion : extractionSuggestions) {
       //TODO: We need to stop using a single Extractor and use the list
       if (extractionSuggestion.getExtractor() != null) {
         CorrelationRule rule = new CorrelationRule(extractionSuggestion.getName(),
             extractionSuggestion.getExtractor(), null);
-        correlationRules.add(rule);
-        uniqueRules.add(rule);
+        if (correlationRules.containsKey(rule)) {
+          duplicateRules.add(rule);
+        } else {
+          correlationRules.put(rule, extractionSuggestion.getSequence());
+        }
       }
 
       for (CorrelationExtractor<?> extractor: extractionSuggestion.getExtractors()) {
         CorrelationRule rule = new CorrelationRule(extractionSuggestion.getName(), extractor, null);
-        correlationRules.add(rule);
-        uniqueRules.add(rule);
+        if (correlationRules.containsKey(rule)) {
+          duplicateRules.add(rule);
+        } else {
+          correlationRules.put(rule, extractionSuggestion.getSequence());
+        }
       }
     }
 
     for (ReplacementSuggestion replacementSuggestion : replacementSuggestions) {
       CorrelationRule rule = new CorrelationRule(replacementSuggestion.getName(), null,
           replacementSuggestion.getReplacementSuggestion());
-      correlationRules.add(rule);
-      uniqueRules.add(rule);
+      if (correlationRules.containsKey(rule)) {
+        duplicateRules.add(rule);
+      } else {
+        correlationRules.put(rule, replacementSuggestion.getSequence());
+      }
     }
 
-    if (correlationRules.size() != uniqueRules.size()) {
+    if (!duplicateRules.isEmpty()) {
       LOG.warn("There are duplicated rules in the suggestion for parameter {}", paramName);
     }
 
-    return new ArrayList<>(uniqueRules);
+    return correlationRules;
   }
 }

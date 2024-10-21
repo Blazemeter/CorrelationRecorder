@@ -6,7 +6,6 @@ import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
-import com.blazemeter.jmeter.correlation.core.suggestions.SuggestionsUtils;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.AnalysisContext;
 import com.blazemeter.jmeter.correlation.core.suggestions.context.CorrelationContext;
 import com.blazemeter.jmeter.correlation.core.templates.Template;
@@ -25,11 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The AnalysisMethod class implements the CorrelationMethod interface and provides
- * methods for generating correlation suggestions by analyzing the recording and replay traces
- * using the Correlation Rules in the Correlation Templates.
+ * The AnalysisMethod class implements the CorrelationMethod interface and provides methods for
+ * generating correlation suggestions by analyzing the recording and replay traces using the
+ * Correlation Rules in the Correlation Templates.
  */
 public class AnalysisMethod implements CorrelationMethod {
+
   private static final Logger LOG = LoggerFactory.getLogger(AnalysisMethod.class);
   private AnalysisContext context;
 
@@ -83,14 +83,17 @@ public class AnalysisMethod implements CorrelationMethod {
     return correlationSuggestions;
   }
 
-  public static void run(List<SampleResult> sampleResults,
-                         List<JMeterTreeNode> samplerNodes,
-                         CorrelationEngine engine,
-                         List<HTTPSamplerProxy> samplers) {
+  public static synchronized void run(List<SampleResult> sampleResults,
+      List<JMeterTreeNode> samplerNodes,
+      CorrelationEngine engine,
+      List<HTTPSamplerProxy> samplers) {
     JMeterTreeModel model = getCurrentJMeterTreeModel();
     Map<String, Integer> indexedSamplers = getSamplersIndexedByName(samplers);
 
     for (SampleResult sampleResult : sampleResults) {
+      if (Thread.currentThread().isInterrupted()) {
+        break;
+      }
       // Search the sample that match with sample result
       // Get indexed sampler if exist
       if (indexedSamplers.containsKey(sampleResult.getSampleLabel())) {
@@ -111,6 +114,9 @@ public class AnalysisMethod implements CorrelationMethod {
         }
         // When children was added, propagate the child to the tree node
         for (int j = initialChildCount; j < children.size(); j++) {
+          if (Thread.currentThread().isInterrupted()) {
+            break;
+          }
           TestElement child = children.get(j);
           // check if that children not exist in the previous node data
           // this is to avoid generating duplicate extractors
@@ -173,7 +179,7 @@ public class AnalysisMethod implements CorrelationMethod {
     return list == null || list.isEmpty();
   }
 
-  private void runAnalysis(List<RulesGroup> rulesGroups, boolean shouldCorrelate) {
+  public void runAnalysis(List<RulesGroup> rulesGroups, boolean shouldCorrelate) {
     if (!shouldCorrelate) {
       disableCorrelation();
     } else {
@@ -229,13 +235,6 @@ public class AnalysisMethod implements CorrelationMethod {
         rule.getCorrelationReplacement().setVariableName(referenceName);
       }
     }
-  }
-
-  @Override
-  public void applySuggestions(List<CorrelationSuggestion> suggestions) {
-    List<CorrelationRule> correlationRules = SuggestionsUtils.parseSuggestionsToRules(suggestions);
-    List<RulesGroup> rulesGroups = SuggestionsUtils.parseToGroup(correlationRules);
-    runAnalysis(rulesGroups, true);
   }
 
   public AnalysisContext getContext() {

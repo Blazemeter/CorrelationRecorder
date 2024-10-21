@@ -179,7 +179,7 @@ public class JsonCorrelationReplacement<T extends BaseCorrelationContext> extend
   }
 
   private void analysis(String literalMatched, String currentVariableName) {
-    AnalysisReporter.report(this, literalMatched, currentSampler, currentVariableName);
+    AnalysisReporter.report(this, currentSampler, currentVariableName, literalMatched);
   }
 
   private String searchVariable(JMeterVariables vars, String value, String replacementString) {

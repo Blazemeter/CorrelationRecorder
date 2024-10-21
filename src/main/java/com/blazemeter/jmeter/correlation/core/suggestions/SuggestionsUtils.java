@@ -4,7 +4,10 @@ import com.blazemeter.jmeter.correlation.core.CorrelationRule;
 import com.blazemeter.jmeter.correlation.core.RulesGroup;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This is a utility class that provides methods to parse CorrelationSuggestion and
@@ -26,12 +29,13 @@ public class SuggestionsUtils {
    */
   public static List<CorrelationRule> parseSuggestionsToRules(
       List<CorrelationSuggestion> suggestions) {
-    List<CorrelationRule> correlationRules = new ArrayList<>();
+    HashMap<CorrelationRule, Integer> correlationRules = new HashMap<>();
     for (CorrelationSuggestion suggestion : suggestions) {
-      List<CorrelationRule> rules = suggestion.toCorrelationRules();
-      correlationRules.addAll(rules);
+      HashMap<CorrelationRule, Integer> rules = suggestion.toCorrelationRules();
+      correlationRules.putAll(rules);
     }
-    return correlationRules;
+    // Sort the hashmap based on the sequence and return as a list
+    return sortRulesSequence(correlationRules);
   }
 
   /**
@@ -52,5 +56,28 @@ public class SuggestionsUtils {
         .build();
     rulesGroups.add(group);
     return rulesGroups;
+  }
+
+  /**
+   * Sorts a given {@code HashMap} of {@code CorrelationRule} objects based on their associated
+   * sequence values and returns the rules as a list in ascending order of the sequence.
+   *
+   * <p>The method processes the entries of the provided {@code HashMap<CorrelationRule, Integer>}
+   * by sorting them according to the integer values (sequence) and then collecting the keys
+   * (the {@code CorrelationRule} objects) into a list. The resulting list maintains the order of
+   * the rules based on their corresponding sequence values in ascending order.
+   *
+   * @param rulesSequence a {@code HashMap} where each key is a {@code CorrelationRule} and each
+   *                      value is an {@code Integer} representing the rule's sequence
+   * @return a {@code List<CorrelationRule>} of rules ordered by their sequence values in ascending
+   * order
+   */
+  public static List<CorrelationRule> sortRulesSequence(
+      HashMap<CorrelationRule, Integer> rulesSequence) {
+    // Sort the hashmap based on the sequence and return as a list
+    return rulesSequence.entrySet().stream()
+        .sorted(Map.Entry.comparingByValue())  // Sort by Sequence
+        .map(Map.Entry::getKey)  // Extract the Rules and return as a List
+        .collect(Collectors.toList());
   }
 }

@@ -1,6 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.analysis;
 
 import static com.blazemeter.jmeter.correlation.TestUtils.findTestFile;
+
 import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
@@ -15,9 +16,8 @@ import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.save.SaveService;
 
 public class AnalysisTest {
-  protected final String LOG_REQUEST_NAME = "/login-1";
+
   protected final String LOGGED_REQUEST_NAME = "/loggedUser-2";
-  protected final String CALL_REQUEST_NAME = "/callToAction-3";
   protected final String VALUE_NAME = "token";
   protected final String TOKEN_VALUE = "abc123";
 
@@ -37,55 +37,43 @@ public class AnalysisTest {
     StringBuilder reportBuilder = new StringBuilder();
     String RL = System.lineSeparator();
     reportBuilder.append("Correlations Report:").append(RL)
-        .append("Total rules appliances=")
+        .append("  Total rules appliances=")
         .append(parts.size()).append(".").append(RL);
 
     reportBuilder.append(" Details by rule part:").append(RL);
     for (Pair<String, CorrelationRulePartTestElement<?>> part : parts) {
       CorrelationRulePartTestElement<?> element = part.getRight();
-      reportBuilder.append("  Type='").append(element.getClass().getSimpleName())
-          .append("'. Rule Part=")
-          .append(element.toString()).append(RL);
-      reportBuilder.append("  Can be applied to 1 elements.").append(RL);
-      reportBuilder.append("  Entries: ").append(RL);
-      reportBuilder.append("    - {value='").append(TOKEN_VALUE).append("' ")
-          .append(getAction(element))
-          .append(" at 'Correlation Analysis' in '")
-          .append(part.getLeft()).append("' with variable name 'token'}").append(RL);
+      reportBuilder.append("  Type=").append(element.getClass().getSimpleName()).append(RL)
+          .append("  Reference Name=")
+          .append(getRefVarName(part.getRight())).append(RL)
+          .append("  Rule Part=").append(part.getRight()).append(RL);
+
+      reportBuilder.append("\t\tCan be applied to 1 elements.").append(RL);
+      reportBuilder.append("\t\t Entries: ").append(RL);
+      reportBuilder.append("    - { value='")
+          .append(TOKEN_VALUE)
+          .append("'  at '")
+          .append(getLocationFrom(part.getRight())).append("' ")
+          .append("in '")
+          .append(part.getLeft()).append("'}").append(RL);
     }
     return reportBuilder.toString();
   }
 
-  protected String getExpectedAnalysisReport(
-      List<Pair<String, CorrelationRulePartTestElement<?>>> parts) {
-    StringBuilder reportBuilder = new StringBuilder();
-    String RL = System.lineSeparator();
-    reportBuilder.append("Correlations Report:").append(RL)
-        .append("Total rules appliances=")
-        .append(parts.size()).append(".").append(RL);
-
-    reportBuilder.append(" Details by rule part:").append(RL);
-    for (Pair<String, CorrelationRulePartTestElement<?>> part : parts) {
-      CorrelationRulePartTestElement<?> element = part.getRight();
-      reportBuilder.append("  Type='").append(element.getClass().getSimpleName())
-          .append("'. Rule Part=")
-          .append(element.toString()).append(RL);
-      reportBuilder.append("  Can be applied to 1 elements.").append(RL);
-      reportBuilder.append("  Entries: ").append(RL);
-      reportBuilder.append("    - {value='").append(TOKEN_VALUE).append("' ")
-          .append(getAction(element))
-          .append(" at 'Correlation Analysis' in '")
-          .append(part.getLeft()).append("' with variable name 'token'}").append(RL);
+  private String getLocationFrom(CorrelationRulePartTestElement<?> right) {
+    if (right instanceof CorrelationExtractor) {
+      return ((CorrelationExtractor<?>) right).getTarget().toString();
     }
-    return reportBuilder.toString();
+    return "Correlation Analysis";
   }
 
-  private static String getAction(CorrelationRulePartTestElement<?> part) {
-    if (part instanceof CorrelationExtractor) {
-      return "extracted";
+  private String getRefVarName(CorrelationRulePartTestElement<?> right) {
+    if (right instanceof CorrelationExtractor) {
+      return ((CorrelationExtractor<?>) right).getVariableName();
+    } else if (right instanceof CorrelationReplacement) {
+      return ((CorrelationReplacement<?>) right).getVariableName();
     }
-
-    return "replaced";
+    return "Unsupported CorrelationPartTestElement";
   }
 
   protected HTTPSamplerBase createLoggedUserRequest() throws IOException {

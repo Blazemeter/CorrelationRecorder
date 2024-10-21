@@ -88,6 +88,9 @@ public class CorrelationEngine {
     JMeterContextService.getContext().setVariables(vars);
     // Using for instead of streams to avoid ConcurrentModificationException
     for (CorrelationRule rule : rules) {
+      if (Thread.currentThread().isInterrupted()) {
+        break;
+      }
       if (rule.isEnabled() && rule.getCorrelationReplacement() != null) {
         try {
           rule.getCorrelationReplacement().process(sampler, children, result, vars);
@@ -106,6 +109,9 @@ public class CorrelationEngine {
     if (isContentTypeAllowed(result, responseFilter)) {
       // Using for instead of streams to avoid ConcurrentModificationException
       for (CorrelationRule rule : rules) {
+        if (Thread.currentThread().isInterrupted()) {
+          break;
+        }
         if (rule.isEnabled() && rule.getCorrelationExtractor() != null) {
           try {
             rule.getCorrelationExtractor().process(sampler, children, result, vars);

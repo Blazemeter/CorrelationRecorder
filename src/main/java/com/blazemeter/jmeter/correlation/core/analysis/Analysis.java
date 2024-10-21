@@ -67,14 +67,15 @@ public class Analysis {
     setResultsSupplier(() -> JMeterElementUtils.getCurrentSampleResults(this.tracePath));
 
     Map<Template, List<CorrelationSuggestion>> suggestions = new HashMap<>();
+    AnalysisReporter.startCollecting(); // Start collecting
     for (Template template : selectedTemplates) {
-      AnalysisReporter.startCollecting();
       startAnalysisWithGroupRules(template.getGroups());
-      AnalysisReporter.stopCollecting();
       List<CorrelationSuggestion> correlationSuggestions =
           AnalysisReporter.generateCorrelationSuggestions();
       suggestions.put(template, correlationSuggestions);
+      AnalysisReporter.clear(); // Clear the current template suggestions
     }
+    AnalysisReporter.stopCollecting();
 
     enableCorrelation();
     LOG.trace("Analysis finished!");
@@ -117,7 +118,7 @@ public class Analysis {
   //With this method we will attempt to make the Analysis without triggering the recording
   public void startAnalysisWithGroupRules(List<RulesGroup> rulesGroups) {
     if (rulesGroups == null || rulesGroups.isEmpty()) {
-      LOG.error("No rules found. Using the default ones");
+      LOG.warn("No rules found. Using the default ones");
     }
 
     this.rulesGroups = rulesGroups;

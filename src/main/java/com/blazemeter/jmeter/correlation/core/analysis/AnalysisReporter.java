@@ -6,17 +6,16 @@ import com.blazemeter.jmeter.correlation.core.automatic.CorrelationSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ExtractionSuggestion;
 import com.blazemeter.jmeter.correlation.core.automatic.ReplacementSuggestion;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
-import com.blazemeter.jmeter.correlation.core.extractors.RegexCorrelationExtractor;
 import com.blazemeter.jmeter.correlation.core.replacements.CorrelationReplacement;
-import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationReplacement;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.TestElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +24,9 @@ public class AnalysisReporter {
   public static final String NO_REPORT = "The Analyzer was not active. No report available.";
   private static final Logger LOG = LoggerFactory.getLogger(AnalysisReporter.class);
   private static AnalysisReporter reporter;
-  private static Map<CorrelationRulePartTestElement<?>, Report> reports
+  private static Map<VariablePartElement, Report> reports
       = new HashMap<>();
+  private static int globalSequence = 0;
   private static boolean isCollectingReports = true;
   private static boolean canCorrelate = true;
 
@@ -41,71 +41,75 @@ public class AnalysisReporter {
     return reporter;
   }
 
+  /* For ACR > v3.0 the AnalysisReported is now grouping every CorrelationRulePartTestElement
+  with a variable reference name for better reporting findings. Therefore, the signature of these
+  report methods changed due to parameters being able to be deductive rather than passing. These
+  (deprecated) methods remain due to API compatibility such as
+  Siebel Extension usage.
+   */
+  @Deprecated
+  public static void report(CorrelationRulePartTestElement<?> part, String value,
+      Object affectedElement, String variableName, String location) {
+    report(part, affectedElement, location, value);
+  }
+
+  @Deprecated
+  public static void report(CorrelationRulePartTestElement<?> part, String value,
+      Object affectedElement, String variableName) {
+    report(part, affectedElement, value);
+  }
+
   /**
    * Add a report entry to the AnalysisReporter for the given Correlation Rule Part.
    *
-   * @param part            Correlation Rule Part that successfully applied.
-   *                        This is used to identify upon which part the report entry is for.
-   * @param value           Value that was affected by the Correlation Rule Part.
+   * @param part Correlation Rule Part that successfully applied. This is used to identify upon
+   * which part the report entry is for.
    * @param affectedElement Element that was affected by the Correlation Rule Part.
-   * @param variableName    Variable name that is used to store or extract the value from.
-   * @param location        Location within the affectedElement for the affected value.
+   * @param location Location within the affectedElement for the affected value.
+   * @param value Value that was affected by the Correlation Rule Part.
    */
-  public static void report(CorrelationRulePartTestElement<?> part, String value,
-                            Object affectedElement, String variableName, String location) {
-
-    ReportEntry reportEntry = generateReport(part, value, affectedElement, variableName, location);
-    Report report = getReport(part);
+  public static void report(CorrelationRulePartTestElement<?> part, Object affectedElement,
+      String location, String value) {
+    if (!isCollectingReports) {
+      return;
+    }
+    ReportEntry reportEntry = generateReport(value, affectedElement, location);
+    VariablePartElement variablePartElement = VariablePartElement.getFrom(part);
+    Report report = getReport(variablePartElement);
     if (report == null) {
       report = new Report();
-      report.part = part;
       report.entries = new ArrayList<>();
-      reports.put(part, report);
+      reports.put(variablePartElement, report);
     }
 
     report.entries.add(reportEntry);
   }
 
   /**
-   * Similar to the other report method, but this one does not require a location.
-   * Used to report when the Replacements are applied.
+   * Similar to the other report method, but this one does not require a location. Used to report
+   * when the Replacements are applied.
    */
-  public static void report(CorrelationRulePartTestElement<?> part, String value,
-                            Object affectedElement, String variableName) {
-    if (!isCollectingReports) {
-      return;
-    }
-
-    Report report = getReport(part);
-    if (report == null) {
-      report = new Report();
-      report.part = part;
-      report.entries = new ArrayList<>();
-      reports.put(part, report);
-    }
-
-    ReportEntry entry = new ReportEntry();
-    entry.value = value;
-    entry.affectedElement = affectedElement;
-    entry.variableName = variableName;
-    entry.part = part;
-    report.entries.add(entry);
+  public static void report(CorrelationRulePartTestElement<?> part, Object affectedElement,
+      String value) {
+    report(part, affectedElement, "Correlation Analysis", value);
   }
 
-  private static ReportEntry generateReport(CorrelationRulePartTestElement<?> part, String value,
-                                            Object affectedElement, String variableName,
-                                            String location) {
+  private static ReportEntry generateReport(String value, Object affectedElement, String location) {
     ReportEntry entry = new ReportEntry();
+    entry.sequence = getNextSequence();
     entry.value = value;
     entry.affectedElement = affectedElement;
-    entry.variableName = variableName;
-    entry.part = part;
     entry.location = location;
     return entry;
   }
 
+  private static int getNextSequence() {
+    globalSequence += 1;
+    return globalSequence;
+  }
+
   @VisibleForTesting
-  public static Report getReport(CorrelationRulePartTestElement<?> part) {
+  public static Report getReport(VariablePartElement part) {
     return getReporter().reports.get(part);
   }
 
@@ -120,7 +124,12 @@ public class AnalysisReporter {
    * Starts collecting reports. This is used when processing recordings with Analysis.
    */
   public static void startCollecting() {
+    globalSequence = 0;
     isCollectingReports = true;
+    clear();
+  }
+
+  public static void clear() {
     reports.clear();
   }
 
@@ -128,46 +137,42 @@ public class AnalysisReporter {
     return isCollectingReports;
   }
 
-  private static String getParamName(CorrelationRulePartTestElement<?> part) {
-    if (part instanceof CorrelationExtractor) {
-      return ((CorrelationExtractor<?>) part).getVariableName();
-    } else if (part instanceof CorrelationReplacement) {
-      return ((CorrelationReplacement<?>) part).getVariableName();
-    }
-    return "";
-  }
-
   public static List<CorrelationSuggestion> generateCorrelationSuggestions() {
     Map<String, CorrelationSuggestion> suggestionsMap = new HashMap<>();
-    for (Report report : reports.values()) {
-      CorrelationRulePartTestElement<?> part = report.part;
-      String paramName = getParamName(part);
-      CorrelationSuggestion suggestion = suggestionsMap.get(paramName);
+    for (Entry<VariablePartElement, Report> reportsMap : reports.entrySet()) {
+
+      CorrelationSuggestion suggestion = suggestionsMap.get(
+          reportsMap.getKey().referenceVariableName);
+      String referenceVariableName = reportsMap.getKey().referenceVariableName;
       if (suggestion == null) {
         suggestion = new CorrelationSuggestion.Builder().fromRulesAnalysis()
-            .withParamName(paramName)
+            .withParamName(referenceVariableName)
             .build();
-        suggestionsMap.put(paramName, suggestion);
+        suggestionsMap.put(referenceVariableName, suggestion);
       }
+
+      CorrelationRulePartTestElement<?> part = reportsMap.getKey().partTestElement;
 
       if (part instanceof CorrelationExtractor) {
         CorrelationExtractor<?> extractor = (CorrelationExtractor<?>) part;
-        for (ReportEntry entry : report.entries) {
+        for (ReportEntry entry : reportsMap.getValue().entries) {
           ExtractionSuggestion extraction = new ExtractionSuggestion(extractor, entry.getSampler());
+          extraction.setSequence(entry.sequence);
           extraction.setValue(entry.value);
-          extraction.setName(paramName);
+          extraction.setName(referenceVariableName);
           extraction.setSource(entry.location);
           suggestion.setOriginalValue(entry.value);
           suggestion.addExtractionSuggestion(extraction);
         }
       } else {
         CorrelationReplacement<?> replacement = (CorrelationReplacement<?>) part;
-        for (ReportEntry entry : report.entries) {
+        for (ReportEntry entry : reportsMap.getValue().entries) {
           ReplacementSuggestion replacementSuggestion
               = new ReplacementSuggestion(replacement,
               entry.getSampler());
+          replacementSuggestion.setSequence(entry.sequence);
           replacementSuggestion.setValue(entry.value);
-          replacementSuggestion.setName(paramName);
+          replacementSuggestion.setName(referenceVariableName);
           replacementSuggestion.setSource(entry.location);
           suggestion.setOriginalValue(entry.value);
           suggestion.addReplacementSuggestion(replacementSuggestion);
@@ -175,77 +180,6 @@ public class AnalysisReporter {
       }
     }
     return new ArrayList<>(suggestionsMap.values());
-  }
-
-  public static List<CorrelationSuggestion> generateReplacementSuggestions() {
-    List<CorrelationSuggestion> suggestions = new ArrayList<>();
-    for (Report report : reports.values()) {
-      CorrelationRulePartTestElement<?> rulePart = report.part;
-      if (!(rulePart instanceof CorrelationReplacement)) {
-        continue;
-      }
-
-      if (!((rulePart instanceof RegexCorrelationReplacement))) {
-        continue;
-      }
-
-      CorrelationSuggestion suggestion = new CorrelationSuggestion();
-      RegexCorrelationReplacement<?> replacement = (RegexCorrelationReplacement<?>) rulePart;
-      for (ReportEntry entry : report.entries) {
-        if (!(entry.affectedElement instanceof TestElement)) {
-          if (LOG.isDebugEnabled()) {
-            System.out.println("Replacement affect element is not an TestElement");
-          }
-          continue;
-        }
-        TestElement usage = (TestElement) entry.affectedElement;
-        ReplacementSuggestion replacementSuggestion
-            = new ReplacementSuggestion(replacement, usage);
-        replacementSuggestion.setSource("Correlation Analysis");
-        replacementSuggestion.setName(entry.variableName);
-        replacementSuggestion.setValue(entry.value);
-        suggestion.setParamName(entry.variableName);
-        suggestion.setOriginalValue(entry.value);
-        suggestion.setNewValue("");
-        suggestion.addReplacementSuggestion(replacementSuggestion);
-      }
-      suggestions.add(suggestion);
-    }
-    return suggestions;
-  }
-
-  private static List<CorrelationSuggestion> generateExtractorSuggestions() {
-    List<CorrelationSuggestion> suggestions = new ArrayList<>();
-    for (Report report : reports.values()) {
-      CorrelationRulePartTestElement<?> rulePart = report.part;
-      if (!(rulePart instanceof RegexCorrelationExtractor)) {
-        continue;
-      }
-
-      RegexCorrelationExtractor<?> extractor = (RegexCorrelationExtractor<?>) rulePart;
-      CorrelationSuggestion suggestion = new CorrelationSuggestion();
-      for (ReportEntry entry : report.entries) {
-        if (!(entry.affectedElement instanceof HTTPSamplerBase)) {
-          if (LOG.isDebugEnabled()) {
-            System.out.println("Extractor affect element is not an SampleResult");
-          }
-          continue;
-        }
-
-        HTTPSamplerBase request = (HTTPSamplerBase) entry.affectedElement;
-        ExtractionSuggestion extractionSuggestion = new ExtractionSuggestion(extractor, request);
-        extractionSuggestion.setSource("Correlation Analysis");
-        extractionSuggestion.setValue(entry.value);
-        extractionSuggestion.setName(entry.variableName);
-        suggestion.addExtractionSuggestion(extractionSuggestion);
-        suggestion.setParamName(entry.variableName);
-        suggestion.setOriginalValue(entry.value);
-        suggestion.setNewValue("");
-        suggestions.add(suggestion);
-      }
-    }
-
-    return suggestions;
   }
 
   public static void enableCorrelation() {
@@ -261,9 +195,10 @@ public class AnalysisReporter {
   }
 
   public CorrelationRuleReport getRuleReport(CorrelationRule rule) {
-    Report extractorReport = getReport(rule.getCorrelationExtractor());
-    Report replacementReport = getReport(rule.getCorrelationReplacement());
-
+    Report extractorReport =
+        getReport(VariablePartElement.getFrom(rule.getCorrelationExtractor()));
+    Report replacementReport =
+        getReport(VariablePartElement.getFrom(rule.getCorrelationReplacement()));
     boolean extractorApplied = extractorReport != null;
     boolean replacementApplied = replacementReport != null;
 
@@ -277,38 +212,28 @@ public class AnalysisReporter {
   }
 
   public static class Report {
-    private CorrelationRulePartTestElement part;
+
     private List<ReportEntry> entries;
 
     @Override
     public String toString() {
-      return "Part: " + part + " can be applied to " + entries.size() + " elements.\n"
+      return "Part can be applied to " + entries.size() + " elements.\n"
           + "Entries: " + entries + "\n";
     }
   }
 
   private static class ReportEntry {
-    public String variableName;
+
+    private int sequence;
     private String value;
     private Object affectedElement;
-    private CorrelationRulePartTestElement<?> part;
     private String location = "Correlation Analysis";
 
-    private String getOperation() {
-      if (part instanceof CorrelationExtractor) {
-        return "extracted";
-      } else if (part instanceof CorrelationReplacement) {
-        return "replaced";
-      } else {
-        return "Correlation Analysis";
-      }
-    }
-
     public String getReportString() {
-      return "{ value='" + value + "' " + getOperation()
+      return "{ value='" + value + "' "
           + " at '" + location + "'"
           + " in '" + getAffectedElementName()
-          + "' with variable name '" + variableName + "'}";
+          + "'}";
     }
 
     private String getAffectedElementName() {
@@ -352,16 +277,18 @@ public class AnalysisReporter {
       return sb.toString();
     }
     sb.append(getIndentation(1)).append("Details by rule part:").append(separator);
-    for (Report report : reports.values()) {
+    for (Entry<VariablePartElement, Report> map : reports.entrySet()) {
       sb.append(getIndentation(2))
-          .append("Type='").append(report.part.getClass().getSimpleName()).append("'.")
+          .append("Type=").append(map.getKey().partTestElement.getClass().getSimpleName())
           .append(separator).append(getIndentation(2))
-          .append("Rule Part=").append(report.part).append(separator);
+          .append("Reference Name=").append(map.getKey().referenceVariableName)
+          .append(separator).append(getIndentation(2))
+          .append("Rule Part=").append(map.getKey().partTestElement).append(separator);
       sb.append(getIndentation(3))
-          .append("  Can be applied to ").append(report.entries.size()).append(" elements.")
+          .append("  Can be applied to ").append(map.getValue().entries.size()).append(" elements.")
           .append(separator);
       sb.append(getIndentation(4)).append("  Entries: ").append(separator);
-      for (ReportEntry entry : report.entries) {
+      for (ReportEntry entry : map.getValue().entries) {
         sb.append(getIndentation(5))
             .append("- ").append(entry.getReportString()).append(separator);
       }
@@ -371,5 +298,48 @@ public class AnalysisReporter {
 
   private String getIndentation(int i) {
     return String.format("%" + i + "s", "");
+  }
+
+  public static class VariablePartElement {
+
+    private final String referenceVariableName;
+    private final CorrelationRulePartTestElement<?> partTestElement;
+
+    public VariablePartElement(String referenceVariableName,
+        CorrelationRulePartTestElement<?> partTestElement) {
+      this.referenceVariableName = referenceVariableName;
+      this.partTestElement = partTestElement;
+    }
+
+    public static VariablePartElement getFrom(CorrelationRulePartTestElement<?> partTestElement) {
+      return new VariablePartElement(getRefVarNameFrom(partTestElement), partTestElement);
+    }
+
+    private static String getRefVarNameFrom(CorrelationRulePartTestElement<?> partTestElement) {
+      if (partTestElement instanceof CorrelationExtractor) {
+        return ((CorrelationExtractor<?>) partTestElement).getVariableName();
+      } else if (partTestElement instanceof CorrelationReplacement) {
+        return ((CorrelationReplacement<?>) partTestElement).getVariableName();
+      }
+      return "";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      VariablePartElement that = (VariablePartElement) o;
+      return Objects.equals(referenceVariableName, that.referenceVariableName) && Objects.equals(
+          partTestElement, that.partTestElement);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(referenceVariableName, partTestElement);
+    }
   }
 }

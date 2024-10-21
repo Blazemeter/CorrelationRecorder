@@ -9,6 +9,7 @@ public class ReplacementSuggestion {
   private String source;
   private String value;
   private String name;
+  private int sequence = 0;
 
   public ReplacementSuggestion(CorrelationReplacement<?> replacementSuggestion,
                                TestElement usage) {
@@ -30,6 +31,14 @@ public class ReplacementSuggestion {
 
   public void setSource(String source) {
     this.source = source;
+  }
+
+  public int getSequence() {
+    return this.sequence;
+  }
+
+  public void setSequence(int sequence) {
+    this.sequence = sequence;
   }
 
   public String getValue() {
@@ -58,4 +67,5 @@ public class ReplacementSuggestion {
         ", name='" + name + '\'' +
         '}';
   }
+
 }
