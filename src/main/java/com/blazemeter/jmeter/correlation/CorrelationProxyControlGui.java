@@ -1,5 +1,6 @@
 package com.blazemeter.jmeter.correlation;
 
+import com.blazemeter.jmeter.commons.BlazemeterLabsLogo;
 import com.blazemeter.jmeter.correlation.core.analysis.AnalysisReporter;
 import com.blazemeter.jmeter.correlation.core.automatic.CorrelationHistory;
 import com.blazemeter.jmeter.correlation.core.templates.ConfigurationException;
@@ -14,7 +15,6 @@ import com.blazemeter.jmeter.correlation.core.templates.Template;
 import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.core.templates.repository.RepositoryManager;
 import com.blazemeter.jmeter.correlation.core.templates.repository.TemplateProperties;
-import com.blazemeter.jmeter.correlation.gui.BlazemeterLabsLogo;
 import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import com.blazemeter.jmeter.correlation.gui.RulesContainer;
 import com.blazemeter.jmeter.correlation.gui.automatic.CorrelationWizard;
@@ -61,7 +61,7 @@ public class CorrelationProxyControlGui extends ProxyControlGui
     JTabbedPane correlationPane = findTabbedPane();
     rulesContainer = new RulesContainer(this, () -> modifyTestElement(model));
     Objects.requireNonNull(correlationPane).add("Correlation", rulesContainer);
-    add(new BlazemeterLabsLogo(), BorderLayout.SOUTH);
+    add(new BlazemeterLabsLogo("https://blazemeter.github.io/CorrelationRecorder/"), BorderLayout.SOUTH);
 
     wizard = new CorrelationWizard();
     wizard.setRepositoriesSupplier(this::getRepositories);

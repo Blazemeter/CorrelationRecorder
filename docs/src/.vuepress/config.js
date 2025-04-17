@@ -44,7 +44,7 @@ module.exports = {
     docsDir: "",
     editLinkText: "",
     lastUpdated: false,
-    logo: "/images/blazemeter-labs-logo.png",
+    logo: "https://raw.githubusercontent.com/Blazemeter/jmeter-bzm-commons/refs/heads/master/src/main/resources/dark-theme/blazemeter-by-perforce-logo.png",
     nav: [
       {
         text: "Guide",
