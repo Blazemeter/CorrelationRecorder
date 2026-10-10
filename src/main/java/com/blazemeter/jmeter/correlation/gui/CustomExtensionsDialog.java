@@ -5,7 +5,6 @@ import com.blazemeter.jmeter.correlation.core.CorrelationRulePartTestElement;
 import com.blazemeter.jmeter.correlation.core.DescriptionContent;
 import com.blazemeter.jmeter.correlation.core.extractors.CorrelationExtractor;
 import com.blazemeter.jmeter.correlation.gui.common.RulePartType;
-import com.google.common.base.Objects;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -14,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
@@ -303,13 +303,13 @@ public class CustomExtensionsDialog extends JDialog implements ActionListener {
       }
       ExtensionItem item = (ExtensionItem) o;
       return isActive() == item.isActive() &&
-          Objects.equal(CorrelationRulePartTestElement.getDisplayName(getExtension()),
+          Objects.equals(CorrelationRulePartTestElement.getDisplayName(getExtension()),
               CorrelationRulePartTestElement.getDisplayName(item.getExtension()));
     }
 
     @Override
     public int hashCode() {
-      return Objects.hashCode(getExtension(), isActive());
+      return Objects.hash(getExtension(), isActive());
     }
 
     @Override
