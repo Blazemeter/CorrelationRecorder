@@ -20,7 +20,6 @@ import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.swing.DefaultRowSorter;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -41,6 +41,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
@@ -132,8 +133,8 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     JLabel infoLabel = new JLabel("Select which suggestions you want to apply and "
         + "click on Correlate");
     infoLabel.setBorder(new EmptyBorder(5, 0, 5, 0));
-    infoLabel.setVerticalAlignment(Label.CENTER);
-    infoLabel.setVerticalTextPosition(Label.CENTER);
+    infoLabel.setVerticalAlignment(SwingConstants.CENTER);
+    infoLabel.setVerticalTextPosition(SwingConstants.CENTER);
     Font font = infoLabel.getFont();
     infoLabel.setFont(font.deriveFont(font.getStyle() | java.awt.Font.BOLD));
 
@@ -158,6 +159,8 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     int selectionColumn = 0;
     TableColumn tc = table.getColumnModel().getColumn(selectionColumn);
     tc.setHeaderRenderer(new SelectAllHeader(table, selectionColumn));
+    // a click on that header selects or clears the rows: it must not sort them too
+    ((DefaultRowSorter<?, ?>) table.getRowSorter()).setSortable(selectionColumn, false);
 
     JTableHeader header = table.getTableHeader();
     header.setFont(header.getFont().deriveFont(14f));
@@ -521,6 +524,8 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
       if (columnIndex == 0) {
         suggestionList.get(rowIndex).setSelected((boolean) aValue);
+        // the select-all header follows the rows through this event
+        fireTableCellUpdated(rowIndex, columnIndex);
       } else {
         super.setValueAt(aValue, rowIndex, columnIndex);
       }
