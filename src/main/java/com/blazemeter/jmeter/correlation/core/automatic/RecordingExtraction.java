@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.testelement.TestElement;
@@ -51,12 +50,12 @@ public class RecordingExtraction implements AppearancesExtraction {
   }
 
   @VisibleForTesting
-  public Map<String, HTTPSamplerProxy> generateSamplerMap(String filepath) {
+  public Map<String, HTTPSamplerBase> generateSamplerMap(String filepath) {
     HashTree testPlan = JMeterElementUtils.getTestPlan(filepath);
     List<HTTPSamplerBase> requests = getRequests(testPlan, false);
-    Map<String, HTTPSamplerProxy> samplerMap = new HashMap<>();
+    Map<String, HTTPSamplerBase> samplerMap = new HashMap<>();
     for (HTTPSamplerBase sampler : requests) {
-      samplerMap.put(sampler.getName(), (HTTPSamplerProxy) sampler);
+      samplerMap.put(sampler.getName(), (HTTPSamplerBase) sampler);
     }
     return samplerMap;
   }

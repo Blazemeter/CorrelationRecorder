@@ -54,7 +54,6 @@ import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.reporters.ResultCollector;
 import org.apache.jmeter.samplers.SampleResult;
@@ -563,12 +562,12 @@ public class JMeterElementUtils {
   }
 
   /**
-   * Returns the CollectionProperty associated to the HTTPSamplerProxy contained in a
+   * Returns the CollectionProperty associated to the HTTPSamplerBase contained in a
    * JMeterTreeNode. Note: this method requires that the JMeterTreeNode is a HTTPSamplerBase
    * instance.
    *
    * @param requestElement the JMeterTreeNode element from which the collection will be obtained.
-   * @return the CollectionProperty associated to the HTTPSamplerProxy.
+   * @return the CollectionProperty associated to the HTTPSamplerBase.
    */
   public static CollectionProperty getHttpArguments(JMeterTreeNode requestElement) {
     HTTPSamplerBase sampler = (HTTPSamplerBase) requestElement.getTestElement();
@@ -996,8 +995,8 @@ public class JMeterElementUtils {
 
   public boolean canBeFiltered(Supplier<Object> elementSupplier) {
     Object o = elementSupplier.get();
-    if (o instanceof HTTPSamplerProxy) {
-      HTTPSamplerProxy sampler = (HTTPSamplerProxy) o;
+    if (o instanceof HTTPSamplerBase) {
+      HTTPSamplerBase sampler = (HTTPSamplerBase) o;
       return sampler.getPropertyAsString("HTTPSampler.domain") == null
           || ignoredDomain(sampler.getDomain())
           || ignoredFile(sampler.getPath());
@@ -1086,10 +1085,10 @@ public class JMeterElementUtils {
         || configuration.shouldIgnoreBooleanValues();
   }
 
-  public static List<HTTPSamplerProxy> getCurrentSamplerList() {
-    List<HTTPSamplerProxy> samplerProxies = new ArrayList<>();
+  public static List<HTTPSamplerBase> getCurrentSamplerList() {
+    List<HTTPSamplerBase> samplerProxies = new ArrayList<>();
     for (JMeterTreeNode samplerProxyNode : getCurrentSamplerNodes()) {
-      samplerProxies.add((HTTPSamplerProxy) samplerProxyNode.getTestElement());
+      samplerProxies.add((HTTPSamplerBase) samplerProxyNode.getTestElement());
     }
     return samplerProxies;
   }
@@ -1099,16 +1098,16 @@ public class JMeterElementUtils {
 
       return new ArrayList<>();
     }
-    return GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerProxy.class);
+    return GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerBase.class);
   }
 
   public static List<SampleResult> getCurrentSampleResults(String path) {
     List<SampleResult> sampleResults = new ResultFileParser(new Configuration())
         .loadFromFile(new File(path), true);
     List<SampleResult> filteredResults = new ArrayList<>();
-    List<HTTPSamplerProxy> desiredSamplers = JMeterElementUtils.getCurrentSamplerList();
+    List<HTTPSamplerBase> desiredSamplers = JMeterElementUtils.getCurrentSamplerList();
     for (SampleResult sampleResult : sampleResults) {
-      for (HTTPSamplerProxy samplerProxy : desiredSamplers) {
+      for (HTTPSamplerBase samplerProxy : desiredSamplers) {
         if (sampleResult.getSampleLabel().equals(samplerProxy.getName())) {
           filteredResults.add(sampleResult);
         }
@@ -1195,7 +1194,7 @@ public class JMeterElementUtils {
       }
       */
     JMeterTreeModel model = getCurrentJMeterTreeModel();
-    return model.getNodesOfType(HTTPSamplerProxy.class);
+    return model.getNodesOfType(HTTPSamplerBase.class);
   }
 
   public static JMeterTreeModel getCurrentJMeterTreeModel() {

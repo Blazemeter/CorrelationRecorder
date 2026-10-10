@@ -17,7 +17,7 @@ import org.apache.jmeter.exceptions.IllegalUserActionException;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.slf4j.Logger;
@@ -86,7 +86,7 @@ public class AnalysisMethod implements CorrelationMethod {
   public static synchronized void run(List<SampleResult> sampleResults,
       List<JMeterTreeNode> samplerNodes,
       CorrelationEngine engine,
-      List<HTTPSamplerProxy> samplers) {
+      List<? extends HTTPSamplerBase> samplers) {
     JMeterTreeModel model = getCurrentJMeterTreeModel();
     Map<String, Integer> indexedSamplers = getSamplersIndexedByName(samplers);
 
@@ -98,7 +98,7 @@ public class AnalysisMethod implements CorrelationMethod {
       // Get indexed sampler if exist
       if (indexedSamplers.containsKey(sampleResult.getSampleLabel())) {
         Integer samplerIndex = indexedSamplers.get(sampleResult.getSampleLabel());
-        HTTPSamplerProxy samplerProxy = samplers.get(samplerIndex);
+        HTTPSamplerBase samplerProxy = samplers.get(samplerIndex);
 
         List<TestElement> children = new ArrayList<>();
         JMeterTreeNode node = samplerNodes.get(samplerIndex);
@@ -135,11 +135,11 @@ public class AnalysisMethod implements CorrelationMethod {
   }
 
   public static Map<String, Integer> getSamplersIndexedByName(
-      List<HTTPSamplerProxy> samplers) {
+      List<? extends HTTPSamplerBase> samplers) {
     // The method is used to optimize the way how to get the index of a specific sampler by name
     Map<String, Integer> indexedSamplers = new HashMap<>();
     int index = 0;
-    for (HTTPSamplerProxy sampler : samplers) {
+    for (HTTPSamplerBase sampler : samplers) {
       indexedSamplers.put(getCrName(sampler), index);
       index += 1;
     }
@@ -208,7 +208,7 @@ public class AnalysisMethod implements CorrelationMethod {
     engine.setEnabled(true);
     engine.reset();
 
-    List<HTTPSamplerProxy> samplers = context.getRecordingSamplers();
+    List<? extends HTTPSamplerBase> samplers = context.getRecordingSamplers();
     List<SampleResult> sampleResults = context.getRecordingSampleResults();
     List<JMeterTreeNode> samplerNodes = context.getSamplerNodes();
 

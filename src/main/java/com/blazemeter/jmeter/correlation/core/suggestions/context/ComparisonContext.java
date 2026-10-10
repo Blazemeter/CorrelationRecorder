@@ -7,7 +7,7 @@ import com.blazemeter.jmeter.correlation.core.automatic.ResultsExtraction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 
 
@@ -53,7 +53,7 @@ public class ComparisonContext implements CorrelationContext {
    * @return a list of HTTPSamplerBase objects.
    */
   @Override
-  public List<HTTPSamplerProxy> getRecordingSamplers() {
+  public List<HTTPSamplerBase> getRecordingSamplers() {
     return new ArrayList<>();
   }
 

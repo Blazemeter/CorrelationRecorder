@@ -25,6 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.entity.ContentType;
 import org.apache.jmeter.protocol.http.control.Cookie;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.samplers.SampleResult;
@@ -50,7 +51,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   private final Configuration configuration;
   private Map<String, List<Appearances>> appearanceMap;
 
-  private Map<String, HTTPSamplerProxy> requestsMap;
+  private Map<String, HTTPSamplerBase> requestsMap;
   private ResultFileParser resultFileParser;
 
   public ResultsExtraction(Configuration configuration) {
@@ -92,8 +93,8 @@ public class ResultsExtraction implements AppearancesExtraction {
     return cookies;
   }
 
-  private static HTTPSamplerProxy parseToHttpSampler(HTTPSampleResult httpResult) {
-    HTTPSamplerProxy sampler = new HTTPSamplerProxy();
+  private static HTTPSamplerBase parseToHttpSampler(HTTPSampleResult httpResult) {
+    HTTPSamplerBase sampler = new HTTPSamplerProxy();
     sampler.setName(httpResult.getSampleLabel());
     URL url = httpResult.getURL();
     sampler.setDomain(url.getHost());
@@ -300,7 +301,7 @@ public class ResultsExtraction implements AppearancesExtraction {
       if (result instanceof HTTPSampleResult) {
         try {
           HTTPSampleResult httpSampleResult = (HTTPSampleResult) result;
-          HTTPSamplerProxy sourceRequest = parseToHttpSampler(httpSampleResult);
+          HTTPSamplerBase sourceRequest = parseToHttpSampler(httpSampleResult);
           if (requestsMap != null && requestsMap.containsKey(result.getSampleLabel())) {
             sourceRequest = requestsMap.get(result.getSampleLabel());
           }
@@ -314,7 +315,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private void extractAppearancesFromSampleResult(HTTPSampleResult httpSampleResult,
-      HTTPSamplerProxy sourceRequest) {
+      HTTPSamplerBase sourceRequest) {
     extractParametersFromHeaderStrings(httpSampleResult.getResponseHeaders(), sourceRequest,
         "Response");
     extractParametersFromHeaderStrings(httpSampleResult.getRequestHeaders(), sourceRequest,
@@ -325,7 +326,7 @@ public class ResultsExtraction implements AppearancesExtraction {
     }
   }
 
-  private void extractAppearancesFromJson(String json, HTTPSamplerProxy sourceRequest) {
+  private void extractAppearancesFromJson(String json, HTTPSamplerBase sourceRequest) {
     try {
       if (JMeterElementUtils.isJsonArray(json)) {
         utils.extractParametersFromJsonArray(new JSONArray(json), appearanceMap, sourceRequest, "",
@@ -340,7 +341,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private void extractParametersFromHeaderStrings(String headerString,
-      HTTPSamplerProxy sourceRequest,
+      HTTPSamplerBase sourceRequest,
       String headerSource) {
     String[] headerLines = headerString.split("\\n", 0);
     for (String headerLine : headerLines) {
@@ -374,7 +375,7 @@ public class ResultsExtraction implements AppearancesExtraction {
     return headerValue.contains(";") && headerValue.contains("=");
   }
 
-  private void registerHeaderCookie(String headerValue, HTTPSamplerProxy sourceRequest,
+  private void registerHeaderCookie(String headerValue, HTTPSamplerBase sourceRequest,
       String headerSource) {
     String[] fields = headerValue.split(";");
 
@@ -427,7 +428,7 @@ public class ResultsExtraction implements AppearancesExtraction {
   }
 
   private void registerHeaderSubParameters(String headerName, String headerValue,
-      HTTPSamplerProxy sourceRequest, String headerSource) {
+      HTTPSamplerBase sourceRequest, String headerSource) {
     String[] fields = headerValue.split(";");
     for (int i = 0; i < fields.length; i++) {
       String field = fields[i];
@@ -449,7 +450,7 @@ public class ResultsExtraction implements AppearancesExtraction {
     }
   }
 
-  public void setRequestsMap(Map<String, HTTPSamplerProxy> requestsMap) {
+  public void setRequestsMap(Map<String, HTTPSamplerBase> requestsMap) {
     this.requestsMap = requestsMap;
   }
 
