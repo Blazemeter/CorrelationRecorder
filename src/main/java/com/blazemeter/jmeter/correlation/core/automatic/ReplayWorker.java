@@ -6,6 +6,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import org.slf4j.Logger;
 
@@ -21,6 +22,7 @@ public class ReplayWorker extends SwingWorker<ReplayReport, Void> implements
   public ReplayWorkerArrivalContext replayWorkerContext =
       ReplayWorkerArrivalContext.REPLAY_TEST_PLAN;
   public ReplayReport replayReport;
+  private volatile boolean failed;
 
   public ReplayWorker() {
     super();
@@ -35,8 +37,10 @@ public class ReplayWorker extends SwingWorker<ReplayReport, Void> implements
       return replayReport;
     } catch (Exception ex) {
       LOG.error("Error while processing replaying test plan.", ex);
+      // the failure is reported on its own: the done method would report it again as a null report
+      failed = true;
       cancel(true);
-      getOnFailureMethod().accept(ex);
+      SwingUtilities.invokeLater(() -> getOnFailureMethod().accept(ex));
       return null;
     } finally {
       LOG.info("Replay finished.");
@@ -75,7 +79,7 @@ public class ReplayWorker extends SwingWorker<ReplayReport, Void> implements
   public void propertyChange(PropertyChangeEvent evt) {
     String name = evt.getPropertyName();
     if ("state".equals(name)) {
-      if (evt.getNewValue().equals(SwingWorker.StateValue.DONE)) {
+      if (evt.getNewValue().equals(SwingWorker.StateValue.DONE) && !failed) {
         getOnDoneMethod().run();
       }
     }
