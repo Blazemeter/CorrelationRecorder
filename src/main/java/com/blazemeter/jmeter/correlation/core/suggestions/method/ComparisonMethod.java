@@ -133,6 +133,9 @@ public class ComparisonMethod implements CorrelationMethod {
     DynamicElementHandler handler = new DynamicElementHandler(this.context);
     List<DynamicElement> dynamicElements = handler.getDynamicElements(recordingMap, replayMap);
     dynamicElements.forEach(this::loadFromDynamicElements);
+    if (getConfiguration().shouldUnifySuggestions()) {
+      return SuggestionUnification.unify(suggestions, getConfiguration());
+    }
     return suggestions;
   }
 

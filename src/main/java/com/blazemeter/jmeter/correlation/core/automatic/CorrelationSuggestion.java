@@ -25,6 +25,8 @@ public class CorrelationSuggestion {
   private final List<ExtractionSuggestion> extractionSuggestions = new ArrayList<>();
   private final List<String> extractionSuggestionsString = new ArrayList<>();
   private final List<ReplacementSuggestion> replacementSuggestions = new ArrayList<>();
+  // Other names of the same variable, joined into this suggestion
+  private final List<String> aliases = new ArrayList<>();
   private String method = "Replay";
 
   private Template source;
@@ -111,49 +113,68 @@ public class CorrelationSuggestion {
     return replacementSuggestions;
   }
 
+  public void addAlias(String alias) {
+    if (!alias.equals(paramName) && !aliases.contains(alias)) {
+      aliases.add(alias);
+    }
+  }
+
+  public List<String> getAliases() {
+    return aliases;
+  }
+
+  // The name and its first alias, with "..." when there are more: getAliases has them all
+  public String getDisplayName() {
+    if (aliases.isEmpty()) {
+      return paramName;
+    }
+    return paramName + " (alias: " + aliases.get(0) + (aliases.size() > 1 ? ", ..." : "") + ")";
+  }
+
   public String getExtractionParamName() {
     return paramName + "#" + extractionSuggestions.size();
   }
 
   public String getUsedOnString() {
-    if ("Replay".equals(method)) {
-      if (!usages.isEmpty()) {
-        String amountString = "(" + usages.size() + ") ";
-        return amountString + usages.stream()
-            .map(TestElement::getName)
-            .collect(Collectors.joining(", "));
-      }
-
-      if (!appearances.isEmpty()) {
-        String amountString = "(" + appearances.size() + ") ";
-        return amountString + appearances.stream()
-            .map(SampleResult::getSampleLabel)
-            .collect(Collectors.joining(", "));
-      }
+    List<String> names = getUsedOnNames();
+    if (names.isEmpty() && "Replay".equals(method)) {
       return "Failed to generate used on string";
-    } else {
-      String amountString = "(" + replacementSuggestions.size() + ") ";
-      return amountString + replacementSuggestions.stream()
-          .map(r -> r.getUsage().getName())
-          .collect(Collectors.joining(", "));
     }
+    return "(" + names.size() + ") " + String.join(", ", names);
+  }
+
+  /**
+   * The names of the samplers that use the value, one per use.
+   */
+  public List<String> getUsedOnNames() {
+    if (!"Replay".equals(method)) {
+      return replacementSuggestions.stream()
+          .map(r -> r.getUsage().getName())
+          .collect(Collectors.toList());
+    }
+    return !usages.isEmpty()
+        ? usages.stream().map(TestElement::getName).collect(Collectors.toList())
+        : appearances.stream().map(SampleResult::getSampleLabel).collect(Collectors.toList());
   }
 
   public String getObtainedFromString() {
-    if ("Replay".equals(method)) {
-      if (!appearances.isEmpty()) {
-        String amountString = "(" + appearances.size() + ") ";
-        return amountString + appearances.stream()
-            .map(SampleResult::getSampleLabel)
-            .collect(Collectors.joining(", "));
-      }
+    List<String> names = getObtainedFromNames();
+    if (names.isEmpty() && "Replay".equals(method)) {
       return "Failed to generate obtained from string";
-    } else {
-      String amountString = "(" + extractionSuggestions.size() + ") ";
-      return amountString + extractionSuggestions.stream()
-          .map(r -> r.getSampler().getName())
-          .collect(Collectors.joining(", "));
     }
+    return "(" + names.size() + ") " + String.join(", ", names);
+  }
+
+  /**
+   * The names of the samplers the value is extracted from, one per extraction.
+   */
+  public List<String> getObtainedFromNames() {
+    if (!"Replay".equals(method)) {
+      return extractionSuggestions.stream()
+          .map(r -> r.getSampler().getName())
+          .collect(Collectors.toList());
+    }
+    return appearances.stream().map(SampleResult::getSampleLabel).collect(Collectors.toList());
   }
 
   public String getOriginalValueString() {

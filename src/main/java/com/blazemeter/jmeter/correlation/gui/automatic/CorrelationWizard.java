@@ -207,6 +207,7 @@ public class CorrelationWizard extends JDialog {
   }
 
   public void displaySuggestions() {
+    suggestionsPanel.refreshAppliedStatus();
     getContentPane().removeAll();
     getContentPane().add(suggestionsPanel);
     updateView(60);
