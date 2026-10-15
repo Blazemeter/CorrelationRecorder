@@ -281,12 +281,22 @@ public class ResultsExtraction implements AppearancesExtraction {
 
   @Override
   public Map<String, List<Appearances>> extractAppearanceMap(String filepath) {
-    appearanceMap = new HashMap<>();
     resultFileParser = getResultFileParser();
     List<SampleResult> results = resultFileParser.loadFromFile(new File(filepath), true);
-
-    extractAppearancesFromResults(results);
     resultFileParser = null;
+    return extractAppearanceMap(results);
+  }
+
+  /**
+   * Builds the appearance map from results already loaded, as {@link #extractAppearanceMap(String)}
+   * does after loading them from a file with this extraction's configuration.
+   *
+   * @param results the filtered results of a trace
+   * @return the appearances of each parameter
+   */
+  public Map<String, List<Appearances>> extractAppearanceMap(List<SampleResult> results) {
+    appearanceMap = new HashMap<>();
+    extractAppearancesFromResults(results);
     return appearanceMap;
   }
 

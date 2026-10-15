@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -228,13 +229,18 @@ public class JMeterElementUtils {
   }
 
   public static List<SampleResult> getSampleResultsFiltered(String filePath) {
+    return getSampleResultsFiltered(filePath, new Configuration());
+  }
+
+  public static List<SampleResult> getSampleResultsFiltered(String filePath,
+      Configuration configuration) {
     File file = new File(filePath);
     if (!file.exists()) {
       LOG.warn("File {} does not exist", filePath);
       return new ArrayList<>();
     }
 
-    return new ResultFileParser().loadFromFile(file, true);
+    return new ResultFileParser(configuration).loadFromFile(file, true);
   }
 
   private boolean isIgnoredParameter(String key) {
@@ -838,21 +844,26 @@ public class JMeterElementUtils {
       return report;
     }
 
-    List<SampleResult> originalResults = new ResultFileParser(configuration)
-        .loadFromFile(new File(originalTraceFilepath), false);
-
-    List<SampleResult> originalErrors = originalResults.stream()
-        .filter(result -> !result.isSuccessful())
-        .collect(Collectors.toList());
+    // Only the labels of the recorded errors are needed: the recording is read as a stream,
+    // without keeping its samples, and a recording that cannot be read has no errors, as before
+    Set<String> originalErrorLabels = new HashSet<>();
+    boolean recordingRead = new ResultFileParser(configuration).forEachResult(
+        new File(originalTraceFilepath), false, result -> {
+          if (!result.isSuccessful()) {
+            originalErrorLabels.add(result.getSampleLabel());
+          }
+        });
+    if (!recordingRead) {
+      originalErrorLabels.clear();
+    }
 
     List<SampleResult> replayErrors = collector.getErrors();
     Map<String, String> recordedNames =
         getRecordedNamesByName(getTestPlan(originalRecordingFilepath));
     List<SampleResult> newErrors = replayErrors.stream()
-        .filter(replayError -> originalErrors.stream()
-            .noneMatch(originalError -> originalError.getSampleLabel()
-                .equals(recordedNames.getOrDefault(replayError.getSampleLabel(),
-                    replayError.getSampleLabel()))))
+        .filter(replayError -> !originalErrorLabels.contains(
+            recordedNames.getOrDefault(replayError.getSampleLabel(),
+                replayError.getSampleLabel())))
         .collect(Collectors.toList());
 
     if (newErrors.isEmpty()) {
