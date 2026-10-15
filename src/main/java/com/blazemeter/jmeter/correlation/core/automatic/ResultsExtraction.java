@@ -27,7 +27,6 @@ import org.apache.jmeter.protocol.http.control.Cookie;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
-import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.util.JMeterUtils;
 import org.json.JSONArray;
@@ -357,10 +356,13 @@ public class ResultsExtraction implements AppearancesExtraction {
         } else if (hasParameters(headerValue)) {
           registerHeaderSubParameters(headerName, headerValue, sourceRequest, headerSource);
           continue;
-        } else if (equalsIgnoreCase(headerName, HTTPConstants.HEADER_AUTHORIZATION)) {
-          String token = headerValue.trim().split(" ")[1];
-          utils.addToMap(appearanceMap, headerName, token, sourceRequest,
-              "Header " + headerSource + " (Fields)");
+        } else if (HttpAuthorization.isCredentialsField(headerName)) {
+          // Only token68 credentials are a value to correlate; the scheme stays in the header
+          String token = HttpAuthorization.token68(headerValue);
+          if (token != null) {
+            utils.addToMap(appearanceMap, headerName, token, sourceRequest,
+                "Header " + headerSource + " (Fields)");
+          }
           continue;
         }
         utils.addToMap(appearanceMap, headerName, headerValue, sourceRequest,

@@ -11,7 +11,9 @@ public class Sources {
       = "Request Path Followed By Question Mark";
   public static final String REQUEST_PATH_NUMBER_FOLLOWED_BY_SLASH
       = "Request Path Followed By Slash";
+  public static final String REQUEST_PATH_ALPHANUMERIC_ID = "Request Path (Alphanumeric Id)";
   public static final String REQUEST_ARGUMENTS = "HTTP arguments";
+  public static final String REQUEST_ENTITY_ARGUMENT = "HTTP arguments (Entity)";
   public static final String REQUEST_URL = "URL";
   public static final String REQUEST_QUERY = "Request Query";
 
@@ -26,7 +28,9 @@ public class Sources {
         || REQUEST_PATH.equals(source)
         || REQUEST_PATH_NUMBER_FOLLOWED_BY_QUESTION_MARK.equals(source)
         || REQUEST_PATH_NUMBER_FOLLOWED_BY_SLASH.equals(source)
+        || REQUEST_PATH_ALPHANUMERIC_ID.equals(source)
         || REQUEST_ARGUMENTS.equals(source)
+        || REQUEST_ENTITY_ARGUMENT.equals(source)
         || REQUEST_URL.equals(source)
         || REQUEST_QUERY.equals(source);
   }
