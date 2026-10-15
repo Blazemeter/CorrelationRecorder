@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,6 +66,7 @@ import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
+import org.apache.jorphan.collections.SearchByClass;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -844,10 +846,13 @@ public class JMeterElementUtils {
         .collect(Collectors.toList());
 
     List<SampleResult> replayErrors = collector.getErrors();
+    Map<String, String> recordedNames =
+        getRecordedNamesByName(getTestPlan(originalRecordingFilepath));
     List<SampleResult> newErrors = replayErrors.stream()
         .filter(replayError -> originalErrors.stream()
             .noneMatch(originalError -> originalError.getSampleLabel()
-                .equals(replayError.getSampleLabel())))
+                .equals(recordedNames.getOrDefault(replayError.getSampleLabel(),
+                    replayError.getSampleLabel()))))
         .collect(Collectors.toList());
 
     if (newErrors.isEmpty()) {
@@ -1108,13 +1113,42 @@ public class JMeterElementUtils {
     List<HTTPSamplerBase> desiredSamplers = JMeterElementUtils.getCurrentSamplerList();
     for (SampleResult sampleResult : sampleResults) {
       for (HTTPSamplerBase samplerProxy : desiredSamplers) {
-        if (sampleResult.getSampleLabel().equals(samplerProxy.getName())) {
+        if (sampleResult.getSampleLabel().equals(getRecordedName(samplerProxy))) {
           filteredResults.add(sampleResult);
         }
       }
     }
 
     return filteredResults;
+  }
+
+  /**
+   * The name a sampler was recorded with, which labels its results in the recording. It is kept in
+   * the sampler's comment (ORIGINAL_NAME=), as its name can change: the correlation puts [var] in
+   * it, and the user can rename it.
+   */
+  public static String getRecordedName(TestElement te) {
+    String comment = te.getComment();
+    String crName = comment.substring(comment.lastIndexOf(";") + 1);
+    if (crName.contains("ORIGINAL_NAME")) {
+      return crName.substring(crName.indexOf("=") + 1);
+    }
+    return te.getName();
+  }
+
+  // The replay labels its results with the samplers' names, the recording with their recorded names
+  @VisibleForTesting
+  static Map<String, String> getRecordedNamesByName(HashTree testPlan) {
+    Map<String, String> recordedNames = new HashMap<>();
+    if (testPlan == null) {
+      return recordedNames;
+    }
+    SearchByClass<HTTPSamplerBase> search = new SearchByClass<>(HTTPSamplerBase.class);
+    testPlan.traverse(search);
+    for (HTTPSamplerBase sampler : search.getSearchResults()) {
+      recordedNames.putIfAbsent(sampler.getName(), getRecordedName(sampler));
+    }
+    return recordedNames;
   }
 
   public static String getRecordingResultFileName() {

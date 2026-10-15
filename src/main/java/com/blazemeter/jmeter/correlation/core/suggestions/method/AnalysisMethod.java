@@ -140,7 +140,7 @@ public class AnalysisMethod implements CorrelationMethod {
     Map<String, Integer> indexedSamplers = new HashMap<>();
     int index = 0;
     for (HTTPSamplerBase sampler : samplers) {
-      indexedSamplers.put(getCrName(sampler), index);
+      indexedSamplers.put(JMeterElementUtils.getRecordedName(sampler), index);
       index += 1;
     }
     return indexedSamplers;
@@ -150,19 +150,10 @@ public class AnalysisMethod implements CorrelationMethod {
     int childCount = node.getChildCount();
     Map<String, Integer> indexedChildren = new HashMap<>();
     for (int index = 0; index < childCount; index++) {
-      indexedChildren.put(getCrName(((TestElement) (((JMeterTreeNode)
+      indexedChildren.put(JMeterElementUtils.getRecordedName(((TestElement) (((JMeterTreeNode)
           node.getChildAt(index)).getUserObject()))), index);
     }
     return indexedChildren;
-  }
-
-  private static String getCrName(TestElement te) {
-    String comment = te.getComment();
-    String crName = comment.substring(comment.lastIndexOf(";") + 1);
-    if (crName.contains("ORIGINAL_NAME")) {
-      return crName.substring(crName.indexOf("=") + 1);
-    }
-    return te.getName();
   }
 
   private static JMeterTreeModel getCurrentJMeterTreeModel() {
