@@ -1,21 +1,24 @@
 package com.blazemeter.jmeter.correlation.core.automatic.extraction.location;
 
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.regex.Pattern;
 import org.apache.jmeter.samplers.SampleResult;
 
-public class HeaderExtractionStrategy implements ExtractionStrategy {
+public class HeaderExtractionStrategy extends IndexedExtractionStrategy {
+
+  private static final Pattern SET_COOKIE_LINES = Pattern.compile("(?m)^Set-Cookie.*");
 
   @Override
-  public Pair<LocationType, String> identifyLocationInResponse(SampleResult response,
-      String value) {
+  protected String searchableContent(SampleResult response) {
     // Logic to determine if the argument is in the headers
-    String headersWithoutSetCookies =
-        getCleanedResponseHeaders(String.valueOf(response.getResponseHeaders()));
-    return ExtractionStrategy.getLocationAndValue(headersWithoutSetCookies, value,
-        LocationType.HEADER);
+    return getCleanedResponseHeaders(String.valueOf(response.getResponseHeaders()));
+  }
+
+  @Override
+  protected LocationType locationType() {
+    return LocationType.HEADER;
   }
 
   private static String getCleanedResponseHeaders(String responseHeadersRaw) {
-    return responseHeadersRaw.replaceAll("(?m)^Set-Cookie.*", "");
+    return SET_COOKIE_LINES.matcher(responseHeadersRaw).replaceAll("");
   }
 }

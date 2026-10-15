@@ -5,10 +5,17 @@ import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.Body
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.CookieExtractionStrategy;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.ExtractionStrategy;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.HeaderExtractionStrategy;
+import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.IndexedExtractionStrategy;
 import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.LocationType;
+import com.blazemeter.jmeter.correlation.core.automatic.extraction.location.MultiPatternFinder;
+import com.blazemeter.jmeter.correlation.core.automatic.replacement.method.ReplacementString;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jmeter.samplers.SampleResult;
 
@@ -18,14 +25,36 @@ import org.apache.jmeter.samplers.SampleResult;
  */
 public class ResponseAnalyzer {
 
-  private final List<ExtractionStrategy> strategies = Arrays.asList(
+  private final List<IndexedExtractionStrategy> strategies = Arrays.asList(
       new HeaderExtractionStrategy(),
       new CookieExtractionStrategy(),
       new BodyExtractionStrategy()
   );
 
-  private HashMap<String, StructureType> resposeStructureTypeCache =
-      new HashMap<String, StructureType>();
+  // Keyed by the response itself, not by its label: two responses can share a label
+  private final Map<SampleResult, StructureType> bodyStructureTypes = new IdentityHashMap<>();
+
+  /**
+   * Gives the analyzer the values it is going to be asked about, so each part of a response is
+   * scanned once for all of them and their encoding variants, instead of once per value. The
+   * locations found are the same; a value it is asked about and was not given is searched
+   * directly.
+   *
+   * @param values the values the following calls to {@link #identifyArgumentLocation} will use
+   */
+  public void setCandidateValues(Collection<String> values) {
+    Set<String> candidates = new HashSet<>(values);
+    Set<String> variants = new HashSet<>();
+    for (String value : candidates) {
+      for (ReplacementString variant : ReplacementString.values()) {
+        variants.add(variant.applyFunction(value));
+      }
+    }
+    MultiPatternFinder finder = new MultiPatternFinder(variants);
+    for (IndexedExtractionStrategy strategy : strategies) {
+      strategy.setCandidates(candidates, finder);
+    }
+  }
 
   /**
    * Identifies the location of an argument in a response.
@@ -59,23 +88,15 @@ public class ResponseAnalyzer {
    * @see StructureType
    */
   public StructureType identifyStructureType(SampleResult response, LocationType locationType) {
-    StructureType structureType = StructureType.UNKNOWN;
-    String responseKey = response.getSampleLabel() + ":" + locationType;
-    if (resposeStructureTypeCache.containsKey(responseKey)) {
-      return resposeStructureTypeCache.get(responseKey);
-    } else {
-      if (locationType == LocationType.HEADER || locationType == LocationType.COOKIE) {
-        return StructureType.RAW_TEXT;
-      } else if (locationType == LocationType.BODY) {
-        if (JMeterElementUtils.isJson(response.getResponseDataAsString())) {
-          structureType = StructureType.JSON;
-        } else {
-          structureType = StructureType.RAW_TEXT;
-        }
-      }
+    if (locationType == LocationType.HEADER || locationType == LocationType.COOKIE) {
+      return StructureType.RAW_TEXT;
+    } else if (locationType != LocationType.BODY) {
+      return StructureType.UNKNOWN;
     }
-    resposeStructureTypeCache.put(responseKey, structureType);
-    return structureType;
+    // Parsing the body to tell JSON apart is costly, so it is done once per response
+    return bodyStructureTypes.computeIfAbsent(response,
+        r -> JMeterElementUtils.isJson(r.getResponseDataAsString()) ? StructureType.JSON
+            : StructureType.RAW_TEXT);
   }
 
 }

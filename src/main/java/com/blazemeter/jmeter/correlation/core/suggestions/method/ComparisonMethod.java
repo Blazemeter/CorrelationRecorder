@@ -22,9 +22,11 @@ import com.helger.commons.annotation.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,6 +54,9 @@ public class ComparisonMethod implements CorrelationMethod {
   private ComparisonContext context;
   private final HashMap<LocationType, StructureType> structureTypeCache =
       new HashMap<>();
+  // One analyzer for the whole search, so what a response yields (its cleaned headers, its body
+  // structure) is computed once and not again for every dynamic element
+  private ResponseAnalyzer analyzer = new ResponseAnalyzer();
 
   public ComparisonMethod() {
   }
@@ -122,6 +127,7 @@ public class ComparisonMethod implements CorrelationMethod {
     }
     this.context = (ComparisonContext) context;
     this.results = this.context.getRecordingSampleResults(); // Load the results once
+    this.analyzer = new ResponseAnalyzer();
 
     Map<String, List<Appearances>> recordingMap = this.context.getRecordingMap();
     Map<String, List<Appearances>> replayMap = this.context.getReplayMap();
@@ -132,11 +138,33 @@ public class ComparisonMethod implements CorrelationMethod {
     }
     DynamicElementHandler handler = new DynamicElementHandler(this.context);
     List<DynamicElement> dynamicElements = handler.getDynamicElements(recordingMap, replayMap);
+    analyzer.setCandidateValues(searchedValues(dynamicElements));
     dynamicElements.forEach(this::loadFromDynamicElements);
     if (getConfiguration().shouldUnifySuggestions()) {
       return SuggestionUnification.unify(suggestions, getConfiguration());
     }
     return suggestions;
+  }
+
+  /**
+   * The values the source search looks for: the request-origin appearances of every dynamic
+   * element, in the recording and in the replay, as {@link #addExtractorSuggestions} visits them.
+   *
+   * @param dynamicElements the elements whose sources are searched.
+   * @return the distinct values searched.
+   */
+  private static Set<String> searchedValues(List<DynamicElement> dynamicElements) {
+    Set<String> values = new HashSet<>();
+    for (DynamicElement element : dynamicElements) {
+      List<Appearances> appearances = new ArrayList<>(element.getOriginalAppearance());
+      appearances.addAll(element.getOtherAppearance());
+      for (Appearances appearance : appearances) {
+        if (Sources.isRequestSource(appearance.getSource())) {
+          values.add(appearance.getValue());
+        }
+      }
+    }
+    return values;
   }
 
   /**
@@ -231,7 +259,6 @@ public class ComparisonMethod implements CorrelationMethod {
     StructureType structureType;
     ExtractorFactory ef = new ExtractorFactory(context.getConfiguration());
     HashMap<String, Extractor> extractorCache = new HashMap<>();
-    ResponseAnalyzer analyzer = new ResponseAnalyzer();
     String name;
     Extractor extractor;
 
