@@ -49,6 +49,15 @@
 
     <module name="AvoidStarImport"/>
     <module name="IllegalImport"/>
+    <!-- Heavyweight AWT controls: they ignore JMeter's look and feel, draw above Swing content and
+    are hard to automate. Use their Swing counterparts (JLabel, JButton, JRadioButton...). -->
+    <module name="IllegalImport">
+      <property name="illegalClasses" value="java.awt.Button, java.awt.Canvas, java.awt.Checkbox,
+        java.awt.CheckboxGroup, java.awt.CheckboxMenuItem, java.awt.Choice, java.awt.FileDialog,
+        java.awt.Label, java.awt.List, java.awt.Menu, java.awt.MenuBar, java.awt.MenuItem,
+        java.awt.Panel, java.awt.PopupMenu, java.awt.ScrollPane, java.awt.Scrollbar,
+        java.awt.TextArea, java.awt.TextField"/>
+    </module>
     <module name="ImportOrder">
       <property name="option" value="top"/>
       <property name="separated" value="true"/>

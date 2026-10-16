@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Map;
 
 import junit.framework.TestCase;
 import org.apache.commons.lang3.StringUtils;
@@ -237,6 +238,25 @@ public class JMeterElementUtilsTest extends TestCase {
 
     checkTree(tree);
 
+  }
+
+  @Test
+  public void shouldMatchReplayLabelsWithTheRecordedNames() {
+    HTTPSamplerProxy correlated = new HTTPSamplerProxy();
+    correlated.setName("/api/carts/[carts#1]/items-102");
+    correlated.setComment("ORIGINAL_NAME USED BY CR, DON'T DELETE. Prepend addition comments if"
+        + " necessary.;ORIGINAL_NAME=/api/carts/cart_62704d1930ac/items-102");
+    HTTPSamplerProxy unchanged = new HTTPSamplerProxy();
+    unchanged.setName("/api/login-100");
+    HashTree testPlan = new HashTree();
+    testPlan.add(new TestPlan()).add(correlated);
+    testPlan.getTree(testPlan.list().iterator().next()).add(unchanged);
+
+    Map<String, String> recordedNames = JMeterElementUtils.getRecordedNamesByName(testPlan);
+
+    assertEquals("/api/carts/cart_62704d1930ac/items-102",
+        recordedNames.get("/api/carts/[carts#1]/items-102"));
+    assertEquals("/api/login-100", recordedNames.get("/api/login-100"));
   }
 
   private void checkTree(HashTree tree) {

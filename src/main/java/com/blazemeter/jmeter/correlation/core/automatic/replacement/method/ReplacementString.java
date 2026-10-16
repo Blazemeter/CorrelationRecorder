@@ -13,6 +13,9 @@ public enum ReplacementString {
       return URLDecoder.decode(s, StandardCharsets.UTF_8.name());
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
+    } catch (IllegalArgumentException e) {
+      // A literal '%' that is not a valid escape cannot be decoded: the value is used as it is
+      return s;
     }
   }),
   URL_ENCODE("__urlencode", s -> {

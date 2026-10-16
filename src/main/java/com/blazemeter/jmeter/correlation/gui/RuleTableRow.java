@@ -10,10 +10,10 @@ import com.blazemeter.jmeter.correlation.core.replacements.RegexCorrelationRepla
 import com.blazemeter.jmeter.correlation.gui.CorrelationRulePartPanel.Builder;
 import com.blazemeter.jmeter.correlation.gui.common.PlaceHolderTextField;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -315,7 +315,7 @@ public class RuleTableRow implements Serializable {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(isEnabled(), getVariableName(), getReplacementConfigurationPanel(),
+    return Objects.hash(isEnabled(), getVariableName(), getReplacementConfigurationPanel(),
         getExtractorConfigurationPanel());
   }
 

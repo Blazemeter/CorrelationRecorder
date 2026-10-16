@@ -2,15 +2,15 @@ package com.blazemeter.jmeter.correlation.gui.automatic;
 
 import com.blazemeter.jmeter.commons.SwingUtils;
 import java.awt.BorderLayout;
-import java.awt.Checkbox;
-import java.awt.CheckboxGroup;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.border.EmptyBorder;
 
 /**
@@ -31,7 +31,7 @@ public class CorrelationMethodPanel extends WizardStepPanel implements ActionLis
   private static final long serialVersionUID = 1L;
   private static final String CONTINUE = "continue";
 
-  private Checkbox correlateByRules;
+  private JRadioButton correlateByRules;
 
   public CorrelationMethodPanel(CorrelationWizard wizard) {
     super(wizard);
@@ -55,12 +55,18 @@ public class CorrelationMethodPanel extends WizardStepPanel implements ActionLis
     JPanel methodsPanel = new JPanel();
     methodsPanel.setLayout(new GridLayout(0, 1));
     methodsPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
-    CheckboxGroup methodGroup = new CheckboxGroup();
-    correlateByRules = new Checkbox("Existing Correlation Templates", methodGroup,
-        true);
+    // Swing radio buttons, not java.awt.Checkbox: heavyweight AWT components ignore the look and
+    // feel and get cut out by any lightweight component layered above them.
+    correlateByRules = new JRadioButton("Existing Correlation Templates", true);
+    correlateByRules.setName("correlateByRules");
+    JRadioButton correlateByComparison =
+        new JRadioButton("Automatic comparison and variable detection", false);
+    correlateByComparison.setName("correlateByComparison");
+    ButtonGroup methodGroup = new ButtonGroup();
+    methodGroup.add(correlateByRules);
+    methodGroup.add(correlateByComparison);
     methodsPanel.add(correlateByRules);
-    methodsPanel.add(new Checkbox("Automatic comparison and variable detection",
-        methodGroup, false));
+    methodsPanel.add(correlateByComparison);
     methodsPanel.setMaximumSize(new Dimension(500, 300));
     return methodsPanel;
   }
@@ -92,7 +98,7 @@ public class CorrelationMethodPanel extends WizardStepPanel implements ActionLis
 
   private void continueToNextStep() {
     this.getWizard().setVisible(false);
-    if (correlateByRules.getState()) {
+    if (correlateByRules.isSelected()) {
       displayTemplateSelectionPanel();
     } else {
       displaySuggestionsPanel();

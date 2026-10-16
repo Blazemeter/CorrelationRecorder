@@ -6,6 +6,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import com.blazemeter.jmeter.correlation.core.BaseCorrelationContext;
+import com.blazemeter.jmeter.correlation.core.automatic.Sources;
+import com.blazemeter.jmeter.correlation.core.automatic.replacement.method.ReplacementRegex;
 import com.blazemeter.jmeter.correlation.core.extractors.ResultField;
 import java.util.Collections;
 import java.util.function.Function;
@@ -118,6 +120,115 @@ public class RegexCorrelationReplacementTest {
     replacer.process(sampler, Collections.singletonList(headerManager), null, vars);
     assertThat(headerManager.getHeader(0))
         .isEqualTo(new Header(PARAM_NAME, "${" + REFERENCE_NAME + "}"));
+  }
+
+  @Test
+  public void shouldReplaceOnlyTheTokenOfBearerCredentials() {
+    assertCredentialsTokenReplaced("Authorization", "Bearer ");
+  }
+
+  @Test
+  public void shouldReplaceCredentialsTokenWhenFieldNameAndSchemeInLowerCase() {
+    // HTTP/2 sends field names in lower case; names and schemes are case-insensitive (RFC 9110)
+    assertCredentialsTokenReplaced("authorization", "bearer ");
+  }
+
+  @Test
+  public void shouldReplaceAlphanumericIdInTheMiddleOfThePath() {
+    String cartId = "cart_62704d1930ac";
+    vars.put(REFERENCE_NAME, cartId);
+    replacer = new RegexCorrelationReplacement<>(
+        ReplacementRegex.match("carts", Sources.REQUEST_PATH_ALPHANUMERIC_ID));
+    replacer.setVariableName(REFERENCE_NAME);
+    replacer.setContext(context);
+    sampler.setPath("/api/carts/" + cartId + "/items");
+    replacer.process(sampler, Collections.emptyList(), null, vars);
+    assertThat(sampler.getPath()).isEqualTo("/api/carts/${" + REFERENCE_NAME + "}/items");
+  }
+
+  @Test
+  public void shouldReferToThePathIdInTheNameAsAFixedReferenceAndKeepTheComment() {
+    // JMeter's recorder names a sampler after its path ("{prefix}{path}-{counter}"); ACR identifies
+    // the sampler by the ORIGINAL_NAME in its comment, which stays
+    String cartId = "cart_62704d1930ac";
+    String comment = "ORIGINAL_NAME USED BY CR, DON'T DELETE. Prepend addition comments if"
+        + " necessary.;ORIGINAL_NAME=/api/carts/" + cartId + "/items-102";
+    sampler.setComment(comment);
+    replacePathId("carts", cartId, "/api/carts/" + cartId + "/items",
+        "/api/carts/" + cartId + "/items-102");
+    assertThat(sampler.getPath()).isEqualTo("/api/carts/${" + REFERENCE_NAME + "}/items");
+    assertThat(sampler.getName()).isEqualTo("/api/carts/[" + REFERENCE_NAME + "]/items-102");
+    assertThat(sampler.getComment()).isEqualTo(comment);
+  }
+
+  @Test
+  public void shouldReplaceThePathIdBeforeTheRecordingNumberInTheName() {
+    replacePathId("orders", "ord_6301cb020b20", "/api/orders/ord_6301cb020b20",
+        "/api/orders/ord_6301cb020b20-35");
+    assertThat(sampler.getName()).isEqualTo("/api/orders/[" + REFERENCE_NAME + "]-35");
+  }
+
+  @Test
+  public void shouldReplaceAPathIdEndingInANumberInANameWithoutRecordingNumber() {
+    replacePathId("orders", "ord-1001", "/api/orders/ord-1001", "/api/orders/ord-1001");
+    assertThat(sampler.getName()).isEqualTo("/api/orders/[" + REFERENCE_NAME + "]");
+  }
+
+  @Test
+  public void shouldReplaceThePathIdInANameWithJMeterFreeFormat() {
+    // "#{counter,number,000} - #{path} (#{name})", JMeter's default free format
+    replacePathId("orders", "ord_6301cb020b20", "/api/orders/ord_6301cb020b20",
+        "035 - /api/orders/ord_6301cb020b20 (Lumen)");
+    assertThat(sampler.getName()).isEqualTo("035 - /api/orders/[" + REFERENCE_NAME + "] (Lumen)");
+  }
+
+  @Test
+  public void shouldTurnOnlyTheAddedReferencesOfANameIntoFixedOnes() {
+    assertThat(CorrelationReplacement.asNameReferences("/users/${user}/orders/ord_1",
+        "/users/${user}/orders/${__urlencode(${order})}"))
+        .isEqualTo("/users/${user}/orders/[__urlencode([order])]");
+  }
+
+  @Test
+  public void shouldReplaceTheEntityArgumentInTheRequestAndInTheReferer() {
+    // The Referer is not a candidate, but the rule of the argument it carries replaces it too
+    String orderId = "ord_6301cb020b20";
+    vars.put(REFERENCE_NAME, orderId);
+    replacer = new RegexCorrelationReplacement<>(
+        ReplacementRegex.match("order.id", Sources.REQUEST_ENTITY_ARGUMENT));
+    replacer.setVariableName(REFERENCE_NAME);
+    replacer.setContext(context);
+    sampler.setPath("/order.html");
+    sampler.addArgument("id", orderId);
+    HeaderManager headerManager = new HeaderManager();
+    headerManager.add(new Header("Referer", "http://localhost:8090/order.html?id=" + orderId));
+    replacer.process(sampler, Collections.singletonList(headerManager), null, vars);
+    assertThat(getFirstArgumentValue()).isEqualTo("${" + REFERENCE_NAME + "}");
+    assertThat(headerManager.getHeader(0).getValue())
+        .isEqualTo("http://localhost:8090/order.html?id=${" + REFERENCE_NAME + "}");
+  }
+
+  private void replacePathId(String concept, String id, String path, String name) {
+    vars.put(REFERENCE_NAME, id);
+    replacer = new RegexCorrelationReplacement<>(
+        ReplacementRegex.match(concept, Sources.REQUEST_PATH_ALPHANUMERIC_ID));
+    replacer.setVariableName(REFERENCE_NAME);
+    replacer.setContext(context);
+    sampler.setName(name);
+    sampler.setPath(path);
+    replacer.process(sampler, Collections.emptyList(), null, vars);
+  }
+
+  private void assertCredentialsTokenReplaced(String fieldName, String scheme) {
+    replacer = new RegexCorrelationReplacement<>(
+        ReplacementRegex.match("Authorization", Sources.REQUEST_HEADER_FIELDS));
+    replacer.setVariableName(REFERENCE_NAME);
+    replacer.setContext(context);
+    HeaderManager headerManager = new HeaderManager();
+    headerManager.add(new Header(fieldName, scheme + PARAM_VALUE));
+    replacer.process(sampler, Collections.singletonList(headerManager), null, vars);
+    assertThat(headerManager.getHeader(0))
+        .isEqualTo(new Header(fieldName, scheme + "${" + REFERENCE_NAME + "}"));
   }
 
   @Test

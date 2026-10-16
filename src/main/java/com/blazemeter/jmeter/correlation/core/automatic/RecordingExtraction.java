@@ -17,14 +17,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
-import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jorphan.collections.HashTree;
@@ -37,26 +36,30 @@ import org.slf4j.LoggerFactory;
 public class RecordingExtraction implements AppearancesExtraction {
 
   private static final Logger LOG = LoggerFactory.getLogger(RecordingExtraction.class);
+  private static final int MIN_ALPHANUMERIC_ID_LENGTH = 8;
+  private static final Pattern PATH_CONCEPT = Pattern.compile("[A-Za-z][A-Za-z_-]*");
+  private static final Pattern PATH_ID = Pattern.compile("[A-Za-z0-9_-]+");
+  private final Configuration configuration;
   private final JMeterElementUtils utils;
   private final Map<String, List<Appearances>> appearanceMap;
 
   public RecordingExtraction(Configuration configuration) {
-    this.utils = new JMeterElementUtils(configuration);
-    this.appearanceMap = new HashMap<>();
+    this(configuration, new HashMap<>());
   }
 
   public RecordingExtraction(Configuration configuration, Map<String, List<Appearances>> map) {
+    this.configuration = configuration;
     this.utils = new JMeterElementUtils(configuration);
     this.appearanceMap = map;
   }
 
   @VisibleForTesting
-  public Map<String, HTTPSamplerProxy> generateSamplerMap(String filepath) {
+  public Map<String, HTTPSamplerBase> generateSamplerMap(String filepath) {
     HashTree testPlan = JMeterElementUtils.getTestPlan(filepath);
     List<HTTPSamplerBase> requests = getRequests(testPlan, false);
-    Map<String, HTTPSamplerProxy> samplerMap = new HashMap<>();
+    Map<String, HTTPSamplerBase> samplerMap = new HashMap<>();
     for (HTTPSamplerBase sampler : requests) {
-      samplerMap.put(sampler.getName(), (HTTPSamplerProxy) sampler);
+      samplerMap.put(sampler.getName(), (HTTPSamplerBase) sampler);
     }
     return samplerMap;
   }
@@ -138,7 +141,20 @@ public class RecordingExtraction implements AppearancesExtraction {
     } else if (utils.isParameterized(value)) {
       LOG.warn("Parameterized value: '" + key + "'='" + value + "'");
     } else {
-      utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_ARGUMENTS);
+      addArgument(sampler, key, value, Sources.REQUEST_ARGUMENTS);
+    }
+  }
+
+  // A generic argument (id) is named after its request's entity (order.id), so the ids of
+  // different entities do not end up in one suggestion
+  private void addArgument(HTTPSamplerBase sampler, String key, String value, String source) {
+    String concept = configuration.isGenericParameter(key)
+        ? EntityArgument.concept(sampler.getPath()) : null;
+    if (concept == null) {
+      utils.addToMap(appearanceMap, key, value, sampler, source);
+    } else {
+      utils.addToMap(appearanceMap, EntityArgument.name(concept, key), value, sampler,
+          Sources.REQUEST_ENTITY_ARGUMENT);
     }
   }
 
@@ -203,6 +219,7 @@ public class RecordingExtraction implements AppearancesExtraction {
           }
         }
       }
+      extractAlphanumericPathIds(sampler, pathValues);
 
       if (containsQuestionMark) { // Extract query values
         String baseUrl = sampler.getUrl().toString();
@@ -212,13 +229,46 @@ public class RecordingExtraction implements AppearancesExtraction {
         params.forEach((key, values) -> {
           String value = !values.isEmpty() ? values.get(0) : "";
           if (!utils.canBeFiltered(key, value)) {
-            utils.addToMap(appearanceMap, key, value, sampler, Sources.REQUEST_QUERY);
+            addArgument(sampler, key, value, Sources.REQUEST_QUERY);
           }
         });
       }
     } catch (MalformedURLException e) {
       LOG.error("Unexpected error", e);
     }
+  }
+
+  /*
+   A REST path names a concept and then one of its ids: /carts/cart_62704d1930ac/items. Numeric ids
+   are handled above. An alphanumeric segment is a candidate only when it looks like an id, so the
+   generic words of a route (items, checkout, v2) never are; the comparison still keeps it only when
+   it comes from an earlier response and changes between the recording and the replay.
+   */
+  private void extractAlphanumericPathIds(HTTPSamplerBase sampler, String[] segments) {
+    for (int i = 0; i + 1 < segments.length; i++) {
+      String concept = segments[i];
+      String id = segments[i + 1];
+      if (isPathConcept(concept) && isAlphanumericId(id) && !utils.canBeFiltered(concept, id)) {
+        utils.addToMap(appearanceMap, concept, id, sampler, Sources.REQUEST_PATH_ALPHANUMERIC_ID);
+      }
+    }
+  }
+
+  @VisibleForTesting
+  static boolean isPathConcept(String segment) {
+    return PATH_CONCEPT.matcher(segment).matches();
+  }
+
+  /*
+   Letters and digits together, and long enough not to be a word: cart_62704d1930ac, a UUID, a hex
+   hash. A number alone is not one (the numeric rule covers it).
+   */
+  @VisibleForTesting
+  static boolean isAlphanumericId(String segment) {
+    return segment.length() >= MIN_ALPHANUMERIC_ID_LENGTH
+        && PATH_ID.matcher(segment).matches()
+        && segment.chars().anyMatch(Character::isDigit)
+        && segment.chars().anyMatch(Character::isLetter);
   }
 
   private List<HeaderManager> getHeaders(HashTree testPlanTree, boolean shouldFilter) {
@@ -241,15 +291,12 @@ public class RecordingExtraction implements AppearancesExtraction {
     for (JMeterProperty property : headerManager.getHeaders()) {
       Header header = (Header) property.getObjectValue();
       String name = header.getName();
-      String value = header.getValue();
-      String[] parsedAuthValue = value.trim().split(" ");
-      if (!StringUtils.equalsIgnoreCase(HTTPConstants.HEADER_AUTHORIZATION, name)
-          || parsedAuthValue.length < 2) {
-        return;
+      if (!HttpAuthorization.isCredentialsField(name)) {
+        continue;
       }
-
-      if (parsedAuthValue[0].equals("Bearer")) {
-        utils.addToMap(appearanceMap, name, parsedAuthValue[1], headerManager, "Bearer");
+      String token = HttpAuthorization.token68(header.getValue());
+      if (token != null) {
+        utils.addToMap(appearanceMap, name, token, headerManager, Sources.REQUEST_HEADER_FIELDS);
       }
     }
   }

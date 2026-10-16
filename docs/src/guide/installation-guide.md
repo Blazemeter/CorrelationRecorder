@@ -95,8 +95,15 @@ Here is a list of properties that you need to configure in order to use the Auto
    This is required for a proper and automatic correlation experience.
 2. Set deflate mode: If you plan to record in _Siebel CRM environments_, set the `httpclient4.deflate_relax_mode`
    property to true in your `user.properties` file. This will help you avoid `Unexpected end of input stream` errors.
-3. (Optional) Set the scope of post-processors to all: Set the `Sample.scope` property to `all` in your
-   `user.properties` file. This will help you to avoid the post-processors to only limit to the main sampler.
+
+You can check and set both properties from **Tools > BlazeMeter Auto Correlation Recorder > JMeter Properties...**.
+The screen marks each property that has the expected value and warns, with its effect, about each one that does not.
+**Apply and Restart JMeter** sets them in `user.properties`, replacing their previous values in that file, and
+restarts JMeter to load them.
+
+The extractors that the plugin adds to correlate apply to the main sample and its sub-samples, so they also find
+values in redirects and embedded resources. If you add an extractor by hand, set its **Apply to** option to
+**Main sample and sub-samples** for the same effect: no JMeter property changes that default.
 
 ### BlazeMeter Api Key
 

@@ -6,7 +6,7 @@ import com.blazemeter.jmeter.correlation.gui.CorrelationComponentsRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.collections.HashTree;
@@ -50,14 +50,14 @@ public class AnalysisContext implements CorrelationContext {
   }
 
   /**
-   * Fetches the HTTPSamplerProxy objects from the recording test plan.
+   * Fetches the HTTPSamplerBase objects from the recording test plan.
    *
-   * @return A list of HTTPSamplerProxy objects. If the recording test
+   * @return A list of HTTPSamplerBase objects. If the recording test
    * plan path is null or no test plan is found,
    * an empty list is returned.
    */
   @Override
-  public List<HTTPSamplerProxy> getRecordingSamplers() {
+  public List<HTTPSamplerBase> getRecordingSamplers() {
     HashTree testPlan = getRecordingHashTree();
     if (testPlan == null) {
       return new ArrayList<>();
@@ -66,7 +66,7 @@ public class AnalysisContext implements CorrelationContext {
     List<TestElement> samplerList = new ArrayList<>();
     JMeterElementUtils.extractHttpSamplers(testPlan, samplerList);
     return samplerList.stream()
-        .map(sampler -> (HTTPSamplerProxy) sampler)
+        .map(sampler -> (HTTPSamplerBase) sampler)
         .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
   }
 

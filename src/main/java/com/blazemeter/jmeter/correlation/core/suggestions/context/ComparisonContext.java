@@ -4,10 +4,12 @@ import com.blazemeter.jmeter.correlation.core.automatic.Appearances;
 import com.blazemeter.jmeter.correlation.core.automatic.Configuration;
 import com.blazemeter.jmeter.correlation.core.automatic.JMeterElementUtils;
 import com.blazemeter.jmeter.correlation.core.automatic.ResultsExtraction;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 
 
@@ -22,6 +24,11 @@ public class ComparisonContext implements CorrelationContext {
   private String replayTraceFilePath;
   private String recordingTestPlanPath;
   private Configuration configuration;
+  // The recording as getRecordingSampleResults last loaded it: the samples, the trace they came
+  // from (path, size and modification time) and the filter applied to them
+  private List<SampleResult> loadedRecording;
+  private String loadedRecordingKey;
+  private List<List<String>> loadedRecordingFilter;
 
   /**
    * Constructor for the ComparisonContext class that takes a Configuration object as
@@ -45,7 +52,26 @@ public class ComparisonContext implements CorrelationContext {
    */
   @Override
   public List<SampleResult> getRecordingSampleResults() {
-    return JMeterElementUtils.getSampleResultsFiltered(recordingTraceFilePath);
+    Configuration loadedWith = new Configuration();
+    List<SampleResult> results =
+        JMeterElementUtils.getSampleResultsFiltered(recordingTraceFilePath, loadedWith);
+    loadedRecording = results;
+    loadedRecordingKey = traceKey(recordingTraceFilePath);
+    loadedRecordingFilter = sampleFilter(loadedWith);
+    return results;
+  }
+
+  private static String traceKey(String filePath) {
+    if (filePath == null) {
+      return "";
+    }
+    File file = new File(filePath);
+    return file.getAbsolutePath() + "|" + file.length() + "|" + file.lastModified();
+  }
+
+  // What decides which samples a trace load keeps (see JMeterElementUtils.canBeFiltered)
+  private static List<List<String>> sampleFilter(Configuration configuration) {
+    return Arrays.asList(configuration.getIgnoredDomains(), configuration.getIgnoredFiles());
   }
 
   /**
@@ -53,7 +79,7 @@ public class ComparisonContext implements CorrelationContext {
    * @return a list of HTTPSamplerBase objects.
    */
   @Override
-  public List<HTTPSamplerProxy> getRecordingSamplers() {
+  public List<HTTPSamplerBase> getRecordingSamplers() {
     return new ArrayList<>();
   }
 
@@ -104,8 +130,14 @@ public class ComparisonContext implements CorrelationContext {
    * @return a map of parameter names to their appearances.
    */
   public Map<String, List<Appearances>> getRecordingMap() {
-    return new ResultsExtraction(configuration)
-        .extractAppearanceMap(recordingTraceFilePath);
+    ResultsExtraction extraction = new ResultsExtraction(configuration);
+    // The samples getRecordingSampleResults loaded are the ones this map needs when the trace has
+    // not changed and both filter samples alike: reusing them reads the trace once, not twice
+    if (loadedRecording != null && traceKey(recordingTraceFilePath).equals(loadedRecordingKey)
+        && loadedRecordingFilter.equals(sampleFilter(configuration))) {
+      return extraction.extractAppearanceMap(loadedRecording);
+    }
+    return extraction.extractAppearanceMap(recordingTraceFilePath);
   }
 
   /**

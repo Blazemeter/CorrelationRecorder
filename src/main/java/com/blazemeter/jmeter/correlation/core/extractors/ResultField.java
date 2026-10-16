@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.jmeter.extractor.RegexExtractor;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.util.Document;
@@ -23,7 +23,7 @@ public enum ResultField {
       SampleResult::getResponseMessage),
   BODY_UNESCAPED(JMeterUtils.getResString("regex_src_body_unescaped"),
       RegexExtractor.USE_BODY_UNESCAPED,
-      r -> StringEscapeUtils.unescapeHtml(r.getResponseDataAsString())),
+      r -> StringEscapeUtils.unescapeHtml4(r.getResponseDataAsString())),
   BODY_AS_A_DOCUMENT(JMeterUtils.getResString("regex_src_body_as_document"),
       RegexExtractor.USE_BODY_AS_DOCUMENT, r -> Document.getTextFromDocument(r.getResponseData())),
   BODY(JMeterUtils.getResString("regex_src_body"), RegexExtractor.USE_BODY,

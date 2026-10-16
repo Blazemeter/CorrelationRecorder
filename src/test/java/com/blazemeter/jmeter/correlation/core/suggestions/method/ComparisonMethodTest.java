@@ -96,11 +96,37 @@ public class ComparisonMethodTest extends ReplacementTest {
     mockGetReplayMap(path);
 
     Configuration configuration = new Configuration();
+    // the suggestions the comparison collects, before they are joined
+    configuration.setUnifySuggestions(false);
     mockGetRecordingResults(configuration);
     when(context.getConfiguration()).thenReturn(configuration);
 
     List<CorrelationSuggestion> suggestions = method.generateSuggestions(context);
     softly.assertThat(suggestions.size()).isEqualTo(24);
+  }
+
+  @Test
+  public void shouldJoinTheSuggestionsThatTakeOneValueFromOneResponse() throws IOException {
+    String path = TestUtils.getFolderPath("/xmlObjects", getClass());
+    mockGetRecordingMap(path);
+    mockGetReplayMap(path);
+    Configuration configuration = new Configuration();
+    mockGetRecordingResults(configuration);
+    when(context.getConfiguration()).thenReturn(configuration);
+
+    List<CorrelationSuggestion> suggestions = method.generateSuggestions(context);
+    // 24 collected: guids (one value) joins guid (two), under guids as guid is a generic name;
+    // attributes joins sort, which has all its values. csrftoken is the response's name for
+    // x-csrf-token
+    softly.assertThat(suggestions.size()).isEqualTo(22);
+    softly.assertThat(aliasesOf(suggestions, "x-csrf-token")).contains("csrftoken");
+    softly.assertThat(aliasesOf(suggestions, "guids")).contains("guid");
+    softly.assertThat(aliasesOf(suggestions, "sort")).contains("attributes");
+  }
+
+  private static List<String> aliasesOf(List<CorrelationSuggestion> suggestions, String name) {
+    return suggestions.stream().filter(s -> s.getParamName().equals(name))
+        .findFirst().map(CorrelationSuggestion::getAliases).orElse(Collections.emptyList());
   }
 
   private void mockGetReplayMap(String path) {
@@ -138,6 +164,7 @@ public class ComparisonMethodTest extends ReplacementTest {
     mockGetReplayMap(folderPath);
 
     Configuration configuration = new Configuration();
+    configuration.setUnifySuggestions(false);
     mockGetRecordingResults(configuration);
     when(context.getConfiguration()).thenReturn(configuration);
 

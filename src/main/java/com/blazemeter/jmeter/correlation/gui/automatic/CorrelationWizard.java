@@ -19,6 +19,7 @@ import com.blazemeter.jmeter.correlation.core.templates.Template.Builder;
 import com.blazemeter.jmeter.correlation.gui.analysis.CorrelationTemplatesSelectionPanel;
 import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.List;
@@ -151,7 +152,13 @@ public class CorrelationWizard extends JDialog {
     }
 
     pack();
+    Dimension packed = getSize();
     ComponentUtil.centerComponentInWindow(this, percentage == 0 ? 80 : percentage);
+    // a percentage of a small (or scaled) screen can be smaller than the content
+    if (getWidth() < packed.width || getHeight() < packed.height) {
+      setSize(Math.max(getWidth(), packed.width), Math.max(getHeight(), packed.height));
+      ComponentUtil.centerComponentInWindow(this);
+    }
     setVisible(true);
   }
 
@@ -200,6 +207,7 @@ public class CorrelationWizard extends JDialog {
   }
 
   public void displaySuggestions() {
+    suggestionsPanel.refreshAppliedStatus();
     getContentPane().removeAll();
     getContentPane().add(suggestionsPanel);
     updateView(60);
@@ -297,6 +305,10 @@ public class CorrelationWizard extends JDialog {
   }
 
   protected ReplayReport getCurrentTestPlanReplayErrors() {
+    if (history == null || !history.hasRecording()) {
+      throw new IllegalStateException("There is no recording to replay. Record the flow with the "
+          + "bzm - Auto Correlation Recorder first.");
+    }
     String currentTestPlan = JMeterElementUtils.saveTestPlanSnapshot();
     String recordingTraceFilepath = history.getOriginalRecordingTrace();
     LOG.info("Current Test Plan: {}", currentTestPlan);

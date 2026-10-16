@@ -20,18 +20,21 @@ import com.helger.commons.annotation.VisibleForTesting;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.swing.DefaultRowSorter;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -41,11 +44,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import org.apache.jmeter.gui.util.JMeterToolBar;
@@ -132,12 +137,37 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     JLabel infoLabel = new JLabel("Select which suggestions you want to apply and "
         + "click on Correlate");
     infoLabel.setBorder(new EmptyBorder(5, 0, 5, 0));
-    infoLabel.setVerticalAlignment(Label.CENTER);
-    infoLabel.setVerticalTextPosition(Label.CENTER);
+    infoLabel.setVerticalAlignment(SwingConstants.CENTER);
+    infoLabel.setVerticalTextPosition(SwingConstants.CENTER);
     Font font = infoLabel.getFont();
     infoLabel.setFont(font.deriveFont(font.getStyle() | java.awt.Font.BOLD));
 
-    table = new JTable();
+    table = new JTable() {
+      @Override
+      public String getToolTipText(MouseEvent event) {
+        // "Used on" and "Obtained from" are cut in the cell: the tooltip lists them by state, as
+        // it lists the aliases of a name
+        int row = rowAtPoint(event.getPoint());
+        int column = columnAtPoint(event.getPoint());
+        String tooltip = row < 0 || column < 0 ? null
+            : ((SuggestionsTableModel) getModel()).getToolTipAt(convertRowIndexToModel(row),
+                convertColumnIndexToModel(column));
+        return tooltip != null ? tooltip : super.getToolTipText(event);
+      }
+
+      // The Name cell holds the name, which is what is read and sorted; it is drawn with its first
+      // alias, by the look and feel's renderer
+      @Override
+      public TableCellRenderer getCellRenderer(int row, int column) {
+        TableCellRenderer renderer = super.getCellRenderer(row, column);
+        if (convertColumnIndexToModel(column) != 2) {
+          return renderer;
+        }
+        return (t, value, selected, focused, r, c) -> renderer.getTableCellRendererComponent(t,
+            ((SuggestionsTableModel) getModel()).getDisplayNameAt(convertRowIndexToModel(r)),
+            selected, focused, r, c);
+      }
+    };
     table.setName("suggestionsTable");
     table.setModel(new SuggestionsTableModel());
     table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
@@ -153,11 +183,25 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     table.setRowSelectionAllowed(true);
     table.setAutoCreateRowSorter(true);
     table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-    table.addMouseListener(new TextBoxPopupDialog.TextBoxDoubleClick(table));
+    // A double click shows the cell in full, and a name with every alias; the row is the model's,
+    // as the table can be sorted
+    table.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        int row = table.rowAtPoint(e.getPoint());
+        int column = table.columnAtPoint(e.getPoint());
+        if (e.getClickCount() == 2 && row >= 0 && column >= 0) {
+          new TextBoxPopupDialog(((SuggestionsTableModel) table.getModel()).getDetailAt(
+              table.convertRowIndexToModel(row), table.convertColumnIndexToModel(column)), false);
+        }
+      }
+    });
 
     int selectionColumn = 0;
     TableColumn tc = table.getColumnModel().getColumn(selectionColumn);
     tc.setHeaderRenderer(new SelectAllHeader(table, selectionColumn));
+    // a click on that header selects or clears the rows: it must not sort them too
+    ((DefaultRowSorter<?, ?>) table.getRowSorter()).setSortable(selectionColumn, false);
 
     JTableHeader header = table.getTableHeader();
     header.setFont(header.getFont().deriveFont(14f));
@@ -249,6 +293,14 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
   public void loadSuggestions(List<CorrelationSuggestion> suggestions) {
     SuggestionsTableModel model = (SuggestionsTableModel) table.getModel();
     model.loadSuggestions(suggestions);
+  }
+
+  /**
+   * Works out again which suggestions the test plan already has (after applying, or when the
+   * panel is shown again).
+   */
+  public void refreshAppliedStatus() {
+    ((SuggestionsTableModel) table.getModel()).refreshAppliedStatus();
   }
 
   public List<CorrelationSuggestion> exportSelectedSuggestions() {
@@ -459,6 +511,9 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     private final List<SuggestionItem> suggestionList = new ArrayList<>();
     private final Map<Template, List<CorrelationSuggestion>> suggestionsMap =
         new HashMap<>();
+    private final Map<CorrelationSuggestion, SuggestionAppliedStatus.Cell[]> appliedCells =
+        new IdentityHashMap<>();
+    private SuggestionAppliedStatus appliedStatus;
 
     @Override
     public String getColumnName(int column) {
@@ -500,11 +555,72 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
         case 3:
           return suggestion.getOriginalValueString();
         case 4:
-          return suggestion.getUsedOnString();
+          return appliedCells(suggestion)[0].getText();
         case 5:
-          return suggestion.getObtainedFromString();
+          return appliedCells(suggestion)[1].getText();
         default:
           return "N/A";
+      }
+    }
+
+    /**
+     * The "Used on" and "Obtained from" cells split into what is applied in the test plan and
+     * what is pending, worked out once per load or refresh.
+     */
+    private SuggestionAppliedStatus.Cell[] appliedCells(CorrelationSuggestion suggestion) {
+      return appliedCells.computeIfAbsent(suggestion, s -> {
+        if (appliedStatus == null) {
+          appliedStatus = SuggestionAppliedStatus.ofCurrentPlan();
+        }
+        return new SuggestionAppliedStatus.Cell[] {appliedStatus.usedOn(s),
+            appliedStatus.obtainedFrom(s)};
+      });
+    }
+
+    String getToolTipAt(int rowIndex, int columnIndex) {
+      if (rowIndex < 0 || rowIndex >= suggestionList.size()) {
+        return null;
+      }
+      CorrelationSuggestion suggestion = suggestionList.get(rowIndex).getSuggestion();
+      if (columnIndex == 2) {
+        return aliasesTooltip(suggestion);
+      }
+      if (columnIndex != 4 && columnIndex != 5) {
+        return null;
+      }
+      return appliedCells(suggestion)[columnIndex - 4].getTooltip();
+    }
+
+    String getDisplayNameAt(int rowIndex) {
+      return suggestionList.get(rowIndex).getSuggestion().getDisplayName();
+    }
+
+    String getDetailAt(int rowIndex, int columnIndex) {
+      if (columnIndex == 2) {
+        CorrelationSuggestion suggestion = suggestionList.get(rowIndex).getSuggestion();
+        List<String> aliases = suggestion.getAliases();
+        return aliases.isEmpty() ? suggestion.getParamName()
+            : suggestion.getParamName() + "\n\nAliases:\n" + String.join("\n", aliases);
+      }
+      return String.valueOf(getValueAt(rowIndex, columnIndex));
+    }
+
+    private static String aliasesTooltip(CorrelationSuggestion suggestion) {
+      List<String> aliases = suggestion.getAliases();
+      if (aliases.isEmpty()) {
+        return null;
+      }
+      StringBuilder tooltip = new StringBuilder("<html><b>aliases (" + aliases.size() + ")</b>");
+      aliases.forEach(alias -> tooltip.append("<br>&nbsp;&nbsp;").append(alias
+          .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")));
+      return tooltip.append("</html>").toString();
+    }
+
+    void refreshAppliedStatus() {
+      appliedStatus = null;
+      appliedCells.clear();
+      if (!suggestionList.isEmpty()) {
+        fireTableRowsUpdated(0, suggestionList.size() - 1);
       }
     }
 
@@ -521,6 +637,8 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
       if (columnIndex == 0) {
         suggestionList.get(rowIndex).setSelected((boolean) aValue);
+        // the select-all header follows the rows through this event
+        fireTableCellUpdated(rowIndex, columnIndex);
       } else {
         super.setValueAt(aValue, rowIndex, columnIndex);
       }
@@ -541,6 +659,8 @@ public class CorrelationSuggestionsPanel extends WizardStepPanel implements Acti
     public void loadSuggestions(List<CorrelationSuggestion> suggestions) {
       suggestionList.clear();
       suggestions.forEach(suggestion -> suggestionList.add(new SuggestionItem(suggestion)));
+      appliedStatus = null;
+      appliedCells.clear();
       fireTableDataChanged();
     }
 

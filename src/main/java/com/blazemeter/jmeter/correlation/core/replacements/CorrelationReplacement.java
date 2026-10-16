@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.engine.util.CompoundVariable;
@@ -64,6 +66,10 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
    * Functions are wrapped in ${ and }.
    */
   protected static final String FUNCTION_REF_SUFFIX = "}"; //$NON-NLS-1$
+  // A word of a name, or the spaces between two
+  private static final Pattern NAME_WORD = Pattern.compile("(\\S+)|\\s+");
+  // The number JMeter appends to a recorded request's name
+  private static final Pattern RECORDING_NUMBER = Pattern.compile("(.+)(-\\d+)");
 
   private static final Logger LOG = LoggerFactory.getLogger(CorrelationReplacement.class);
 
@@ -168,9 +174,13 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
 
   private JMeterProperty replaceProperty(JMeterProperty prop, JMeterVariables vars) {
     if (prop instanceof StringProperty) {
-      // Must not convert TestElement.gui_class etc
-      if (!prop.getName().equals(TestElement.GUI_CLASS)
-          && !prop.getName().equals(TestElement.TEST_CLASS)) {
+      // Must not convert TestElement.gui_class etc, nor the comments: they hold the ORIGINAL_NAME
+      // that identifies a recorded sampler.
+      if (prop.getName().equals(TestElement.NAME)) {
+        prop = replaceName(prop, vars);
+      } else if (!prop.getName().equals(TestElement.GUI_CLASS)
+          && !prop.getName().equals(TestElement.TEST_CLASS)
+          && !prop.getName().equals(TestElement.COMMENTS)) {
         prop = replaceSimpleProp(prop, vars);
       }
     } else if (prop instanceof NumberProperty) {
@@ -219,6 +229,74 @@ public abstract class CorrelationReplacement<T extends CorrelationContext> exten
     } else {
       return new StringProperty(prop.getName(), newImput);
     }
+  }
+
+  /**
+   * The name of a recorded sampler is made from its URL, so it gets the same replacements, but as
+   * {@code [var]} instead of {@code ${var}}: the name, which is the label in the results and the
+   * reports, stays the same in every run. Changing {@code [var]} to {@code ${var}} makes it follow
+   * the value. The name is replaced word by word, as JMeter can put the path between other words
+   * ("#{counter} - #{path} (#{name})"), and each word without the number JMeter appends to it when
+   * it numbers the requests (/api/orders/ord_6301cb020b20-35).
+   */
+  private JMeterProperty replaceName(JMeterProperty prop, JMeterVariables vars) {
+    String name = prop.getStringValue();
+    if (name == null || name.isEmpty()) {
+      return prop;
+    }
+    StringBuilder replaced = new StringBuilder();
+    Matcher word = NAME_WORD.matcher(name);
+    while (word.find()) {
+      replaced.append(word.group(1) != null ? replaceNameWord(word.group(1), vars) : word.group());
+    }
+    String newName = asNameReferences(name, replaced.toString());
+    return newName.equals(name) ? prop : new StringProperty(prop.getName(), newName);
+  }
+
+  private String replaceNameWord(String word, JMeterVariables vars) {
+    Matcher numbered = RECORDING_NUMBER.matcher(word);
+    if (numbered.matches()) {
+      String replaced = replaceString(numbered.group(1), vars);
+      if (!replaced.equals(numbered.group(1))) {
+        return replaced + numbered.group(2);
+      }
+    }
+    return replaceString(word, vars);
+  }
+
+  /**
+   * Turns the references the replacements added to a name, {@code ${var}}, and those nested in
+   * them, into {@code [var]}. The ones the name already had are kept.
+   */
+  static String asNameReferences(String original, String name) {
+    StringBuilder result = new StringBuilder();
+    int from = 0;
+    int start = name.indexOf(FUNCTION_REF_PREFIX);
+    while (start >= 0) {
+      int end = closingBrace(name, start + FUNCTION_REF_PREFIX.length());
+      if (end < 0) {
+        break;
+      }
+      String reference = name.substring(start, end + 1);
+      result.append(name, from, start).append(original.contains(reference) ? reference
+          : "[" + asNameReferences("", reference.substring(FUNCTION_REF_PREFIX.length(),
+          reference.length() - FUNCTION_REF_SUFFIX.length())) + "]");
+      from = end + 1;
+      start = name.indexOf(FUNCTION_REF_PREFIX, from);
+    }
+    return result.append(name.substring(from)).toString();
+  }
+
+  private static int closingBrace(String text, int from) {
+    int depth = 1;
+    for (int i = from; i < text.length(); i++) {
+      if (text.charAt(i) == '{') {
+        depth++;
+      } else if (text.charAt(i) == '}' && --depth == 0) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   /**
