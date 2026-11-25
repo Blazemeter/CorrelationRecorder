@@ -126,11 +126,14 @@
       <groupId>org.xmlunit</groupId>
       <artifactId>xmlunit-matchers</artifactId>
       <version>2.2.1</version>
+      <!-- only tests use it; at compile scope the shaded jar would bundle it -->
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.xmlunit</groupId>
       <artifactId>xmlunit-legacy</artifactId>
       <version>2.6.3</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.json</groupId>
@@ -231,26 +234,6 @@
             </systemPropertyVariables>
           </configuration>
         </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-shade-plugin</artifactId>
-          <version>3.2.1</version>
-          <executions>
-            <execution>
-              <phase>package</phase>
-              <goals>
-                <goal>shade</goal>
-              </goals>
-              <configuration>
-                <artifactSet>
-                  <includes>
-                    <include>com.blazemeter:jmeter-bzm-commons</include>
-                  </includes>
-                </artifactSet>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -281,7 +264,75 @@
             </goals>
           </execution>
         </executions>
-      </plugin>      
+      </plugin>
+      <!--
+        The plugin is distributed as a single jar: every compile/runtime dependency is bundled and
+        relocated under com.blazemeter.jmeter.correlation.shaded, so no extra jar goes to JMeter's
+        lib/ and whatever version other plugins leave there (JMeter loads lib/ before lib/ext/)
+        cannot replace ours. Provided dependencies (JMeter and the libraries it ships) are not
+        bundled.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.apache.jmeter:*</exclude>
+                </excludes>
+              </artifactSet>
+              <relocations>
+                <!--
+                  Other BlazeMeter plugins put their own jmeter-bzm-commons jar in JMeter's lib/,
+                  which JMeter loads before lib/ext/, so an unrelocated copy would lose to whatever
+                  version they ship. Its theme icons are looked up with absolute paths
+                  (/light-theme, /dark-theme) and stay at the jar root.
+                -->
+                <relocation>
+                  <pattern>com.blazemeter.jmeter.commons</pattern>
+                  <shadedPattern>com.blazemeter.jmeter.correlation.shaded.com.blazemeter.jmeter.commons</shadedPattern>
+                </relocation>
+                <!-- earlier releases shipped these jars to lib/ too, so old copies may be there -->
+                <relocation>
+                  <pattern>org.json</pattern>
+                  <shadedPattern>com.blazemeter.jmeter.correlation.shaded.org.json</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.maven</pattern>
+                  <shadedPattern>com.blazemeter.jmeter.correlation.shaded.org.apache.maven</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.codehaus.plexus</pattern>
+                  <shadedPattern>com.blazemeter.jmeter.correlation.shaded.org.codehaus.plexus</shadedPattern>
+                </relocation>
+              </relocations>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
