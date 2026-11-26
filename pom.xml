@@ -32,6 +32,9 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <jmeter.version>5.5</jmeter.version>
+    <!-- compile-time only: at runtime JMeter's own Jackson is used (2.13.3 in 5.5), so only API
+    present there may be used. 2.18.12 is the oldest line with no known advisories. -->
+    <jackson.version>2.18.12</jackson.version>
   </properties>
 
   <scm>
@@ -46,6 +49,20 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- keeps jackson-core and jackson-annotations, which arrive through JMeter, on the same
+      version as jackson-databind -->
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -89,7 +106,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.13.0</version>
+      <version>${jackson.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -101,13 +118,14 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.11.1</version>
+      <version>3.27.7</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-swing-junit</artifactId>
-      <version>3.9.2</version>
+      <!-- 3.9.2 was built against assertj-core 3.11 and fails with NoSuchMethodError on 3.27 -->
+      <version>3.17.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -135,7 +153,7 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20190722</version>
+      <version>20260814</version>
     </dependency>
     <dependency>
       <groupId>us.abstracta.jmeter</groupId>
@@ -172,8 +190,9 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.9</version>
-      <!-- shipped by JMeter (1.9 in 5.5) -->
+      <!-- shipped by JMeter (1.9 in 5.5), which is what runs; compiled against 1.10.0, the first
+      release without known advisories, so only API present in 1.9 may be used -->
+      <version>1.10.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -184,7 +203,9 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.12.0</version>
+      <!-- shipped by JMeter (3.12.0 in 5.5), which is what runs; compiled against 3.18.0, the first
+      release without known advisories, so only API present in 3.12.0 may be used -->
+      <version>3.18.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

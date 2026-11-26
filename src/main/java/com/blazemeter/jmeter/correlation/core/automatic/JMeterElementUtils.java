@@ -402,8 +402,8 @@ public class JMeterElementUtils {
         extractParametersFromJson(json.getJSONObject(key), parameterMap, sampler, source);
       } else if (value instanceof JSONArray) {
         extractParametersFromJsonArray(json.getJSONArray(key), parameterMap, sampler, key, source);
-      } else if (value instanceof Integer || value instanceof Double || value instanceof Long
-          || value instanceof Float) {
+      } else if (value instanceof Number) {
+        // org.json parses decimals as BigDecimal and integers beyond long as BigInteger
         addToMap(parameterMap, key, value.toString(), sampler,
             source.equals(Sources.RESPONSE_BODY_JSON) ? Sources.RESPONSE_BODY_JSON_NUMERIC
                 : Sources.REQUEST_BODY_JSON_NUMERIC);
