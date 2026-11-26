@@ -1,6 +1,10 @@
 ---
-prev: /guide/after-recording.md
-next: /guide/before-recording.md
+prev:
+  text: "Automatic Correlation methods"
+  link: /guide/after-recording.md
+next:
+  text: "Before the Recording"
+  link: /guide/before-recording.md
 ---
 
 # Configuring the Auto Correlation Recorder Plugin

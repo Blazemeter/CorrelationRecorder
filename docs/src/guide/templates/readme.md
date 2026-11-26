@@ -1,5 +1,7 @@
 ---
-next: /guide/templates/create.md
+next:
+  text: "Create Template"
+  link: /guide/templates/create.md
 ---
 
 # Correlation Templates

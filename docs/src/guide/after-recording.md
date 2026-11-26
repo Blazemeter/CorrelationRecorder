@@ -1,6 +1,10 @@
 ---
-next: /guide/analysis-configuration.md
-prev: /guide/correlation-process.md
+next:
+  text: "Configuring the Auto Correlation Recorder Plugin"
+  link: /guide/analysis-configuration.md
+prev:
+  text: "Correlation Process"
+  link: /guide/correlation-process.md
 ---
 
 # Automatic Correlation methods

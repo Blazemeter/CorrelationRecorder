@@ -1,6 +1,10 @@
 ---
-prev: /guide/templates/
-next: /guide/custom-extensions/
+prev:
+  text: "Correlation Templates"
+  link: /guide/templates/
+next:
+  text: "Custom Extensions"
+  link: /guide/custom-extensions/
 ---
 # Create Template
 The only requisite for creating a Template is having Correlation Rules on it. These can be added to the Plugin by:

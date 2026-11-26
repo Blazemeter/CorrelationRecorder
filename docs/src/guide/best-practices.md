@@ -1,6 +1,10 @@
 ---
-next: /guide/troubleshooting.md
-prev: /guide/concepts.md
+next:
+  text: "Troubleshooting"
+  link: /guide/troubleshooting.md
+prev:
+  text: "Concepts"
+  link: /guide/concepts.md
 ---
 
 # Best Practices
