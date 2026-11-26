@@ -1,7 +1,11 @@
 ---
-sidebar: auto
-next: /guide/correlation-process.md
-prev: /guide/
+sidebar: heading
+next:
+  text: "Correlation Process"
+  link: /guide/correlation-process.md
+prev:
+  text: "User Guide"
+  link: /guide/
 ---
 
 # Installation and Configuration Guide

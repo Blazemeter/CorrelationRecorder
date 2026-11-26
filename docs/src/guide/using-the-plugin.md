@@ -1,6 +1,10 @@
 ---
-next: /guide/correlation-process.md
-prev: /guide/installation-guide.md
+next:
+  text: "Correlation Process"
+  link: /guide/correlation-process.md
+prev:
+  text: "Installing the Plugin"
+  link: /guide/installation-guide.md
 ---
 
 # Usage

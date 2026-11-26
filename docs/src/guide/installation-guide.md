@@ -1,6 +1,10 @@
 ---
-next: /guide/using-the-plugin.md
-prev: /guide/
+next:
+  text: "Usage"
+  link: /guide/using-the-plugin.md
+prev:
+  text: "User Guide"
+  link: /guide/
 ---
 
 # Installing the Plugin
