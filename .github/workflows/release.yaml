@@ -21,12 +21,13 @@ jobs:
         run: mvn --batch-mode --no-transfer-progress versions:set -DnewVersion=${{ env.release_version }} --settings .github/settings.xml
       - name: package release
         run: mvn --batch-mode --no-transfer-progress clean package -DskipTests -Dkeytool.directory=${{ env.JAVA_HOME }}/bin -Dproxy.cert.directory=${{ runner.temp }} --settings .github/settings.xml
+      # Only the shaded jar: it bundles every dependency. The Plugins Manager publish action takes
+      # any other release asset as a lib, so target/original-*.jar must not be uploaded.
       - name: Upload built jar into release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/*.jar
-          file_glob: true
+          file: target/jmeter-bzm-correlation-recorder-${{ env.release_version }}.jar
           tag: ${{ github.ref }}
       - name: publish to Nexus
         run: .github/maven-central-deploy.sh
