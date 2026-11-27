@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -44,6 +46,7 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.collections.HashTree;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -257,6 +260,23 @@ public class JMeterElementUtilsTest extends TestCase {
     assertEquals("/api/carts/cart_62704d1930ac/items-102",
         recordedNames.get("/api/carts/[carts#1]/items-102"));
     assertEquals("/api/login-100", recordedNames.get("/api/login-100"));
+  }
+
+  @Test
+  public void shouldExtractDecimalAndLargeIntegerJsonValuesAsNumeric() {
+    // org.json parses decimals as BigDecimal and integers beyond long as BigInteger
+    HTTPSamplerProxy sampler = new HTTPSamplerProxy();
+    sampler.setName("/api/orders-1");
+    Map<String, List<Appearances>> parameters = new HashMap<>();
+
+    new JMeterElementUtils().extractParametersFromJson(
+        new JSONObject("{\"price\":1234.56,\"total\":12345678901234567890}"), parameters, sampler,
+        Sources.REQUEST_BODY_JSON);
+
+    assertEquals("1234.56", parameters.get("price").get(0).getValue());
+    assertEquals(Sources.REQUEST_BODY_JSON_NUMERIC, parameters.get("price").get(0).getSource());
+    assertEquals("12345678901234567890", parameters.get("total").get(0).getValue());
+    assertEquals(Sources.REQUEST_BODY_JSON_NUMERIC, parameters.get("total").get(0).getSource());
   }
 
   private void checkTree(HashTree tree) {
