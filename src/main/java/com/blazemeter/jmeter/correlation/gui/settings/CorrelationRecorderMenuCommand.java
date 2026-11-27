@@ -12,8 +12,8 @@ import org.apache.jmeter.gui.action.ActionRouter;
 import org.apache.jmeter.gui.plugin.MenuCreator;
 
 /**
- * Tools > Auto Correlation Recorder: the plugin's settings in JMeter's menu, and the command that
- * opens them.
+ * Tools &gt; Auto Correlation Recorder: the plugin's settings in JMeter's menu, and the command
+ * that opens them.
  */
 public class CorrelationRecorderMenuCommand extends AbstractActionWithNoRunningTest
     implements MenuCreator {

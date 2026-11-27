@@ -1,0 +1,21 @@
+name: ci
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          # Same JDK as release.yaml: JDK 8's javadoc fails on doclint errors
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+      # The release profile adds the enforcer, sources and javadoc that the
+      # Maven Central deploy runs; gpg.skip leaves out only the signing.
+      - name: build as the release does
+        run: mvn --batch-mode --no-transfer-progress verify -Prelease -Dgpg.skip

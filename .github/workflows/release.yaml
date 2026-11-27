@@ -19,6 +19,10 @@ jobs:
         run: .github/semver-check.sh ${{ env.release_version }}
       - name: set maven project version
         run: mvn --batch-mode --no-transfer-progress versions:set -DnewVersion=${{ env.release_version }} --settings .github/settings.xml
+      # Runs what the Maven Central deploy runs (enforcer, sources, javadoc),
+      # without signing, so a failure stops here before the jar is uploaded.
+      - name: check release build
+        run: mvn --batch-mode --no-transfer-progress verify -Prelease -Dgpg.skip -DskipTests --settings .github/settings.xml
       - name: package release
         run: mvn --batch-mode --no-transfer-progress clean package -DskipTests -Dkeytool.directory=${{ env.JAVA_HOME }}/bin -Dproxy.cert.directory=${{ runner.temp }} --settings .github/settings.xml
       - name: Upload built jar into release
