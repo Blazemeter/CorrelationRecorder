@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en-US" data-appearance="auto">
+  <head>
+    <script>
+      ;(() => {
+        const root = document.documentElement
+        // appearance is injected into this template at build time, so the very
+        // first paint can follow the site config instead of only the browser
+        // preferences and the storage
+        const appearance = root.dataset.appearance || 'auto'
+        const prefersDark = window.matchMedia(
+          '(prefers-color-scheme: dark)',
+        ).matches
+        let isDark = false
+
+        if (appearance === 'force-dark') {
+          isDark = true
+        } else if (appearance === 'force-auto') {
+          isDark = prefersDark
+        } else if (appearance === 'light') {
+          isDark = false
+        } else {
+          const fallback = appearance === 'dark' ? 'dark' : 'auto'
+          const preference =
+            localStorage.getItem('vuepress-color-scheme') || fallback
+
+          isDark = preference === 'auto' ? prefersDark : preference === 'dark'
+        }
+
+        root.dataset.theme = isDark ? 'dark' : 'light'
+      })()
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="generator" content="VuePress 2.0.0-rc.32" />
+    <style>
+      :root {
+        --vp-c-bg: #fff;
+      }
+
+      html[data-theme='dark'] {
+        --vp-c-bg: #1b1b1f;
+      }
+
+      html,
+      body {
+        background-color: var(--vp-c-bg);
+      }
+
+      /* the theme css is loaded asynchronously, so the first paint has to use
+         the theme text color to avoid a flash of the browser default color */
+      body {
+        color: #3c3c43;
+      }
+
+      html[data-theme='dark'] body {
+        color: #dfdfd6;
+      }
+    </style>
+    <meta name="theme-color" content="#00ace6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><title>Auto Correlation Recorder</title><meta name="description" content="Effortlessly handle dynamic values in JMeter with the Auto Correlation Recorder plugin.">
+    <link rel="preload" href="/CorrelationRecorder/assets/style-EhuL1i7e.css" as="style"><link rel="stylesheet" href="/CorrelationRecorder/assets/style-EhuL1i7e.css">
+    <link rel="modulepreload" href="/CorrelationRecorder/assets/app-C_XBSt0U.js"><link rel="modulepreload" href="/CorrelationRecorder/assets/404.html-BZ5OPJcP.js">
+    
+  </head>
+  <body>
+    <div id="app"><!--[--><div class="vp-theme-container" data-v-433401d2><!--[--><!--]--><!--[--><span tabindex="-1" data-v-46f487f3></span><a href="#vp-content" class="vp-skip-link visually-hidden" data-v-46f487f3>Skip to content</a><!--]--><!----><header class="vp-nav" data-v-433401d2 data-v-aada68e1><div class="vp-navbar top" data-v-aada68e1 data-v-5deedf4d><div class="wrapper" data-v-5deedf4d><div class="container" data-v-5deedf4d><div class="title" data-v-5deedf4d><div class="vp-navbar-title" data-v-5deedf4d data-v-d76ab35c><a class="route-link title" href="/CorrelationRecorder/" title="Auto Correlation Recorder" data-v-d76ab35c><!--[--><!--]--><!--[--><img class="vp-image logo" src="https://raw.githubusercontent.com/Blazemeter/jmeter-bzm-commons/refs/heads/master/src/main/resources/dark-theme/blazemeter-by-perforce-logo.png" alt data-v-71661d19><!--]--><span data-v-d76ab35c>Auto Correlation Recorder</span><!--[--><!--]--></a></div></div><div class="content" data-v-5deedf4d><div class="content-body" data-v-5deedf4d><!--[--><!--]--><div class="vp-navbar-search search" data-v-5deedf4d data-v-3dc7fb66><form class="search-box" role="search" data-v-3dc7fb66><input type="search" placeholder="Search" autocomplete="off" spellcheck="false" value><!----></form></div><nav aria-label="Main Navigation" class="vp-nav-menu vp-navbar-menu menu" data-v-5deedf4d data-v-482ad3cb><ul class="list" data-v-482ad3cb><!--[--><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Guide</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/templates/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Templates</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/custom-extensions/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Custom Extensions</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/contributing/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Contributing</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/troubleshooting.html" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>FAQ</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="vp-link link vp-external-link-icon vp-nav-menu-link vp-navbar-menu-link" href="https://github.com/Blazemeter/CorrelationRecorder" target="_blank" rel="noreferrer" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>GitHub</span><!--]--></a></li><!--]--></ul></nav><!----><div class="vp-nav-appearance vp-navbar-appearance appearance" data-v-5deedf4d data-v-70d12294><!----><button class="vp-switch vp-switch-appearance" type="button" role="switch" title aria-label="Appearance" aria-checked="false" data-v-70d12294 data-v-b0e493d4 data-v-a3e796d0><span class="check" data-v-a3e796d0><span class="icon" data-v-a3e796d0><!--[--><span class="vpi-sun sun" aria-hidden="true" data-v-b0e493d4></span><span class="vpi-moon moon" aria-hidden="true" data-v-b0e493d4></span><!--]--></span></span></button></div><!----><!----><!--[--><!--]--><button type="button" class="vp-navbar-hamburger hamburger" aria-label="Menu" aria-expanded="false" data-v-5deedf4d data-v-0b4e1fe9><span class="container" aria-hidden="true" data-v-0b4e1fe9><span class="top" data-v-0b4e1fe9></span><span class="middle" data-v-0b4e1fe9></span><span class="bottom" data-v-0b4e1fe9></span></span></button></div></div></div></div><div class="divider" data-v-5deedf4d><div class="divider-line" data-v-5deedf4d></div></div></div><!----></header><div class="vp-local-nav empty fixed" data-v-433401d2 data-v-20397592><div class="container" data-v-20397592><!----><div class="vp-local-nav-outline-dropdown" style="--vp-vh:0px;" data-allow-mismatch="style" data-v-20397592 data-v-a05ca544><button type="button" data-v-a05ca544>Return to top</button><!----></div></div></div><!----><div class="vp-content" id="vp-content" vp-content data-v-433401d2 data-v-d5b7fbc1><!--[--><div class="vp-not-found" data-v-d5b7fbc1 data-v-3c444574><p class="code" data-v-3c444574>404</p><h1 class="title" data-v-3c444574><bdi data-v-3c444574>PAGE NOT FOUND</bdi></h1><div class="divider" data-v-3c444574></div><blockquote class="quote" data-v-3c444574><bdi data-v-3c444574>But if you don&#39;t change your direction, and if you keep looking, you may end up where you are heading.</bdi></blockquote><div class="action" data-v-3c444574><a class="link" href="/CorrelationRecorder/" aria-label="go to home" data-v-3c444574><bdi data-v-3c444574>Take me home</bdi></a></div></div><!--]--></div><footer class="vp-footer" data-v-433401d2 data-v-dad9848c><div class="container" data-v-dad9848c><p class="message" data-v-dad9848c><bdi data-v-dad9848c>Made by <a href="https://guide.blazemeter.com/hc/en-us">Blazemeter</a> | Apache 2.0 Licensed | Powered by <a href="https://vuejs.press/">VuePress</a></bdi></p><!----></div></footer><!--[--><!--]--></div><!--[--><!----><!--]--><!--]--></div>
+    <script type="module" src="/CorrelationRecorder/assets/app-C_XBSt0U.js" defer></script>
+  </body>
+</html>

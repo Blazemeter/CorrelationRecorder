@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en-US" data-appearance="auto">
+  <head>
+    <script>
+      ;(() => {
+        const root = document.documentElement
+        // appearance is injected into this template at build time, so the very
+        // first paint can follow the site config instead of only the browser
+        // preferences and the storage
+        const appearance = root.dataset.appearance || 'auto'
+        const prefersDark = window.matchMedia(
+          '(prefers-color-scheme: dark)',
+        ).matches
+        let isDark = false
+
+        if (appearance === 'force-dark') {
+          isDark = true
+        } else if (appearance === 'force-auto') {
+          isDark = prefersDark
+        } else if (appearance === 'light') {
+          isDark = false
+        } else {
+          const fallback = appearance === 'dark' ? 'dark' : 'auto'
+          const preference =
+            localStorage.getItem('vuepress-color-scheme') || fallback
+
+          isDark = preference === 'auto' ? prefersDark : preference === 'dark'
+        }
+
+        root.dataset.theme = isDark ? 'dark' : 'light'
+      })()
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="generator" content="VuePress 2.0.0-rc.32" />
+    <style>
+      :root {
+        --vp-c-bg: #fff;
+      }
+
+      html[data-theme='dark'] {
+        --vp-c-bg: #1b1b1f;
+      }
+
+      html,
+      body {
+        background-color: var(--vp-c-bg);
+      }
+
+      /* the theme css is loaded asynchronously, so the first paint has to use
+         the theme text color to avoid a flash of the browser default color */
+      body {
+        color: #3c3c43;
+      }
+
+      html[data-theme='dark'] body {
+        color: #dfdfd6;
+      }
+    </style>
+    <meta name="theme-color" content="#00ace6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><title>Correlation Rules | Auto Correlation Recorder</title><meta name="description" content="Effortlessly handle dynamic values in JMeter with the Auto Correlation Recorder plugin.">
+    <link rel="preload" href="/CorrelationRecorder/assets/style-EhuL1i7e.css" as="style"><link rel="stylesheet" href="/CorrelationRecorder/assets/style-EhuL1i7e.css">
+    <link rel="modulepreload" href="/CorrelationRecorder/assets/app-C_XBSt0U.js"><link rel="modulepreload" href="/CorrelationRecorder/assets/configuring-correlation-rules-Be1TT9zv.js">
+    
+  </head>
+  <body>
+    <div id="app"><!--[--><div class="vp-theme-container" data-v-433401d2><!--[--><!--]--><!--[--><span tabindex="-1" data-v-46f487f3></span><a href="#vp-content" class="vp-skip-link visually-hidden" data-v-46f487f3>Skip to content</a><!--]--><!----><header class="vp-nav" data-v-433401d2 data-v-aada68e1><div class="vp-navbar has-sidebar top" data-v-aada68e1 data-v-5deedf4d><div class="wrapper" data-v-5deedf4d><div class="container" data-v-5deedf4d><div class="title" data-v-5deedf4d><div class="vp-navbar-title has-sidebar" data-v-5deedf4d data-v-d76ab35c><a class="route-link title" href="/CorrelationRecorder/" title="Auto Correlation Recorder" data-v-d76ab35c><!--[--><!--]--><!--[--><img class="vp-image logo" src="https://raw.githubusercontent.com/Blazemeter/jmeter-bzm-commons/refs/heads/master/src/main/resources/dark-theme/blazemeter-by-perforce-logo.png" alt data-v-71661d19><!--]--><span data-v-d76ab35c>Auto Correlation Recorder</span><!--[--><!--]--></a></div></div><div class="content" data-v-5deedf4d><div class="content-body" data-v-5deedf4d><!--[--><!--]--><div class="vp-navbar-search search" data-v-5deedf4d data-v-3dc7fb66><form class="search-box" role="search" data-v-3dc7fb66><input type="search" placeholder="Search" autocomplete="off" spellcheck="false" value><!----></form></div><nav aria-label="Main Navigation" class="vp-nav-menu vp-navbar-menu menu" data-v-5deedf4d data-v-482ad3cb><ul class="list" data-v-482ad3cb><!--[--><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Guide</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/templates/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Templates</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/custom-extensions/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Custom Extensions</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/contributing/" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>Contributing</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="route-link vp-link link vp-nav-menu-link vp-navbar-menu-link" href="/CorrelationRecorder/guide/troubleshooting.html" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>FAQ</span><!--]--></a></li><li class="" data-v-482ad3cb><a class="vp-link link vp-external-link-icon vp-nav-menu-link vp-navbar-menu-link" href="https://github.com/Blazemeter/CorrelationRecorder" target="_blank" rel="noreferrer" data-v-482ad3cb data-v-0f274180 data-v-cfe0f62d><!--[--><!----><span dir="auto" data-v-0f274180>GitHub</span><!--]--></a></li><!--]--></ul></nav><!----><div class="vp-nav-appearance vp-navbar-appearance appearance" data-v-5deedf4d data-v-70d12294><!----><button class="vp-switch vp-switch-appearance" type="button" role="switch" title aria-label="Appearance" aria-checked="false" data-v-70d12294 data-v-b0e493d4 data-v-a3e796d0><span class="check" data-v-a3e796d0><span class="icon" data-v-a3e796d0><!--[--><span class="vpi-sun sun" aria-hidden="true" data-v-b0e493d4></span><span class="vpi-moon moon" aria-hidden="true" data-v-b0e493d4></span><!--]--></span></span></button></div><!----><!----><!--[--><!--]--><button type="button" class="vp-navbar-hamburger hamburger" aria-label="Menu" aria-expanded="false" data-v-5deedf4d data-v-0b4e1fe9><span class="container" aria-hidden="true" data-v-0b4e1fe9><span class="top" data-v-0b4e1fe9></span><span class="middle" data-v-0b4e1fe9></span><span class="bottom" data-v-0b4e1fe9></span></span></button></div></div></div></div><div class="divider" data-v-5deedf4d><div class="divider-line" data-v-5deedf4d></div></div></div><!----></header><div class="vp-local-nav has-sidebar empty" data-v-433401d2 data-v-20397592><div class="container" data-v-20397592><button type="button" class="menu" aria-expanded="false" aria-controls="vp-sidebar-nav" data-v-20397592><span class="vpi-text-align-start menu-icon" aria-hidden="true" data-v-20397592></span><span class="menu-text" data-v-20397592>Menu</span></button><div class="vp-local-nav-outline-dropdown" style="--vp-vh:0px;" data-allow-mismatch="style" data-v-20397592 data-v-a05ca544><button type="button" data-v-a05ca544>Return to top</button><!----></div></div></div><aside class="vp-sidebar" data-v-433401d2 data-v-3c301ce9><div class="curtain" data-v-3c301ce9></div><nav class="nav" id="vp-sidebar-nav" aria-labelledby="sidebar-aria-label" tabindex="-1" data-v-3c301ce9><span class="visually-hidden" id="sidebar-aria-label" data-v-3c301ce9> Sidebar Navigation </span><!--[--><!--]--><!--[--><div class="no-transition group" data-v-a6ea8bdf><div class="vp-sidebar-item level-0" data-v-a6ea8bdf data-v-bc1f2e99><div class="item" data-v-bc1f2e99><div class="indicator" data-v-bc1f2e99></div><p class="text" data-v-bc1f2e99><!----><bdi data-v-bc1f2e99>Correlation Rules</bdi></p><!----></div><!----></div></div><!--]--><!--[--><!--]--></nav></aside><div class="vp-content has-sidebar" id="vp-content" vp-content data-v-433401d2 data-v-d5b7fbc1><div class="vp-doc-layout has-sidebar has-aside" data-v-d5b7fbc1 data-v-b6fc8191><!--[--><!--]--><div class="container" data-v-b6fc8191><div class="aside" data-v-b6fc8191><div class="aside-curtain" data-v-b6fc8191></div><div class="aside-container" data-v-b6fc8191><div class="aside-content" data-v-b6fc8191><div class="vp-doc-aside" data-v-b6fc8191 data-v-cd5a76dd><!--[--><!--]--><!--[--><!--]--><nav aria-labelledby="doc-outline-aria-label" class="vp-doc-aside-outline" data-v-cd5a76dd data-v-e2a5de67><div class="content" data-v-e2a5de67><div class="outline-marker" data-v-e2a5de67></div><div aria-level="2" class="outline-title" id="doc-outline-aria-label" role="heading" data-v-e2a5de67>On this page</div><ul class="vp-doc-outline-item root" data-v-e2a5de67 data-v-6576e256><!--[--><!--]--></ul></div></nav><!--[--><!--]--><div class="spacer" data-v-cd5a76dd></div><!--[--><!--]--><!--[--><!--]--><!--[--><!--]--></div></div></div></div><div class="content" data-v-b6fc8191><div class="content-container" data-v-b6fc8191><!--[--><!--]--><main class="main" data-v-b6fc8191><div class="vp-doc _guide_configuring-correlation-rules" data-v-b6fc8191><h1 id="correlation-rules" tabindex="-1"><a class="header-anchor" href="#correlation-rules"><span>Correlation Rules</span></a></h1><p>Correlation rules are the mechanism that allows you to define how to the Auto Correlation Recorder will detect dynamic values, extract and replacement them in your recorded flow.</p><h2 id="concepts" tabindex="-1"><a class="header-anchor" href="#concepts"><span>Concepts</span></a></h2><p>A Correlation Rule consists of three elements: a <strong>Reference variable name</strong>, an <strong>Extractor</strong>, and a <strong>Replacement</strong>.</p><p>It&#39;s important to note that while the <strong>Reference variable name must be defined,</strong> it doesn&#39;t have to be unique. You can create <strong>multiple</strong> correlation rules with <strong>the same name</strong>.</p><p>You can create a Correlation Rule with only an Extractor or only a Replacement, but at least one of them must be defined. If you create multiple rules with the same reference variable name, but different extractors or replacements, you&#39;ll be able to extract or replace the same dynamic value in different ways.</p></div></main><footer class="vp-doc-footer" data-v-b6fc8191 data-v-cacd08e6><!--[--><!--]--><!----><nav class="prev-next" aria-labelledby="doc-footer-aria-label" data-v-cacd08e6><span class="visually-hidden" id="doc-footer-aria-label" data-v-cacd08e6>Pager</span><div class="pager" data-v-cacd08e6><!----></div><div class="pager" data-v-cacd08e6><a class="route-link vp-link link pager-link next" href="/CorrelationRecorder/guide/" data-v-cacd08e6 data-v-cfe0f62d><!--[--><span class="desc" data-v-cacd08e6>Next page</span><span class="title" data-v-cacd08e6><bdi data-v-cacd08e6>User Guide</bdi></span><!--]--></a></div></nav></footer><!--[--><!--]--></div></div></div><!--[--><!--]--></div></div><footer class="vp-footer has-sidebar" data-v-433401d2 data-v-dad9848c><div class="container" data-v-dad9848c><p class="message" data-v-dad9848c><bdi data-v-dad9848c>Made by <a href="https://guide.blazemeter.com/hc/en-us">Blazemeter</a> | Apache 2.0 Licensed | Powered by <a href="https://vuejs.press/">VuePress</a></bdi></p><!----></div></footer><!--[--><!--]--></div><!--[--><!----><!--]--><!--]--></div>
+    <script type="module" src="/CorrelationRecorder/assets/app-C_XBSt0U.js" defer></script>
+  </body>
+</html>
