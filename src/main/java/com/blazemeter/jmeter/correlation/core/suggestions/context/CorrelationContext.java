@@ -1,7 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.suggestions.context;
 
 import java.util.List;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 
 /**
@@ -24,5 +24,5 @@ public interface CorrelationContext {
    * An HTTPSamplerBase represents a sampler that sends HTTP requests.
    * @return a list of HTTPSamplerBase objects from the recording.
    */
-  List<HTTPSamplerProxy> getRecordingSamplers();
+  List<? extends HTTPSamplerBase> getRecordingSamplers();
 }

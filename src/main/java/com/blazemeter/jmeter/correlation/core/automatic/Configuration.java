@@ -22,6 +22,7 @@ public class Configuration {
   private static final int DEFAULT_CONTEXT_LENGTH = 10;
   private static final int MAX_NUMBER_OF_APPEARANCES = 500;
   private static final boolean IGNORE_BOOLEAN_VALUES = true;
+  private static final boolean UNIFY_SUGGESTIONS = true;
   private static final List<String> DEFAULT_IGNORED_DOMAINS = Arrays.asList("mozilla.org",
       "mozilla.net", "mozilla.com",
       "content-signature-2.cdn.mozilla.net", "push.services.mozilla.com",
@@ -49,6 +50,9 @@ public class Configuration {
   private static final List<String> DEFAULT_IGNORED_FILES = Arrays.asList("jpg",
       "jpeg", "png", "css", "js", "woff", "txt", "svg", "ico", "pdf", "zip",
       "gzip", "tar", "gz", "rar", "7z", "exe", "msi", "woff2");
+  // Arguments too generic to group values by their name alone: they are named after their entity
+  private static final List<String> DEFAULT_GENERIC_PARAMETERS = Arrays.asList("id", "ids", "uuid",
+      "guid", "ref");
   private static final List<String> DEFAULT_IGNORED_PARAMETERS = Arrays.asList("log",
       "pwd", "password", "pass", "passwd", "action", "testcookie", "ver", "widget",
       "d", "r", "s", "ipv6", "ipv4", "remind_me_later",
@@ -60,10 +64,12 @@ public class Configuration {
   private final int contextLength;
   private int maxNumberOfAppearances;
   private boolean ignoreBooleanValues;
+  private boolean unifySuggestions;
   private final List<String> ignoredDomains;
   private final List<String> ignoredHeaders;
   private List<String> ignoredFiles;
   private List<String> ignoredParameters;
+  private final List<String> genericParameters;
 
   private final List<String> requestedParameters;
 
@@ -85,6 +91,10 @@ public class Configuration {
         DEFAULT_IGNORED_FILES);
     this.ignoredParameters = getDefaultListValues("correlation.configuration.ignored_keys",
         DEFAULT_IGNORED_PARAMETERS);
+    this.unifySuggestions = JMeterUtils.getPropDefault(
+        "correlation.configuration.unify_suggestions", UNIFY_SUGGESTIONS);
+    this.genericParameters = getDefaultListValues("correlation.configuration.generic_keys",
+        DEFAULT_GENERIC_PARAMETERS);
     requestedParameters = new ArrayList<>();
     displayConfiguration();
   }
@@ -99,6 +109,7 @@ public class Configuration {
     LOG.trace("Ignored headers: {}", ignoredHeaders);
     LOG.trace("Ignored files: {}", ignoredFiles);
     LOG.trace("Ignored parameters: {}", ignoredParameters);
+    LOG.trace("Generic parameters: {}", genericParameters);
   }
 
   private List<String> getDefaultListValues(String property, List<String> defaultValues) {
@@ -121,6 +132,15 @@ public class Configuration {
 
   public int getMaxNumberOfAppearances() {
     return maxNumberOfAppearances;
+  }
+
+  // One suggestion, extractor and variable for the names that take one value from one response
+  public boolean shouldUnifySuggestions() {
+    return unifySuggestions;
+  }
+
+  public void setUnifySuggestions(boolean unifySuggestions) {
+    this.unifySuggestions = unifySuggestions;
   }
 
   public boolean shouldIgnoreBooleanValues() {
@@ -149,6 +169,10 @@ public class Configuration {
 
   public List<String> getIgnoredParameters() {
     return ignoredParameters;
+  }
+
+  public boolean isGenericParameter(String key) {
+    return genericParameters.stream().anyMatch(key.trim()::equalsIgnoreCase);
   }
 
   public void setIgnoredParameters(List<String> ignoredParameters) {

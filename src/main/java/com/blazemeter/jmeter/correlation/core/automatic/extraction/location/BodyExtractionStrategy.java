@@ -1,16 +1,16 @@
 package com.blazemeter.jmeter.correlation.core.automatic.extraction.location;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jmeter.samplers.SampleResult;
 
-public class BodyExtractionStrategy implements ExtractionStrategy {
+public class BodyExtractionStrategy extends IndexedExtractionStrategy {
 
   @Override
-  public Pair<LocationType, String> identifyLocationInResponse(SampleResult response,
-      String value) {
-    String bodyResponse =
-        response.getDataType().equals("bin") ? "" : response.getResponseDataAsString();
-    return ExtractionStrategy.getLocationAndValue(bodyResponse, value,
-        LocationType.BODY);
+  protected String searchableContent(SampleResult response) {
+    return response.getDataType().equals("bin") ? "" : response.getResponseDataAsString();
+  }
+
+  @Override
+  protected LocationType locationType() {
+    return LocationType.BODY;
   }
 }

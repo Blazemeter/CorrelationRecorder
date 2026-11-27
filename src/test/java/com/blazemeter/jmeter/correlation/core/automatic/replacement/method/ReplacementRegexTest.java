@@ -52,6 +52,44 @@ public class ReplacementRegexTest {
   }
 
   @Test
+  public void shouldMatchOnlyTheTokenOfCredentialsFields() {
+    assertEquals("abc.def-ghi_~+/==", ReplacementRegex.match("Authorization",
+        Sources.REQUEST_HEADER_FIELDS, "Authorization: Bearer abc.def-ghi_~+/=="));
+    assertEquals("abc", ReplacementRegex.match("Proxy-Authorization",
+        Sources.REQUEST_HEADER_FIELDS, "proxy-authorization: token  abc"));
+  }
+
+  @Test
+  public void shouldMatchAlphanumericIdAnywhereInThePath() {
+    assertEquals("cart_62704d1930ac", ReplacementRegex.match("carts",
+        Sources.REQUEST_PATH_ALPHANUMERIC_ID, "/api/carts/cart_62704d1930ac/items"));
+    assertEquals("cart_62704d1930ac", ReplacementRegex.match("carts",
+        Sources.REQUEST_PATH_ALPHANUMERIC_ID, "/api/carts/cart_62704d1930ac"));
+    assertEquals("ord_6301cb020b20", ReplacementRegex.match("orders",
+        Sources.REQUEST_PATH_ALPHANUMERIC_ID, "/api/orders/ord_6301cb020b20?view=full"));
+  }
+
+  @Test
+  public void shouldMatchTheArgumentOfAnEntityByItsOwnName() {
+    assertEquals("id=([^&]+)", ReplacementRegex.match("order.id",
+        Sources.REQUEST_ENTITY_ARGUMENT));
+    assertEquals("ord_6301cb020b20", ReplacementRegex.match("order.id",
+        Sources.REQUEST_ENTITY_ARGUMENT, "id=ord_6301cb020b20"));
+  }
+
+  @Test
+  public void shouldNotMatchAlphanumericIdOfAnotherConcept() {
+    assertNull(ReplacementRegex.match("carts", Sources.REQUEST_PATH_ALPHANUMERIC_ID,
+        "/api/mycarts/cart_62704d1930ac/items"));
+  }
+
+  @Test
+  public void shouldNotMatchCredentialsWithoutScheme() {
+    assertNull(ReplacementRegex.match("Authorization", Sources.REQUEST_HEADER_FIELDS,
+        "Authorization: abc"));
+  }
+
+  @Test
   public void testRequestUrl() {
     String regex = ReplacementRegex.match("Name", Sources.REQUEST_URL);
     assertEquals("(?:\\?|&)Name=(.+?)(?:&|$)", regex);

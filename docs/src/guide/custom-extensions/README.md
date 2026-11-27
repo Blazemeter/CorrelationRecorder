@@ -1,5 +1,7 @@
 ---
-prev: /guide/templates/create.md
+prev:
+  text: "Create Template"
+  link: /guide/templates/create.md
 ---
 
 # Custom Extensions

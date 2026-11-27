@@ -1,6 +1,10 @@
 ---
-prev: /guide/before-recording.md
-next: /guide/best-practices.md
+prev:
+  text: "Before the Recording"
+  link: /guide/before-recording.md
+next:
+  text: "Best Practices"
+  link: /guide/best-practices.md
 ---
 
 # Concepts

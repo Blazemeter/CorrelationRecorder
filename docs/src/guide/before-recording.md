@@ -1,6 +1,10 @@
 ---
-next: /guide/concepts.md
-prev: /guide/analysis-configuration.md
+next:
+  text: "Concepts"
+  link: /guide/concepts.md
+prev:
+  text: "Configuring the Auto Correlation Recorder Plugin"
+  link: /guide/analysis-configuration.md
 ---
 
 # Before the Recording

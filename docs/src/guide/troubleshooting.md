@@ -1,6 +1,10 @@
 ---
-next: /guide/templates/
-prev: /guide/best-practices.md
+next:
+  text: "Correlation Templates"
+  link: /guide/templates/
+prev:
+  text: "Best Practices"
+  link: /guide/best-practices.md
 ---
 
 # Troubleshooting

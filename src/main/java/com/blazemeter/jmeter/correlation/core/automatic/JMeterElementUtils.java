@@ -19,6 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,7 +56,6 @@ import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.reporters.ResultCollector;
 import org.apache.jmeter.samplers.SampleResult;
@@ -66,6 +67,7 @@ import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
+import org.apache.jorphan.collections.SearchByClass;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -227,13 +229,18 @@ public class JMeterElementUtils {
   }
 
   public static List<SampleResult> getSampleResultsFiltered(String filePath) {
+    return getSampleResultsFiltered(filePath, new Configuration());
+  }
+
+  public static List<SampleResult> getSampleResultsFiltered(String filePath,
+      Configuration configuration) {
     File file = new File(filePath);
     if (!file.exists()) {
       LOG.warn("File {} does not exist", filePath);
       return new ArrayList<>();
     }
 
-    return new ResultFileParser().loadFromFile(file, true);
+    return new ResultFileParser(configuration).loadFromFile(file, true);
   }
 
   private boolean isIgnoredParameter(String key) {
@@ -563,12 +570,12 @@ public class JMeterElementUtils {
   }
 
   /**
-   * Returns the CollectionProperty associated to the HTTPSamplerProxy contained in a
+   * Returns the CollectionProperty associated to the HTTPSamplerBase contained in a
    * JMeterTreeNode. Note: this method requires that the JMeterTreeNode is a HTTPSamplerBase
    * instance.
    *
    * @param requestElement the JMeterTreeNode element from which the collection will be obtained.
-   * @return the CollectionProperty associated to the HTTPSamplerProxy.
+   * @return the CollectionProperty associated to the HTTPSamplerBase.
    */
   public static CollectionProperty getHttpArguments(JMeterTreeNode requestElement) {
     HTTPSamplerBase sampler = (HTTPSamplerBase) requestElement.getTestElement();
@@ -837,18 +844,26 @@ public class JMeterElementUtils {
       return report;
     }
 
-    List<SampleResult> originalResults = new ResultFileParser(configuration)
-        .loadFromFile(new File(originalTraceFilepath), false);
-
-    List<SampleResult> originalErrors = originalResults.stream()
-        .filter(result -> !result.isSuccessful())
-        .collect(Collectors.toList());
+    // Only the labels of the recorded errors are needed: the recording is read as a stream,
+    // without keeping its samples, and a recording that cannot be read has no errors, as before
+    Set<String> originalErrorLabels = new HashSet<>();
+    boolean recordingRead = new ResultFileParser(configuration).forEachResult(
+        new File(originalTraceFilepath), false, result -> {
+          if (!result.isSuccessful()) {
+            originalErrorLabels.add(result.getSampleLabel());
+          }
+        });
+    if (!recordingRead) {
+      originalErrorLabels.clear();
+    }
 
     List<SampleResult> replayErrors = collector.getErrors();
+    Map<String, String> recordedNames =
+        getRecordedNamesByName(getTestPlan(originalRecordingFilepath));
     List<SampleResult> newErrors = replayErrors.stream()
-        .filter(replayError -> originalErrors.stream()
-            .noneMatch(originalError -> originalError.getSampleLabel()
-                .equals(replayError.getSampleLabel())))
+        .filter(replayError -> !originalErrorLabels.contains(
+            recordedNames.getOrDefault(replayError.getSampleLabel(),
+                replayError.getSampleLabel())))
         .collect(Collectors.toList());
 
     if (newErrors.isEmpty()) {
@@ -996,8 +1011,8 @@ public class JMeterElementUtils {
 
   public boolean canBeFiltered(Supplier<Object> elementSupplier) {
     Object o = elementSupplier.get();
-    if (o instanceof HTTPSamplerProxy) {
-      HTTPSamplerProxy sampler = (HTTPSamplerProxy) o;
+    if (o instanceof HTTPSamplerBase) {
+      HTTPSamplerBase sampler = (HTTPSamplerBase) o;
       return sampler.getPropertyAsString("HTTPSampler.domain") == null
           || ignoredDomain(sampler.getDomain())
           || ignoredFile(sampler.getPath());
@@ -1086,10 +1101,10 @@ public class JMeterElementUtils {
         || configuration.shouldIgnoreBooleanValues();
   }
 
-  public static List<HTTPSamplerProxy> getCurrentSamplerList() {
-    List<HTTPSamplerProxy> samplerProxies = new ArrayList<>();
+  public static List<HTTPSamplerBase> getCurrentSamplerList() {
+    List<HTTPSamplerBase> samplerProxies = new ArrayList<>();
     for (JMeterTreeNode samplerProxyNode : getCurrentSamplerNodes()) {
-      samplerProxies.add((HTTPSamplerProxy) samplerProxyNode.getTestElement());
+      samplerProxies.add((HTTPSamplerBase) samplerProxyNode.getTestElement());
     }
     return samplerProxies;
   }
@@ -1099,23 +1114,52 @@ public class JMeterElementUtils {
 
       return new ArrayList<>();
     }
-    return GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerProxy.class);
+    return GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerBase.class);
   }
 
   public static List<SampleResult> getCurrentSampleResults(String path) {
     List<SampleResult> sampleResults = new ResultFileParser(new Configuration())
         .loadFromFile(new File(path), true);
     List<SampleResult> filteredResults = new ArrayList<>();
-    List<HTTPSamplerProxy> desiredSamplers = JMeterElementUtils.getCurrentSamplerList();
+    List<HTTPSamplerBase> desiredSamplers = JMeterElementUtils.getCurrentSamplerList();
     for (SampleResult sampleResult : sampleResults) {
-      for (HTTPSamplerProxy samplerProxy : desiredSamplers) {
-        if (sampleResult.getSampleLabel().equals(samplerProxy.getName())) {
+      for (HTTPSamplerBase samplerProxy : desiredSamplers) {
+        if (sampleResult.getSampleLabel().equals(getRecordedName(samplerProxy))) {
           filteredResults.add(sampleResult);
         }
       }
     }
 
     return filteredResults;
+  }
+
+  /**
+   * The name a sampler was recorded with, which labels its results in the recording. It is kept in
+   * the sampler's comment (ORIGINAL_NAME=), as its name can change: the correlation puts [var] in
+   * it, and the user can rename it.
+   */
+  public static String getRecordedName(TestElement te) {
+    String comment = te.getComment();
+    String crName = comment.substring(comment.lastIndexOf(";") + 1);
+    if (crName.contains("ORIGINAL_NAME")) {
+      return crName.substring(crName.indexOf("=") + 1);
+    }
+    return te.getName();
+  }
+
+  // The replay labels its results with the samplers' names, the recording with their recorded names
+  @VisibleForTesting
+  static Map<String, String> getRecordedNamesByName(HashTree testPlan) {
+    Map<String, String> recordedNames = new HashMap<>();
+    if (testPlan == null) {
+      return recordedNames;
+    }
+    SearchByClass<HTTPSamplerBase> search = new SearchByClass<>(HTTPSamplerBase.class);
+    testPlan.traverse(search);
+    for (HTTPSamplerBase sampler : search.getSearchResults()) {
+      recordedNames.putIfAbsent(sampler.getName(), getRecordedName(sampler));
+    }
+    return recordedNames;
   }
 
   public static String getRecordingResultFileName() {
@@ -1195,7 +1239,7 @@ public class JMeterElementUtils {
       }
       */
     JMeterTreeModel model = getCurrentJMeterTreeModel();
-    return model.getNodesOfType(HTTPSamplerProxy.class);
+    return model.getNodesOfType(HTTPSamplerBase.class);
   }
 
   public static JMeterTreeModel getCurrentJMeterTreeModel() {

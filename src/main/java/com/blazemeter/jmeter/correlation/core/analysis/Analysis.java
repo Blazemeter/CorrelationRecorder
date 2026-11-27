@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.samplers.SampleResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ public class Analysis {
   private String tracePath;
   private Supplier<List<JMeterTreeNode>> nodesSupplier;
   private Supplier<List<SampleResult>> resultsSupplier;
-  private Supplier<List<HTTPSamplerProxy>> samplersSupplier;
+  private Supplier<List<? extends HTTPSamplerBase>> samplersSupplier;
 
   private Consumer<String> report;
 
@@ -135,7 +135,7 @@ public class Analysis {
     engine.setEnabled(true);
     engine.reset();
 
-    List<HTTPSamplerProxy> samplers = samplersSupplier.get();
+    List<? extends HTTPSamplerBase> samplers = samplersSupplier.get();
     List<SampleResult> sampleResults = resultsSupplier.get();
     List<JMeterTreeNode> samplerNodes = nodesSupplier.get();
 
@@ -173,7 +173,7 @@ public class Analysis {
     this.resultsSupplier = resultsSupplier;
   }
 
-  public void setSamplersSupplier(Supplier<List<HTTPSamplerProxy>> samplersSupplier) {
+  public void setSamplersSupplier(Supplier<List<? extends HTTPSamplerBase>> samplersSupplier) {
     this.samplersSupplier = samplersSupplier;
   }
 

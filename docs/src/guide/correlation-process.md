@@ -1,6 +1,10 @@
 ---
-next: /guide/after-recording.md
-prev: /guide/using-the-plugin.md
+next:
+  text: "Automatic Correlation methods"
+  link: /guide/after-recording.md
+prev:
+  text: "Usage"
+  link: /guide/using-the-plugin.md
 ---
 
 # Correlation Process

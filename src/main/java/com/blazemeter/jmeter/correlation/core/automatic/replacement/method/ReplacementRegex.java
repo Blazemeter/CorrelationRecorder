@@ -1,5 +1,7 @@
 package com.blazemeter.jmeter.correlation.core.automatic.replacement.method;
 
+import com.blazemeter.jmeter.correlation.core.automatic.EntityArgument;
+import com.blazemeter.jmeter.correlation.core.automatic.HttpAuthorization;
 import com.blazemeter.jmeter.correlation.core.automatic.Sources;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,13 +39,22 @@ public class ReplacementRegex {
     switch (source) {
       case Sources.REQUEST:
       case Sources.REQUEST_HEADER_FIELDS:
-        regex = cleanName + ": ([^&]+)";
+        // Credentials keep their scheme ("Bearer ${token}"): only the token68 is the value, and
+        // field names and schemes are case-insensitive (RFC 9110, sections 5.1, 11.1 and 11.4)
+        regex = HttpAuthorization.isCredentialsField(name)
+            ? "(?i)" + cleanName + ": " + HttpAuthorization.AUTH_SCHEME + " +("
+            + HttpAuthorization.TOKEN68 + ")"
+            : cleanName + ": ([^&]+)";
         break;
       case Sources.REQUEST_URL:
         regex = "(?:\\?|&)" + cleanName + "=(.+?)(?:&|$)";
         break;
       case Sources.REQUEST_ARGUMENTS:
         regex = cleanName + "=([^&]+)";
+        break;
+      case Sources.REQUEST_ENTITY_ARGUMENT:
+        // order.id names the variable; the request sends id
+        regex = EntityArgument.argument(cleanName) + "=([^&]+)";
         break;
       case Sources.REQUEST_PATH:
         regex = "\\/" + cleanName + "\\/([^\\/]+)(?:\\?[^&]*)?$";
@@ -53,6 +64,10 @@ public class ReplacementRegex {
         break;
       case Sources.REQUEST_PATH_NUMBER_FOLLOWED_BY_SLASH:
         regex = "\\/" + cleanName + "\\/([0-9]+)(\\/|$)";
+        break;
+      case Sources.REQUEST_PATH_ALPHANUMERIC_ID:
+        // the id after its concept, anywhere in the path: /carts/cart_62704d1930ac/items
+        regex = "\\/" + cleanName + "\\/([A-Za-z0-9_-]+)(?=[\\/?#]|$)";
         break;
       default:
         break;

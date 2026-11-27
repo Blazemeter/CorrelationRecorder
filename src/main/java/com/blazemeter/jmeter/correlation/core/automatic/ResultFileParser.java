@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.reporters.ResultCollector;
@@ -35,36 +36,49 @@ public class ResultFileParser {
    * @return the results loaded from the file
    */
   public List<SampleResult> loadFromFile(File file, boolean shouldFilter) {
+    List<SampleResult> results = new ArrayList<>();
+    return forEachResult(file, shouldFilter, results::add) ? results : new ArrayList<>();
+  }
+
+  /**
+   * Reads a jtl file and hands each SampleResult to the consumer as it is read, the same results
+   * {@link #loadFromFile} would return, without keeping them in memory.
+   *
+   * @param file         the file to read the results from
+   * @param shouldFilter whether the results should be filtered or not
+   * @param consumer     receives each result, in file order
+   * @return false when the file could not be read; the consumer may have received part of it
+   */
+  public boolean forEachResult(File file, boolean shouldFilter, Consumer<SampleResult> consumer) {
     try {
-      Collection<SampleResult> results = new ArrayList<>();
       ResultCollector collector = new ResultCollector();
       collector.setFilename(file.getAbsolutePath());
       JMeterElementUtils utils = new JMeterElementUtils(configuration);
-      CustomVisualizer visualizer = getVisualizer(shouldFilter, utils, results);
+      CustomVisualizer visualizer = new CustomVisualizer(shouldFilter, utils, consumer);
       configuration.isDebugModeEnabled().ifPresent(visualizer::setDebugEnabled);
 
       collector.setListener(visualizer);
       collector.loadExistingFile();
-      return new ArrayList<>(results);
+      return true;
     } catch (Exception e) {
       LOG.error("Error while loading the result from the file {} ", file.getAbsolutePath(), e);
     }
-    return new ArrayList<>();
-  }
-
-  private CustomVisualizer getVisualizer(boolean shouldFilter, JMeterElementUtils utils,
-                                   Collection<SampleResult> results) {
-    return new CustomVisualizer(shouldFilter, utils, results);
+    return false;
   }
 
   public static class CustomVisualizer implements Visualizer {
     private final boolean shouldFilter;
     private final JMeterElementUtils utils;
-    private final Collection<SampleResult> results;
+    private final Consumer<SampleResult> results;
     private boolean isDebugEnabled = false;
 
     public CustomVisualizer(boolean shouldFilter, JMeterElementUtils utils,
                             Collection<SampleResult> results) {
+      this(shouldFilter, utils, (Consumer<SampleResult>) results::add);
+    }
+
+    public CustomVisualizer(boolean shouldFilter, JMeterElementUtils utils,
+                            Consumer<SampleResult> results) {
       this.shouldFilter = shouldFilter;
       this.utils = utils;
       this.results = results;
@@ -93,12 +107,12 @@ public class ResultFileParser {
                 .map(s -> (HTTPSampleResult) s)
                 .collect(Collectors.toList());
         if (!childs.isEmpty()) {
-          results.addAll(childs);
+          childs.forEach(results);
           return;
         }
       }
 
-      results.add(sample);
+      results.accept(sample);
       if (isDebugEnabled) {
         LOG.debug("SampleResult '{}' added", sample.getSampleLabel());
       }

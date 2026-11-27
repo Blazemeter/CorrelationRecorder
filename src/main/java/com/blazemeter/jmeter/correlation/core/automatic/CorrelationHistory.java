@@ -166,6 +166,18 @@ public class CorrelationHistory {
     return steps.get(0);
   }
 
+  /**
+   * Whether there is a recording to replay: the history has steps, or the plan's recorder has a
+   * recording to start them from.
+   */
+  public boolean hasRecording() {
+    if (!steps.isEmpty()) {
+      return true;
+    }
+    String recording = recordingFilePathSupplier.get();
+    return recording != null && !recording.isEmpty();
+  }
+
   public String getOriginalRecordingTrace() {
     return getRecordingStep().getRecordingTraceFilepath();
   }

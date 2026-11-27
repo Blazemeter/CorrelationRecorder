@@ -1,0 +1,1 @@
+com.blazemeter.jmeter.correlation.gui.settings.CorrelationRecorderMenuCommand

@@ -6,7 +6,7 @@ set -e
 
 cd docs
 
-yarn && yarn build
+npm ci && npm run build
 
 cd src/.vuepress/dist
 

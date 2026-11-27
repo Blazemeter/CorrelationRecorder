@@ -1,5 +1,7 @@
 ---
-next: /guide/installation-guide.md
+next:
+  text: "Installing the Plugin"
+  link: /guide/installation-guide.md
 ---
 
 # User Guide

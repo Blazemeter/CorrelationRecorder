@@ -205,8 +205,15 @@ public class DynamicElementHandler {
     orphanReplay.remove(referenceName);
 
     // Skip if one of these conditions is true:
-    if (exceedsMaxAllowedAppearances(appearances, otherAppearances)
-        || isParametrizedArgument(appearances, otherAppearances)) {
+    if (exceedsMaxAllowedAppearances(appearances, otherAppearances)) {
+      // Each round analyzes what is still pending: a value that keeps repeating more than the
+      // maximum is most likely noise, but it is reported instead of dropped silently
+      LOG.warn("Parameter '{}' has {} appearances in the recording and {} in the replay, more"
+              + " than the maximum of {}. It is not analyzed.", referenceName, appearances.size(),
+          otherAppearances.size(), context.getConfiguration().getMaxNumberOfAppearances());
+      return;
+    }
+    if (isParametrizedArgument(appearances, otherAppearances)) {
       return;
     }
 

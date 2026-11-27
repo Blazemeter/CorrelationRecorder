@@ -3,12 +3,12 @@ package com.blazemeter.jmeter.correlation.gui.automatic;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
-import java.awt.Label;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Icon;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
@@ -33,8 +33,7 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
   private static final Icon ALL_ICON = new Icon() {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-      g.setColor(new Label().getBackground());
-      g.fillRect(x, y, getIconWidth(), getIconHeight());
+      // a blank space: themes such as Windows paint the header with a skin, not with a color
     }
 
     @Override
@@ -51,7 +50,7 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
   private static final Icon SOME_ICON = new Icon() {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-      Color textColor = new Label().getForeground();
+      Color textColor = c.getForeground();
       JPanel panel = new JPanel();
       Color backgroundColor = panel.getBackground();
       g.setColor(textColor);
@@ -74,8 +73,9 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
   private static final Icon NONE_ICON = new Icon() {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-      g.setColor(new Label().getForeground());
-      g.drawRect(x, y, getIconWidth(), getIconHeight());
+      g.setColor(c.getForeground());
+      // drawRect covers width + 1 pixels: keep the box inside the icon
+      g.drawRect(x, y, getIconWidth() - 1, getIconHeight() - 1);
     }
 
     @Override
@@ -107,17 +107,25 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
     this.targetColumn = targetColumn;
     this.header = table.getTableHeader();
     this.tcm = table.getColumnModel();
-    this.applyTableHeaderStyle();
     this.addItemListener(new RowCheckBoxUpdateListener());
     header.addMouseListener(new MouseHandler());
     tableModel.addTableModelListener(new ModelHandler());
   }
 
+  /**
+   * Paints the column with the look and feel's own header renderer, so it reads like the other
+   * headers in every theme; this toggle only keeps the state, its text and its icon.
+   */
   @Override
   public Component getTableCellRendererComponent(
       JTable table, Object value, boolean isSelected,
       boolean hasFocus, int row, int column) {
-    return this;
+    Component renderer = header.getDefaultRenderer()
+        .getTableCellRendererComponent(table, getText(), isSelected, hasFocus, row, column);
+    if (renderer instanceof JLabel) {
+      ((JLabel) renderer).setIcon(getIcon());
+    }
+    return renderer;
   }
 
   private class RowCheckBoxUpdateListener implements ItemListener {
@@ -127,6 +135,7 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
         boolean state = e.getStateChange() == ItemEvent.SELECTED;
         setText((state) ? NONE : ALL);
         setIcon((state) ? NONE_ICON : ALL_ICON);
+        header.repaint();
         int modelRowCount = table.getModel().getRowCount();
         int tableRowCount = table.getRowCount();
         // We are clearing the table
@@ -137,28 +146,13 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
           updating = true;
           table.setValueAt(state, r, viewColumn);
         }
-        updating = false;
       } catch (IndexOutOfBoundsException ex) {
         // This is thrown when the table is cleared
         return;
+      } finally {
+        updating = false;
       }
     }
-  }
-
-  @Override
-  public void updateUI() {
-    super.updateUI();
-    applyTableHeaderStyle();
-  }
-
-  /**
-   * Makes the toggle button look like a table header.
-   */
-  private void applyTableHeaderStyle() {
-    this.setFont(UIManager.getFont("TableHeader.font"));
-    this.setBorder(UIManager.getBorder("TableHeader.cellBorder"));
-    this.setBackground(UIManager.getColor("TableHeader.background"));
-    this.setForeground(UIManager.getColor("TableHeader.foreground"));
   }
 
   private class MouseHandler extends MouseAdapter {
@@ -205,9 +199,17 @@ public class SelectAllHeader extends JToggleButton implements TableCellRenderer 
         setIcon(SOME_ICON);
         header.repaint();
       }
+      return false;
     }
 
-    return allTrue && !isSelected() || allFalse && isSelected();
+    boolean toggle = allTrue && !isSelected() || allFalse && isSelected();
+    if (!toggle && getText().equals(SOME)) {
+      // back to all or none without a toggle: show this toggle's state again
+      setText(isSelected() ? NONE : ALL);
+      setIcon(isSelected() ? NONE_ICON : ALL_ICON);
+      header.repaint();
+    }
+    return toggle;
   }
 
   // Return the icon used for a JCheckBox when it is selected.

@@ -6,7 +6,7 @@
   <groupId>com.blazemeter</groupId>
   <artifactId>jmeter-bzm-correlation-recorder</artifactId>
   <packaging>jar</packaging>
-  <version>3.1.1</version>
+  <version>3.2.0</version>
   <name>Auto Correlation Recorder</name>
   <description>Auto Correlation Recorder as JMeter Plugin</description>
   <url>https://github.com/Blazemeter/CorrelationRecorder</url>
@@ -146,7 +146,16 @@
     <dependency>
       <groupId>com.blazemeter</groupId>
       <artifactId>jmeter-bzm-commons</artifactId>
-      <version>0.2.2</version>
+      <version>0.2.5</version>
+      <exclusions>
+        <!-- Up to 0.2.4, jmeter-bzm-commons declared its checkstyle build plugin as a dependency,
+        which put velocity, commons-lang 2 and Guava on this compile classpath; JMeter 5.x ships
+        none of them. Kept as a guard. -->
+        <exclusion>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.tomakehurst</groupId>
@@ -164,7 +173,8 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
       <version>1.9</version>
-      <scope>test</scope>
+      <!-- shipped by JMeter (1.9 in 5.5) -->
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -175,6 +185,14 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.12.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- only for @VisibleForTesting (class retention): JMeter does not ship Guava and the plugin
+      does not bundle it, so no other Guava class may be used -->
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>27.1-jre</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
