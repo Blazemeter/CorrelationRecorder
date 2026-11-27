@@ -17,5 +17,7 @@ jobs:
           cache: maven
       # The release profile adds the enforcer, sources and javadoc that the
       # Maven Central deploy runs; gpg.skip leaves out only the signing.
+      # xvfb-run gives the Swing unit tests a display: the runner has none,
+      # and they fail with HeadlessException without it.
       - name: build as the release does
-        run: mvn --batch-mode --no-transfer-progress verify -Prelease -Dgpg.skip
+        run: xvfb-run -a mvn --batch-mode --no-transfer-progress verify -Prelease -Dgpg.skip
